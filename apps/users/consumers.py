@@ -1,6 +1,7 @@
+import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from algoliasearch_django import raw_search
-from json import loads as json_loads, dumps as json_dumps
+from json import dumps as json_dumps
 from websockets import exceptions as ws_exceptions
 
 from core.utils import error_message, success_message
@@ -37,3 +38,5 @@ class UserSearchConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json_dumps(result))
         except ws_exceptions.ConnectionClosed:
             pass
+        except Exception as e:
+            logging.exception(e)
