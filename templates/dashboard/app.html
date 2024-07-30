@@ -1,0 +1,45 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block top_import %}
+    <script src="{% static 'common/namespace.js' %}"></script>
+{% endblock top_import %}
+
+{% block title %} Osiris Cloud {% endblock title %}
+
+{% block content %}
+    <main class="grow">
+        <div class="p-4 my-6 mx-4 bg-white rounded-lg shadow md:items-center md:p-6 xl:p-6 dark:bg-gray-800">
+            <div class="text-xl font-bold leading-none text-gray-900 sm:text-2xl dark:text-white">Welcome to Osiris
+                Cloud!
+            </div>
+            <br>
+            <p class="dark:text-white">Osiris Cloud helps automate, manage and scale on-prem infrastructure with
+                ease.</p>
+            <br>
+            <div>
+                <h2 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">What's available right now</h2>
+                <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
+                    <li class="list-item">Virtual Machines</li>
+                    <li class="list-item">Container Registry</li>
+                    <li class="list-item">Container Apps</li>
+                </ul>
+            </div>
+            <br>
+            <div>
+                <h2 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">What's coming soon&trade;</h2>
+                <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
+                    <li class="list-item">Databases</li>
+                    <li class="list-item">Object Storage</li>
+                    <li class="list-item">Cloud Functions</li>
+                    <li class="list-item">Kubernetes</li>
+                    <li class="list-item">Marketplace for open-source apps</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+{% endblock content %}
+
+{% block footer %}
+    {% include "components/footer.html" %}
+{% endblock footer %}

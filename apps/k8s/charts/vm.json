@@ -1,0 +1,88 @@
+{
+    "apiVersion": "kubevirt.io/v1",
+    "kind": "VirtualMachine",
+    "metadata": {
+        "namespace": "NAMESPACE",
+        "name": "VM_NAME",
+        "annotations": {
+            "harvesterhci.io/volumeClaimTemplates": "{VOLUME_CLAIM_TEMPLATES}",
+            "network.harvesterhci.io/ips": "[]"
+        },
+        "labels": {
+            "harvesterhci.io/creator": "harvester",
+            "harvesterhci.io/os": "OS",
+            "vmid": "VMID",
+            "distro": "DISTRO"
+        }
+    },
+    "spec": {
+        "runStrategy": "RerunOnFailure",
+        "template": {
+            "metadata": {
+                "creationTimestamp": "CREATE_TIME",
+                "annotations": {
+                    "harvesterhci.io/sshNames": "[]"
+                },
+                "labels": {
+                    "harvesterhci.io/vmName": "VM_NAME"
+                }
+            },
+            "spec": {
+                "domain": {
+                    "clock": {
+                        "timezone": "America/New York"
+                    },
+                    "cpu": {
+                        "cores": "CPU"
+                    },
+                    "devices": {
+                        "autoattachGraphicsDevice": true,
+                        "autoattachPodInterface": true,
+                        "networkInterfaceMultiqueue": true,
+                        "disks": "[DISKS]",
+                        "interfaces": [],
+                        "inputs": [
+                            {
+                                "bus": "usb",
+                                "name": "tablet",
+                                "type": "tablet"
+                            }
+                        ]
+                    },
+                    "features": {
+                        "acpi": {
+                            "enabled": true
+                        }
+                    },
+                    "resources": {
+                        "limits": {
+                            "cpu": "CPU",
+                            "memory": "MEMORY"
+                        },
+                        "requests": {
+                            "cpu": "CPU",
+                            "memory": "MEMORY"
+                        }
+                    },
+                    "memory": {
+                        "guest": "MEMORY Mi"
+                    },
+                    "firmware": {
+                        "serial": "VMID",
+                        "bootloader": {
+                            "efi": {
+                                "secureBoot": false
+                            }
+                        }
+                    }
+                },
+                "affinity": {},
+                "hostname": "HOSTNAME",
+                "evictionStrategy": "LiveMigrate",
+                "networks": [],
+                "terminationGracePeriodSeconds": 30,
+                "volumes": []
+            }
+        }
+    }
+}

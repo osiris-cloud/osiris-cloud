@@ -1,0 +1,296 @@
+<style>
+    .grid-con {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        grid-column-gap: 20px;
+        grid-row-gap: 40px;
+        justify-items: stretch;
+        align-items: stretch;
+        overflow: hidden;
+    }
+
+    .grid-item {
+        display: grid;
+        min-width: 200px;
+        grid-template-columns: 16em 20em;
+        grid-template-rows: 30px;
+        grid-column-gap: 20px;
+    }
+</style>
+
+<div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+    <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-tab" data-tabs-toggle="#create-vm"
+        role="tablist">
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg" id="basics-tab" data-tabs-target="#basics"
+                    type="button" role="tab">Basics
+            </button>
+        </li>
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    id="auth-tab" data-tabs-target="#auth" type="button" role="tab">Authentication
+            </button>
+        </li>
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    id="auth-tab" data-tabs-target="#network" type="button" role="tab">Network
+            </button>
+        </li>
+        {#        <li role="presentation">#}
+        {#            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"#}
+        {#                    id="network-tab" data-tabs-target="#review" type="button" role="tab">Review#}
+        {#            </button>#}
+        {#        </li>#}
+    </ul>
+</div>
+
+<div id="create-vm">
+    <div class="px-4 py-6 rounded-lg bg-gray-50 bg-white dark:bg-gray-800" id="basics" role="tabpanel">
+
+        <div class="grid-con">
+            <div class="grid-item">
+                <label for="vm-name" class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">
+                    Virtual Machine Name
+                </label>
+                <input type="text" id="vm-name"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="Enter a name" required/>
+            </div>
+
+            <div class="grid-item">
+                <label for="os_" class="block mb-2 pt-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Operating System
+                </label>
+                <div>
+                    <label for="os" class="sr-only">OS</label>
+                    <select id="os" class="block py-2.5 px-0 w-full text-sm text-gray-500
+                    bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 
+                    dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                        <option class="dark:bg-gray-700 hidden" value="">OS</option>
+                        <option class="dark:bg-gray-700" value="ubuntu-23.10-server-cloudimg">Ubuntu Server 23.10</option>
+                        {#  <option class="dark:bg-gray-700" value="ubuntu-desktop-22.04">Ubuntu Desktop</option>#}
+                        {#  <option class="dark:bg-gray-700" value="windows-10-pro-22h2">Windows 10 Pro 22H2#}
+                        {#  </option>#}
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-item">
+                <label for="size_" class="block mb-2 pt-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Size
+                </label>
+                <div>
+                    <label for="size" class="sr-only">Resources</label>
+                    <select id="size" class="block py-2.5 px-0 w-full text-sm text-gray-500
+                    bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                    dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                        <option class="dark:bg-gray-700 hidden" value="">Resources</option>
+                        <option class="dark:bg-gray-700" value="s1">Small (2 vCPU, 2 GiB RAM)</option>
+                        <option class="dark:bg-gray-700" value="s2">Standard (2 vCPU, 4 GiB RAM)</option>
+                        <option class="dark:bg-gray-700" value="m1">Medium 1 (4 vCPU, 8 GiB RAM)</option>
+                        <option class="dark:bg-gray-700" value="m2">Medium 2 (8 vCPU, 12 GiB RAM)</option>
+                        <option class="dark:bg-gray-700" value="l1">Large 1 (12 vCPU, 16 GiB RAM)</option>
+                        <option class="dark:bg-gray-700" value="l2">Large 2 (16 vCPU, 24 GiB RAM)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-item">
+                <label for="disk" class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+                    Disk Size (GiB)
+                </label>
+                <input type="number" id="disk"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="Eg. 16" required/>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="hidden px-4 py-6 rounded-lg bg-gray-50 bg-white dark:bg-gray-800" id="auth" role="tabpanel">
+
+        <div id="gh-import-modal" tabindex="-1"
+             class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+            <div class="relative p-4 w-full max-w-md max-h-full">
+                <!-- Modal content -->
+                <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                    <!-- Modal header -->
+                    <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                            Import SSH Key
+                        </h3>
+                        <button type="button" id="gh-import-modal-close"
+                                class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                                data-modal-hide="gh-import-modal">
+                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                 viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"></path>
+                            </svg>
+                            <span class="sr-only">Close modal</span>
+                        </button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="p-4 md:p-5">
+                        <div class="space-y-4">
+                            <div>
+                                <label for="gh-username"
+                                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> GitHub
+                                    username</label>
+                                <input type="text" name="gh-username" id="gh-username"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                       placeholder="" required/>
+                            </div>
+                            <div>
+                                <label for="gh-ssh-key"
+                                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Key</label>
+                                <input type="text" name="gh-ssh-key" id="gh-ssh-key"
+                                       placeholder="Click 'Get Key' to preview"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                       disabled/>
+                            </div>
+                            <button id="gh-import-key-button"
+                                    class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                                Get Key
+                            </button>
+
+                        </div>
+                    </div>
+                    <!-- Modal body -->
+                </div>
+            </div>
+        </div>
+
+        <p data-linux="true" class="mb-6 text-sm text-gray-500 dark:text-gray-400">If you don't have an SSH key yet,
+            follow this
+            <a target="_blank" class="text-blue-500 dark:text-blue-400 hover:underline dark:hover:underline"
+               href="https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent">guide</a>.
+            Although the VM supports password authentication for SSH, this is highly discouraged.
+        </p>
+
+        <div class="grid-con">
+            <div class="grid-item" data-linux="true">
+                <label for="enable-ssh" class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+                    Enable SSH
+                </label>
+                <div class="flex items-center mb-4">
+                    <label for="enable-ssh"></label><input id="enable-ssh" type="checkbox"
+                                                              class="w-4 h-4 mt-3.5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                </div>
+            </div>
+
+            <div class="hidden" data-linux="true">
+                <label for="ssh-key" class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+                    SSH Public Key
+                </label>
+                <input type="text" id="ssh-key"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="" required/>
+                 <span data-modal-target="gh-import-modal" data-modal-toggle="gh-import-modal" style="left: 670px;"
+                  class="absolute pt-1.5 text-emerald-500 text-sm cursor-pointer hover:text-lime-300">[ Import from GitHub ]</span>
+            </div>
+
+            <div class="hidden" data-linux="true">
+                <label for="password-auth" class="block pt-1.5 mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    SSH Password Authentication
+                </label>
+                <div class="flex items-center mb-4">
+                    <label for="password-auth"></label><input id="password-auth" type="checkbox"
+                                                              class="w-4 h-4 mt-3.5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                </div>
+            </div>
+
+            <div class="grid-item">
+                <label for="vm-username" class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+                    VM Username
+                </label>
+                <input type="text" id="vm-username"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="Username" required/>
+            </div>
+
+            <div class="grid-item">
+                <label for="vm-password-1" class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+                    VM Password
+                </label>
+                <input type="password" id="vm-password-1"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="•••••••••••••" required/>
+            </div>
+
+            <div class="grid-item">
+                <label for="vm-password-2" class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+                    Confirm VM Password
+                </label>
+                <input type="password" id="vm-password-2"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="•••••••••••••" required/>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="hidden px-4 py-6 rounded-lg bg-gray-50 dark:bg-gray-800" id="network" role="tabpanel">
+        <p class="text-sm text-gray-500 dark:text-gray-400">You can choose one of the 3 networks.
+        </p>
+
+        <div class="ml-3 mt-1">
+            <ul class="space-y-1 text-sm text-gray-500 dark:text-gray-400 list-disc list-inside dark:text-gray-400">
+                <li class="list-item" disabled="">Private: Strictly Firewalled. You can only access the VM via the web
+                    console
+                </li>
+                <li class="list-item">vLab: Firewalled, but part of the shared private subnet. You can access the VM via
+                    web console and the VPN.
+                </li>
+                <li class="list-item" disabled>Public: Open to the internet, and is provided upon request. Email
+                    infra@osiriscloud.io
+                </li>
+            </ul>
+        </div>
+
+        <div class="grid-con mt-6 mb-4">
+            <div class="grid-item">
+                <label for="network-type_" class="block mb-2 pt-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Network Type
+                </label>
+                <div>
+                    <label for="network-type" class="sr-only">Network</label>
+                    <select id="network-type" class="block py-2.5 px-0 w-full text-sm text-gray-500
+                    bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                    dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                        <option class="dark:bg-gray-700 hidden" value="">Network</option>
+                        <option class="dark:bg-gray-700" value="private">Private</option>
+                        <option class="dark:bg-gray-700" value="vlab">vLab</option>
+                        <option class="dark:bg-gray-700" value="public">Public</option>
+                    </select>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    {#    <div class="hidden px-4 py-6 rounded-lg bg-gray-50 dark:bg-gray-800" id="review" role="tabpanel">#}
+    {#        <p class="text-sm text-gray-500 dark:text-gray-400">This is some placeholder content</p>#}
+    {#    </div>#}
+
+</div>
+
+{#<button type="button" id="tab-previous"#}
+{#        class="mt-4 text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">#}
+{#    Previous#}
+{#</button>#}
+{##}
+{#<button type="button" id="tab-next"#}
+{#        class="mt-4 text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">#}
+{#    Next#}
+{#</button>#}
+
+<button type="button" id="vm-create"
+        class="mt-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+    Validate
+</button>
+
+<input type="hidden" name="csrf-token" value="{{ csrf_token }}">

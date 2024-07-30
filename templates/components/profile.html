@@ -1,0 +1,101 @@
+<style>
+    .grid-con {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        grid-column-gap: 20px;
+        grid-row-gap: 20px;
+        justify-items: stretch;
+        align-items: stretch;
+        overflow: hidden;
+    }
+
+    .grid-item {
+        display: grid;
+        min-width: 50px;
+        grid-template-columns: 250px 3fr;
+        grid-template-rows: 35px;
+        grid-column-gap: 10px;
+    }
+</style>
+
+<div>
+    <div class="px-4 py-6 rounded-lg bg-gray-50 bg-white dark:bg-gray-800" id="basics" role="tabpanel">
+        <div class="grid-con">
+            <div class="grid-item">
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">Name</div>
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">{{ request.user.first_name }} {{ request.user.last_name }}</div>
+            </div>
+
+            <div class="grid-item">
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">Email</div>
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">{{ request.user.email }}</div>
+            </div>
+
+            <div class="grid-item">
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">Access</div>
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">{{ request.user.get_role_display }}</div>
+            </div>
+
+            <div class="grid-item">
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">Personal Namespace ID</div>
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">{{ nsid }}</div>
+            </div>
+
+            <div class="grid-item">
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">Resource Limits</div>
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">
+                    {% if limit is not None %}
+                        {{ limit.cpu }} cpu's, {{ limit.memory }} GiB memory, {{ limit.disk }} GB storage,
+                        {{ limit.public_ip }} public IP
+                    {% else %}
+                        Account is not initialized
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid-item">
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">Github</div>
+                <div class="block text-sm font-medium text-gray-900 dark:text-white">
+                    {% if github %}
+                        {{ github }}
+                        <button id="unlink-github" type="button"
+                                class="mx-2 px-1 text-white rounded-md bg-red-700 hover:bg-red-800 focus:ring-4">unlink
+                            account
+                        </button>
+                    {% else %}
+                        <button id="link-github" type="button" class="-mt-2 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4
+                    focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-1.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                            Link Github
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <script>
+                let params = "scrollbars=yes,resizable=yes,status=no,location=no,toolbar=no,menubar=no,width=500,height=600,left=150,top=100";
+                {% if not github %}
+                    document.getElementById("link-github").addEventListener("click", function () {
+                        let newWindow = open('/login/link-account', 'link-github', params);
+                        setInterval(() => {
+                            if (newWindow.closed) {
+                                location.reload();
+                            }
+                        }, 500);
+                    });
+                {% else %}
+                    document.getElementById("unlink-github").addEventListener("click", function () {
+                        let newWindow = open('/login/unlink-account', 'unlink-github', params);
+                        newWindow.onload = function () {
+                            setTimeout(() => {
+                                newWindow.close();
+                                location.reload();
+                            }, 1000);
+                        };
+                    });
+                {% endif %}
+            </script>
+
+        </div>
+    </div>
+</div>

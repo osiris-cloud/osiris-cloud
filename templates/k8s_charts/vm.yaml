@@ -1,0 +1,69 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  namespace: {{ values.namespace }}
+  annotations:
+    harvesterhci.io/volumeClaimTemplates: >-
+      {{ boot_spec }}
+    network.harvesterhci.io/ips: '[]'
+  labels:
+    harvesterhci.io/creator: harvester
+    harvesterhci.io/os: {{ os }}
+    vmid: {{ vm_id }}
+  name: {{ vm_name }}
+spec:
+  runStrategy: RerunOnFailure
+  template:
+    metadata:
+      creationTimestamp: {{ create_time }}
+      annotations:
+        harvesterhci.io/sshNames: '[]'
+      labels:
+        harvesterhci.io/vmName: {{ vm_name }}
+    spec:
+      domain:
+        cpu:
+          cores: 2
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+              bootOrder: 1
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - masquerade: {}
+              macAddress: {{ mac_address }}
+              model: virtio
+              name: default
+        features:
+          acpi:
+            enabled: true
+        resources:
+          limits:
+            cpu: {{ cpu }}
+            memory: {{memory}}Gi
+        firmware:
+          bootloader:
+            efi:
+              secureBoot: false
+        machine: {}
+      evictionStrategy: LiveMigrate
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          persistentVolumeClaim:
+            claimName: {{ pvc_name }}
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            secretRef:
+              name: {{ cloudinit_secret }}
+            networkDataSecretRef:
+              name: {{ cloudinit_secret }}
+      affinity: {}
+      terminationGracePeriodSeconds: 60
+      accessCredentials: []

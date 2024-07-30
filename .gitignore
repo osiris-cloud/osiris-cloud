@@ -1,0 +1,17 @@
+.idea
+.vscode
+
+venv
+__pycache__
+
+node_modules
+package-lock.json
+staticfiles/*
+
+.env
+kubeconfig
+kubeconfig.yaml
+
+_testing
+
+db.sqlite3

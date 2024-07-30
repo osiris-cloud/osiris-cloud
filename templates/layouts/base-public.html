@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <title>{% block title %}Osiris Cloud{% endblock title %}</title>
+    {% include "components/head.html" %}
+    {% block top_import %}{% endblock top_import %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Infrastructure for the better web">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'common/icon.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'common/icon.png' %}">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@">
+    <meta name="twitter:creator" content="@">
+    <meta name="twitter:title" content="Osiris Cloud">
+    <meta name="twitter:description" content="Infrastructure for the better web">
+
+    <link rel="stylesheet" href="{% static 'dist/main.css' %}">
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || !('theme' in localStorage)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+    <style>
+        #main-hero {
+            width: 100%;
+            background: url('https://anubis-lms.io/api/public/static/de8034a1d4e19d19/cloud_bg.webp') no-repeat;
+            background-size: cover;
+            height: fit-content;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900">
+
+{% block header %}
+    <header>
+        <nav class="bg-white border-gray-200 px-4 lg:px-6 py-2.5 dark:bg-gray-800">
+            <div class="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl">
+                <a href="/" class="flex items-center">
+                    <img src="{% static 'common/icon.png' %}" class="h-8 mr-2" alt="Osiris Cloud Logo"/>
+                    <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">Osiris Cloud</span>
+                </a>
+                <div class="flex items-center lg:order-2">
+                    <a href="/login"
+                       class="text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 
+                   dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800">
+                        {% if request.user.is_authenticated %}
+                            Dashboard
+                        {% else %}
+                            Login
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+{% endblock header %}
+
+{% block body %} {% endblock body %}
+
+</body>
+
+{% block footer %} {% endblock footer %}

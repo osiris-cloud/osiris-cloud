@@ -1,0 +1,94 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/login.css" %}">
+    <link rel="icon" href="{% static 'common/favicon.ico' %}">
+    <script>
+        localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'light' : 'dark');
+    </script>
+    {{ form.media }}
+{% endblock %}
+
+{% block title %}Osiris Cloud | Admin Login{% endblock %}
+
+{% block bodyclass %}{{ block.super }} login{% endblock %}
+
+{% block usertools %}{% endblock %}
+{% block nav-global %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block branding %}{% endblock %}
+
+{% block header %}
+    <style>
+        .center {
+            display: grid;
+            place-items: center;
+        }
+    </style>
+    <div id="site-name" class="center" style="margin-top: 30px; margin-bottom: 5px; margin-right: -5px">
+        <img src="{% static 'common/icon.png' %}" alt="OC" style="width: 200px;">
+        <div style="margin: 10px;">Osiris Cloud Admin</div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    {% if form.errors and not form.non_field_errors %}
+        <p class="errornote">
+            {% if form.errors.items|length == 1 %}{% translate "Please correct the error below." %}{% else %}
+                {% translate "Please correct the errors below." %}{% endif %}
+        </p>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        {% for error in form.non_field_errors %}
+            <p class="errornote">
+                {{ error }}
+            </p>
+        {% endfor %}
+    {% endif %}
+
+    <div id="content-main">
+        {% if user.is_authenticated %}
+            <p class="errornote">
+                {% blocktranslate trimmed %}
+                    You are authenticated as {{ username }}, but are not authorized to access this page.
+                {% endblocktranslate %}
+            </p>
+        {% else %}
+            <form action="{{ app_path }}" method="post" id="login-form">
+                {% csrf_token %}
+                <div class="form-row">
+                    {{ form.username.errors }}
+                    {{ form.username.label_tag }} {{ form.username }}
+                </div>
+                <div class="form-row">
+                    {{ form.password.errors }}
+                    {{ form.password.label_tag }} {{ form.password }}
+                    <input type="hidden" name="next" value="{{ next }}">
+                </div>
+                <div class="submit-row">
+                    <input type="submit" value="Log in" style="background-color: forestgreen">
+                </div>
+            </form>
+            <div class="center" style="margin-top: 20px;">
+                <div class="theme-toggle" style="margin-left: -3px">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                         class="theme-icon-when-dark" viewBox="0 0 16 16">
+                        <path d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"></path>
+                    </svg>
+                    <svg class="theme-icon-when-auto">
+                        <use xlink:href="#icon-auto"></use>
+                    </svg>
+                    <svg class="theme-icon-when-light">
+                        <use xlink:href="#icon-moon"></use>
+                    </svg>
+                </div>
+
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

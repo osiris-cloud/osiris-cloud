@@ -1,0 +1,209 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Osiris Cloud Console</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'common/favicon.ico' %}">
+
+    <style>
+        body {
+            margin: 0;
+            background-color: #111827;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        #top_bar {
+            background-color: #0f65d5;
+            color: white;
+            font: bold 12px Helvetica;
+            padding: 6px 5px 4px 5px;
+            border-bottom: 1px outset;
+        }
+
+        #status {
+            text-align: center;
+        }
+
+        #sendCtrlAltDelButton {
+            position: fixed;
+            top: 0;
+            right: 0;
+            border: 1px outset;
+            padding: 5px 5px 4px 5px;
+            cursor: pointer;
+        }
+
+        #screen {
+            flex: 1; /* fill remaining space */
+            overflow: hidden;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .shadow {
+            position: relative;
+            margin: 21% auto 0;
+            width: 410px;
+            height: 65px;
+            padding: 10px;
+            border-radius: 15px;
+        }
+
+        .shadow::before,
+        .shadow::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            background: linear-gradient(90deg, #fb0094, #0000ff, #00ff00, #ffff00, #ff0000, #fb0094, #0000ff, #00ff00, #ffff00, #ff0000);
+            background-size: 400%;
+            width: calc(100% + 4px);
+            height: calc(100% + 4px);
+            z-index: -1;
+            animation: animate 20s linear infinite;
+        }
+
+        .shadow::after {
+            filter: blur(20px);
+        }
+
+        @keyframes animate {
+            0% {
+                background-position: 0 0;
+            }
+            50% {
+                background-position: 300% 0;
+            }
+            100% {
+                background-position: 0 0;
+            }
+        }
+
+
+    </style>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <script type="module" crossorigin="anonymous">
+        // RFB holds the API to connect and communicate with a VNC server
+        import RFB from '{% static 'assets/vnc/core/rfb.js' %}';
+
+        let rfb;
+        // When this function is called we have successfully connected to a server
+        const screen = $('#screen');
+        const ocLogo = $('#oc-logo');
+        const status_bar = $('#status');
+
+        function connectedToServer(e) {
+            screen.removeClass('hidden');
+            ocLogo.addClass('hidden');
+            status("Connected");
+        }
+
+        // This function is called when we are disconnected
+        function disconnectedFromServer(e) {
+            if (e.detail.clean) {
+                status("Disconnected");
+            } else {
+                status("Cannot connect");
+            }
+            screen.addClass('hidden');
+            ocLogo.removeClass('hidden');
+        }
+
+        // When this function is called, the server requires
+        // credentials to authenticate
+        function credentialsAreRequired(e) {
+            const password = prompt("Password Required:");
+            rfb.sendCredentials({password: password});
+        }
+        
+        function sendCtrlAltDel() {
+            rfb.sendCtrlAltDel();
+            return false;
+        }
+        
+        function status(text) {
+            status_bar.text(text);
+        }
+
+        function readQueryVariable(name, defaultValue) {
+            const re = new RegExp('.*[?&]' + name + '=([^&#]*)'),
+                match = ''.concat(document.location.href, window.location.hash).match(re);
+            if (match) {
+                // We have to decode the URL since want the cleartext value
+                return decodeURIComponent(match[1]);
+            }
+            return defaultValue;
+        }
+
+        function extractVMID() {
+            const url = window.location.href;
+            const regex = /\/vm\/console\/([^/]+)\/.*$/;
+            const match = url.match(regex);
+            if (match && match[1]) {
+                const vmid = match[1];
+                return vmid;
+            } else {
+                return '0';
+            }
+        }
+
+        document.getElementById('sendCtrlAltDelButton').onclick = sendCtrlAltDel;
+
+        const host = readQueryVariable('host', window.location.hostname);
+        const port = readQueryVariable('port', window.location.port);
+
+        // | | |         | | |
+        // | | | Connect | | |
+        // v v v         v v v
+
+        status("Connecting");
+
+        // Build the websocket URL used to connect
+        let url = window.location.protocol === 'http:' ? 'ws' : 'wss';
+        url += '://' + host;
+        if (port) {
+            url += ':' + port;
+        }
+        url += '/api/vnc/' + extractVMID();
+
+        // Creating a new RFB object will start a new connection
+        rfb = new RFB(document.getElementById('screen'), url, {});
+
+        // Add listeners to important events from the RFB module
+        rfb.addEventListener("connect", connectedToServer);
+        rfb.addEventListener("disconnect", disconnectedFromServer);
+        rfb.addEventListener("credentialsrequired", credentialsAreRequired);
+
+        // Set parameters that can be changed on an active connection
+        rfb.viewOnly = readQueryVariable('view_only', false);
+        rfb.scaleViewport = readQueryVariable('scale', true);
+    </script>
+</head>
+
+<body>
+<div id="top_bar">
+    <div id="status">Connecting</div>
+    <div id="sendCtrlAltDelButton">Ctrl + Alt + Del</div>
+</div>
+
+<div id="oc-logo" class="shadow">
+    <div>
+        <img src="{% static 'assets/oc-logo.svg' %}" alt="Osiris Cloud">
+    </div>
+</div>
+
+<div id="screen" class="hidden">
+    <!-- This is where the remote screen will appear -->
+</div>
+</body>
+</html>
