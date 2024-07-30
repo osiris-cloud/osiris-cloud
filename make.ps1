@@ -12,6 +12,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Global variable to store job references
 $global:jobs = @()
 
+
 function Show-Help
 {
     Write-Host "### Available targets:"
@@ -77,6 +78,67 @@ function Algolia-Reindex
     & $PY_VENV manage.py algolia_reindex
 }
 
+function Algolia-ClearIndex
+{
+    Write-Host "### Clearing Algolia index"
+    & $PY_VENV manage.py algolia_clear_index
+}
+
+
+function Parse-EnvFile
+{
+    param (
+        [string]$FilePath
+    )
+    $envVars = @{ }
+
+    if (Test-Path $FilePath)
+    {
+        Get-Content $FilePath | ForEach-Object {
+            $line = $_.Trim()
+            if ($line -and !$line.StartsWith("#"))
+            {
+                $keyValue = $line -split "=", 2
+                if ($keyValue.Length -eq 2)
+                {
+                    $key = $keyValue[0].Trim()
+                    $value = $keyValue[1].Trim()
+                    $value = $value -replace '^["'']|["'']$'
+                    $envVars[$key] = $value
+                }
+            }
+        }
+    }
+    else
+    {
+        Write-Error "Environment file not found: $FilePath"
+    }
+
+    return $envVars
+}
+
+
+function Set-EnvVariables
+{
+    param (
+        [hashtable]$EnvVars
+    )
+    foreach ($key in $EnvVars.Keys)
+    {
+        $value = $EnvVars[$key]
+        [System.Environment]::SetEnvironmentVariable($key, $value, [System.EnvironmentVariableTarget]::Process)
+    }
+}
+
+function Load-Env
+{
+    $envVariables = Parse-EnvFile -FilePath ".env"
+    if ($envVariables.Count -gt 0)
+    {
+        Set-EnvVariables -EnvVars $envVariables
+    }
+}
+
 
 function Start-Dev
 {
@@ -105,11 +167,11 @@ function Start-Dev
         & doppler run -- $venvPath\Scripts\python.exe manage.py runserver
     } -ArgumentList $scriptDir, (Resolve-Path ".\venv")
 
-#    $global:jobs += Start-Job -Name "Celery" -ScriptBlock {
-#        param($dir, $venvPath)
-#        Set-Location $dir
-#        & $venvPath\Scripts\python.exe -m celery -A core worker --loglevel INFO
-#    } -ArgumentList $scriptDir, (Resolve-Path ".\venv")
+    #    $global:jobs += Start-Job -Name "Celery" -ScriptBlock {
+    #        param($dir, $venvPath)
+    #        Set-Location $dir
+    #        & $venvPath\Scripts\python.exe -m celery -A core worker --loglevel INFO
+    #    } -ArgumentList $scriptDir, (Resolve-Path ".\venv")
 
     $global:jobs += Start-Job -Name "NodeJS" -ScriptBlock {
         param($dir)
@@ -183,12 +245,14 @@ switch ($Target)
         Install-NodeModules
     }
     "django" {
+        Load-Env
         Start-Django
     }
     "flowbite" {
         Start-Web
     }
     "celery" {
+        Load-Env
         Start-Celery
     }
     "dev" {
@@ -201,7 +265,12 @@ switch ($Target)
         Start-Migrations
     }
     "index" {
+        Load-Env
         Algolia-Reindex
+    }
+    "clear" {
+        Load-Env
+        Algolia-ClearIndex
     }
     "app" {
         if ($args.Count -eq 0)
