@@ -15,3 +15,5 @@ kubeconfig.yaml
 _testing
 
 db.sqlite3
+
+static/dist/*
