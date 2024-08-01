@@ -1153,6 +1153,9 @@ input:checked + .toggle-bg {
 .ml-0\.5 {
   margin-left: 0.125rem;
 }
+.ml-1 {
+  margin-left: 0.25rem;
+}
 .ml-2 {
   margin-left: 0.5rem;
 }
@@ -1167,6 +1170,12 @@ input:checked + .toggle-bg {
 }
 .ml-6 {
   margin-left: 1.5rem;
+}
+.ml-8 {
+  margin-left: 2rem;
+}
+.mr-1 {
+  margin-right: 0.25rem;
 }
 .mr-2 {
   margin-right: 0.5rem;
@@ -1273,6 +1282,9 @@ input:checked + .toggle-bg {
 .h-screen {
   height: 100vh;
 }
+.max-h-48 {
+  max-height: 12rem;
+}
 .max-h-52 {
   max-height: 13rem;
 }
@@ -1320,6 +1332,9 @@ input:checked + .toggle-bg {
 }
 .w-full {
   width: 100%;
+}
+.min-w-64 {
+  min-width: 16rem;
 }
 .max-w-2xl {
   max-width: 42rem;
@@ -1849,6 +1864,9 @@ input:checked + .toggle-bg {
 }
 .text-right {
   text-align: right;
+}
+.align-middle {
+  vertical-align: middle;
 }
 .font-pt-sans {
   font-family: PT Sans, ui-sans-serif, system-ui, -apple-system, system-ui, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;

@@ -69,7 +69,7 @@
                                     </svg>
                                 </div>
                                 <label for="user-search"></label>
-                                <input type="text" id="user-search" 
+                                <input type="text" id="user-search"
                                        class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 
                                            focus:border-blue-600 dark:bg-gray-700 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                                        placeholder="Search users">
@@ -78,107 +78,105 @@
                         </div>
 
                         <!-- User Search Dropdown menu -->
-                        <div id="user-search-dropdown" class="z-10 w-64 absolute hidden bg-white rounded-lg shadow dark:bg-gray-600">
-                            <ul class="max-h-48 py-2 overflow-y-auto text-gray-700 dark:text-gray-200">
-                                <li>
-                                    <div class="flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                                        <img class="w-6 h-6 me-2 rounded-full"
-                                             src="/docs/images/people/profile-picture-1.jpg" alt="">
-                                        Jese Leos
-                                    </div>
-                                </li>
+                        <div id="user-search-dropdown"
+                             class="hidden z-10 min-w-64 ml-8 absolute bg-white rounded-lg shadow dark:bg-gray-600">
+                            <ul id="user-search-results" class="max-h-48 overflow-y-auto text-gray-700 dark:text-gray-200">
                             </ul>
                         </div>
 
 
-                            <!-- Dropdown menu -->
-                            <div id="role-dropdown"
-                                 class="z-10 hidden w-36 bg-white divide-y divide-gray-100 rounded shadow dark:bg-gray-600 dark:divide-gray-600">
-                                <ul class="text-sm text-gray-700 dark:text-gray-200">
-                                    <li id="role-owner" class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
-                                        <svg id="role-selected-svg" class="w-5.5 h-5.5 text-gray-500 dark:text-gray-300"
-                                             xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                             fill="none" viewBox="0 0 24 24">
+                        <!-- Dropdown menu -->
+                        <div id="role-dropdown"
+                             class="z-10 hidden w-36 bg-white divide-y divide-gray-100 rounded shadow dark:bg-gray-600 dark:divide-gray-600">
+                            <ul class="text-sm text-gray-700 dark:text-gray-200">
+                                <li id="role-owner"
+                                    class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                    <svg id="role-selected-svg" class="w-5.5 h-5.5 text-gray-500 dark:text-gray-300"
+                                         xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                         fill="none" viewBox="0 0 24 24">
+                                        <path stroke="currentColor" stroke-linecap="round"
+                                              stroke-linejoin="round" stroke-width="2"
+                                              d="M5 11.917 9.724 16.5 19 7.5">
+                                        </path>
+                                    </svg>
+                                    <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Owner
+                                    </div>
+                                </li>
+                                <li id="role-manager"
+                                    class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                    <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Manager
+                                    </div>
+                                </li>
+                                <li id="role-viewer"
+                                    class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                    <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Viewer
+                                    </div>
+                                </li>
+                                <li id="remove-user"
+                                    class="flex items-center mt-0.5 p-2 rounded-b hover:bg-gray-100 dark:hover:bg-gray-500 border-t border-gray-400">
+                                    <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Remove
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <!-- End Dropdown menu -->
+
+                        <ul class="max-h-52 pb-3 overflow-y-auto text-sm text-gray-700 dark:text-gray-200 cursor-default">
+                            <li class="flex py-2 px-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <div class="flex items-center justify-between w-full">
+                                    <div class="flex items-center justify-between">
+                                        <img class="w-10 h-10 rounded-full ml-0.5"
+                                             src="https://blob.osiriscloud.io/avatar/jp5999-6zg1.png"
+                                             alt="avatar"
+                                        >
+                                        <div class="ml-2.5 py-0.5">
+                                            <span class="text-black dark:text-white">Joe Prakash</span>
+                                            <p class="text-xs font-normal text-gray-500 dark:text-gray-300">
+                                                jp5999@nyu.edu
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div id="role-dropdown-button" data-dropdown-toggle="role-dropdown"
+                                         data-dropdown-placement="right-start"
+                                         class="text-gray-500 dark:text-gray-300 bg-transparent font-medium rounded text-xs px-2.5 py-2 
+                                         text-center inline-flex items-center dark:hover:bg-gray-700 hover:bg-gray-300"
+                                    >
+                                        Owner
+                                        <svg class="w-2.5 h-2.5 ms-3"
+                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                                             <path stroke="currentColor" stroke-linecap="round"
-                                                  stroke-linejoin="round" stroke-width="2"
-                                                  d="M5 11.917 9.724 16.5 19 7.5">
+                                                  stroke-linejoin="round"
+                                                  stroke-width="2" d="m1 1 4 4 4-4">
                                             </path>
                                         </svg>
-                                        <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Owner
-                                        </div>
-                                    </li>
-                                    <li id="role-manager" class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
-                                        <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Manager
-                                        </div>
-                                    </li>
-                                    <li id="role-viewer" class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
-                                        <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Viewer
-                                        </div>
-                                    </li>
-                                    <li id="remove-user" class="flex items-center mt-0.5 p-2 rounded-b hover:bg-gray-100 dark:hover:bg-gray-500 border-t border-gray-400">
-                                        <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Remove
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                            <!-- End Dropdown menu -->
-
-                            <ul class="max-h-52 pb-3 overflow-y-auto text-sm text-gray-700 dark:text-gray-200 cursor-default">
-                                <li class="flex py-2 px-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <div class="flex items-center justify-between w-full">
-                                        <div class="flex items-center justify-between">
-                                            <img class="w-10 h-10 rounded-full ml-0.5"
-                                                 src="https://blob.osiriscloud.io/avatar/jp5999-6zg1.png"
-                                                 alt="avatar"
-                                            >
-                                            <div class="ml-2.5 py-0.5">
-                                                <span class="text-black dark:text-white">Joe Prakash</span>
-                                                <p class="text-xs font-normal text-gray-500 dark:text-gray-300">
-                                                    jp5999@nyu.edu
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div id="role-dropdown-button" data-dropdown-toggle="role-dropdown"
-                                             data-dropdown-placement="right-start"
-                                             class="text-gray-500 dark:text-gray-300 bg-transparent font-medium rounded text-xs px-2.5 py-2 
-                                         text-center inline-flex items-center dark:hover:bg-gray-700 hover:bg-gray-300"
-                                        >
-                                            Owner
-                                            <svg class="w-2.5 h-2.5 ms-3"
-                                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                                                <path stroke="currentColor" stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      stroke-width="2" d="m1 1 4 4 4-4">
-                                                </path>
-                                            </svg>
-                                        </div>
                                     </div>
-                                </li>
-
-                            </ul>
-
-                        </div>
-
-                        <div class="flex justify-between">
-                            <div class="flex items-start">
-                                <div class="flex items-center h-5">
-                                    <input id="switch-after-creation" type="checkbox" checked value=""
-                                           class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
-                                           required/>
                                 </div>
-                                <label for="switch-after-creation"
-                                       class="ml-2 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Switch
-                                    after
-                                    creation</label>
-                            </div>
-                        </div>
-                        <button type="submit"
-                                class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                            Create
-                        </button>
+                            </li>
+
+                        </ul>
+
                     </div>
+
+                    <div class="flex justify-between">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="switch-after-creation" type="checkbox" checked value=""
+                                       class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                                       required/>
+                            </div>
+                            <label for="switch-after-creation"
+                                   class="ml-2 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Switch
+                                after
+                                creation</label>
+                        </div>
+                    </div>
+                    <button type="submit"
+                            class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                        Create
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+</div>

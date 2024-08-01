@@ -33,7 +33,10 @@ class UserSearchConsumer(AsyncWebsocketConsumer):
                                      'email': hit.get('email'),
                                      'avatar': hit.get('avatar')
                                      }
-        result = [filter_result(hit) for hit in search]
+        result = {
+            'users': [filter_result(hit) for hit in search]
+        }
+
         try:
             await self.send(text_data=json_dumps(result))
         except ws_exceptions.ConnectionClosed:
