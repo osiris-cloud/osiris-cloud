@@ -1,3 +1,4 @@
+import logging
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
@@ -9,7 +10,7 @@ from ..k8s.models import Namespace, NamespaceRoles
 
 
 def get_user_default_ns(user: User) -> Namespace:
-    return Namespace.objects.filter(user=user, default=True).first()
+    return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
 
 
 @csrf_exempt
@@ -46,7 +47,7 @@ def namespace(request, ns_name=None):
                 }))
 
             case 'POST':
-                ns_data = request.data.get('data')
+                ns_data = request.data.get('namespace')
                 if not ns_data:
                     return JsonResponse(error_message('No data provided'))
                 ns_data = json_loads(ns_data)
@@ -55,6 +56,7 @@ def namespace(request, ns_name=None):
                 JsonResponse(success_message('Create namespace', {}))
 
     except Exception as e:
+        logging.error(str(e))
         return JsonResponse(error_message(str(e)))
 
 # @csrf_exempt
