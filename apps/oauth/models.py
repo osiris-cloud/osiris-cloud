@@ -12,6 +12,9 @@ class NYUUser(models.Model):
     affiliation = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='nyu')
 
+    class Meta:
+        db_table = 'nyu_user'
+
 
 @admin.register(NYUUser)
 class NYUUserAdmin(admin.ModelAdmin):
@@ -27,6 +30,9 @@ class GithubUser(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(max_length=320, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='github', null=True, blank=True)
+
+    class Meta:
+        db_table = 'github_user'
 
 
 @admin.register(GithubUser)

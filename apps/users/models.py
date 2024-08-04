@@ -24,6 +24,17 @@ class User(AbstractUser):
     def not_manager(self):
         return self.username != 'manager'
 
+    def info(self):
+        return {
+            'username': self.username,
+            'name': f'{self.first_name} {self.last_name}',
+            'email': self.email,
+            'avatar': self.avatar,
+        }
+
+    class Meta:
+        db_table = 'users'
+
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -33,21 +44,34 @@ class UserAdmin(admin.ModelAdmin):
 
 
 class Event(models.Model):
-    id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='events')
+    namespace = models.ForeignKey('k8s.Namespace', on_delete=models.CASCADE, related_name='events')
     message = models.TextField()
-    related_link = models.CharField(max_length=200, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    related_link = models.CharField(max_length=256, blank=True, null=True)
+    time = models.DateTimeField(auto_now_add=True)
     read = models.BooleanField(default=False)
+
+    def info(self):
+        return {
+            'message': self.message,
+            'related_link': self.related_link,
+            'time': self.time,
+            'read': self.read,
+        }
+
+    class Meta:
+        db_table = 'ns_events'
 
 
 class Group(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
+    gid = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=128)
     owners = models.ManyToManyField(User, related_name='groups_owned')
     members = models.ManyToManyField(User, related_name='groups_partof')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'groups'
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
