@@ -132,6 +132,7 @@ function Set-EnvVariables
 
 function Load-Env
 {
+    doppler secrets download --no-file --format env | Out-File -FilePath .env -Encoding utf8
     $envVariables = Parse-EnvFile -FilePath ".env"
     if ($envVariables.Count -gt 0)
     {
@@ -243,6 +244,9 @@ switch ($Target)
     }
     "node_modules" {
         Install-NodeModules
+    }
+    "env" {
+       Load-Env
     }
     "django" {
         Load-Env
