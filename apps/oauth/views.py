@@ -9,7 +9,7 @@ from django.utils import timezone
 from core.settings import env
 from core.utils import random_str, serialize_obj
 
-from ..k8s.models import Namespace, Namespaces, Limit
+from ..k8s.models import Namespace, NamespaceRoles, Limit
 
 from ..oauth.models import GithubUser, NYUUser
 from ..users.models import User
@@ -19,10 +19,11 @@ from .tasks import set_profile_avatar
 import logging
 
 DEFAULT_LIMIT = {
-    'cpu': 2,
-    'memory': 2,
-    'disk': 30,
+    'cpu': 0,
+    'memory': 0,
+    'disk': 0,
     'public_ip': 0,
+    'gpu': 0,
 }
 
 DEFAULT_ROLE = 'user'
@@ -77,7 +78,7 @@ def nyu_callback(request):
         if user := authenticate(request, mode='nyu', user_info=user_info):
             pass
 
-        # if user does not exist, we create a new user, and give them user role for now
+        # if user does not exist, we create a new account, and give them user role for now
         else:
             user_info = user_info['userinfo']
             user = User.objects.create_user(
@@ -89,6 +90,8 @@ def nyu_callback(request):
                 role=DEFAULT_ROLE,
             )
 
+            full_name = user_info['firstname'] + ' ' + user_info['lastname']
+
             # We set the user's profile avatar
             set_profile_avatar.delay(serialize_obj(user))
 
@@ -99,14 +102,13 @@ def nyu_callback(request):
                                    user=user
                                    )
 
+            # We create a default NS for the user
             ns_name = user_info['sub'] + '-' + random_str()
-
-            # We create a default NS
-            ns = Namespace.objects.create(nsid=ns_name, name='Personal', default=True)
+            ns = Namespace.objects.create(nsid=ns_name, name=full_name, default=True)
             logging.info(f"Default namespace {ns_name} created for user {user.username}")
 
-            # We add the user to the NS's Table wih owner role
-            Namespaces.objects.create(namespace=ns, user=user, role='owner')
+            # We add the user to the NS role Table wih owner role
+            NamespaceRoles.objects.create(namespace=ns, user=user, role='owner')
 
             Limit.objects.create(namespace=ns, **DEFAULT_LIMIT)
             logging.info(f"Default limits applied for namespace {ns_name}")

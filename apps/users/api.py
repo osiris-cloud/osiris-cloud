@@ -5,11 +5,11 @@ from json import loads as json_loads
 
 from core.utils import success_message, error_message
 from .models import User
-from ..k8s.models import Namespace, Namespaces, Limit
+from ..k8s.models import Namespace, NamespaceRoles
 
 
 def get_user_default_ns(user: User) -> Namespace:
-    return user.namespaces.filter(role='owner').filter(namespace__default=True).first().namespace
+    return Namespace.objects.filter(user=user, default=True).first()
 
 
 @csrf_exempt
@@ -23,19 +23,26 @@ def namespace(request, ns_name=None):
         if ns_name == 'default':
             if request.session.get('namespace') is None:
                 request.session['namespace'] = get_user_default_ns(request.user).nsid
-            ns_filter['namespace__nsid'] = request.session.get('namespace')
+            ns_filter['nsid'] = request.session.get('namespace')
         else:
-            ns_filter['namespace__nsid'] = ns_name
+            ns_filter['nsid'] = ns_name
 
     try:
         match request.method:
             case 'GET':
-                namespaces = Namespaces.objects.filter(user=request.user, **ns_filter)
+                # Get all namespaces the user is part of
+                namespaces = request.user.namespaces.filter(**ns_filter)
+
                 if not namespaces.exists():
                     return JsonResponse(error_message('No namespace found'))
-                namespace_dict = namespaces.first().info() if ns_name else [n.info() for n in namespaces]
-                return JsonResponse(success_message('Get namespace(s)', {
-                    'namespace' if ns_name else 'namespaces': namespace_dict
+
+                result = [ns.info() for ns in namespaces]
+
+                if ns_name:
+                    return JsonResponse(success_message('Get namespace', result[0]))
+
+                return JsonResponse(success_message('Get namespaces', {
+                    'namespaces': result,
                 }))
 
             case 'POST':
@@ -49,3 +56,35 @@ def namespace(request, ns_name=None):
 
     except Exception as e:
         return JsonResponse(error_message(str(e)))
+
+# @csrf_exempt
+# @api_view(['GET'])
+# def namespace_info(request, ns_name):
+#     """
+#     Get properties of a single namespace
+#     """
+#     try:
+#         namespace = Namespaces.objects.filter(user=request.user, namespace__nsid=ns_name).first()
+#         if not namespace:
+#             return JsonResponse(error_message('No namespace found'))
+#
+#         current_user = list(filter(lambda u: u['username'] == request.user.username, ns_users_list))[0]
+#         ns_users = list(filter(lambda u:
+#                                u['role'] != 'owner' or
+#                                not (current_user['username'] == u['username'] and current_user[
+#                                    'role'] == 'owner'),
+#                                ns_users_list))
+#         ns_owners = list(filter(lambda u: u['role'] == 'owner', ns_users_list))
+#
+#         ns_owners = sorted(ns_owners, key=lambda u: u['name'])
+#         ns_users = sorted(ns_users, key=lambda u: u['name'])
+#
+#         for ns in namespace_list:
+#             ns['requester'] = current_user
+#             ns['owners'] = ns_owners
+#             ns['users'] = ns_users
+#
+#         return JsonResponse(success_message('Get namespace', namespace.info()))
+#
+#     except Exception as e:
+#         return JsonResponse(error_message(str(e)))

@@ -15,10 +15,7 @@ from django.shortcuts import render
 
 @login_required
 def profile(request):
-    ns = request.user.namespaces.filter(role='owner').filter(namespace__default=True).first().namespace
     return render(request, 'dashboard/profile.html', context={
         'github': request.user.github.first().username if request.user.github.first() else None,
-        'nsid': ns.nsid if ns else None,
-        'limit': ns.limit.all().first() if ns else None,
         'segment': ['profile'],
     })

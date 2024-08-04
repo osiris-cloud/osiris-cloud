@@ -4,24 +4,49 @@ from core.utils import eastern_time
 
 
 class Namespace(models.Model):
-    id = models.AutoField(primary_key=True)
     nsid = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=100)
     default = models.BooleanField(default=False)
+    users = models.ManyToManyField(User, through='NamespaceRoles', related_name='namespaces')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def owner(self):
+        return self.users.filter(namespaceroles__role='owner').first()
+
     def get_limit(self):
         return self.limit.first()
+
+    def get_users(self):
+        return self.users.all()
+
+    def get_role(self, user):
+        return self.namespaceroles_set.filter(user=user).first().role
+
+    def get_users_info(self):
+        u_info = lambda u: {
+            'username': u.username,
+            'name': f'{u.first_name} {u.last_name}',
+            'email': u.email,
+            'avatar': u.avatar,
+            'role': self.get_role(u),
+        }
+        return [u_info(u) for u in self.users.all()]
 
     def info(self):
         return {
             'nsid': self.nsid,
             'name': self.name,
-            'immutable': self.default,
+            'default': self.default,
             'created_at': eastern_time(self.created_at),
             'updated_at': eastern_time(self.updated_at),
+            'owner': self.owner.info(),
         }
+
+    class Meta:
+        db_table = 'namespaces'
+        ordering = ['-created_at']
 
 
 NS_ROLES = (
@@ -31,30 +56,16 @@ NS_ROLES = (
 )
 
 
-class Namespaces(models.Model):
-    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='users')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='namespaces')
-    role = models.CharField(max_length=20, choices=NS_ROLES, default='guest')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+class NamespaceRoles(models.Model):
+    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    role = models.CharField(choices=NS_ROLES, default='viewer')
 
-    def get_limit(self):
-        return self.namespace.limit.first()
-
-    def info(self):
-        return {
-            'nsid': self.namespace.nsid,
-            'name': self.namespace.name,
-            'role': self.role,
-            'mutable': not self.namespace.default,
-            'created_at': eastern_time(self.created_at),
-            'updated_at': eastern_time(self.updated_at),
-            'resources': self.get_limit().info(),
-        }
+    class Meta:
+        db_table = 'namespace_roles'
 
 
 class Limit(models.Model):
-    id = models.AutoField(primary_key=True)
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='limit')
     cpu = models.IntegerField(default=0)
     memory = models.IntegerField(default=0)
@@ -71,21 +82,29 @@ class Limit(models.Model):
             'gpu': self.gpu,
         }
 
+    class Meta:
+        db_table = 'ns_limits'
+
 
 class Secret(models.Model):
-    id = models.AutoField(primary_key=True)
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='secrets')
     name = models.CharField(max_length=100)
     data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        db_table = 'ns_secrets'
+
 
 class PVC(models.Model):
-    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     size = models.IntegerField()
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pvcs')
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pvcs'
+        ordering = ['-created_at']
