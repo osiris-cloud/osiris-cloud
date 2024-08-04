@@ -1,4 +1,5 @@
 from django.db import models
+from encrypted_model_fields.fields import EncryptedTextField
 from ..users.models import User
 from core.utils import eastern_time
 
@@ -59,7 +60,7 @@ NS_ROLES = (
 class NamespaceRoles(models.Model):
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    role = models.CharField(choices=NS_ROLES, default='viewer')
+    role = models.CharField(max_length=10, choices=NS_ROLES, default='viewer')
 
     class Meta:
         db_table = 'namespace_roles'
@@ -89,7 +90,7 @@ class Limit(models.Model):
 class Secret(models.Model):
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='secrets')
     name = models.CharField(max_length=100)
-    data = models.JSONField()
+    data = EncryptedTextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

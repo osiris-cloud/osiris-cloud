@@ -46,6 +46,8 @@ ALGOLIA = {
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
+
 
 @dataclass
 class Env:
@@ -108,6 +110,7 @@ INSTALLED_APPS = [
 
     'drf_spectacular',
     'django_api_gen',
+    'encrypted_model_fields',
 ]
 
 MIDDLEWARE = [
@@ -237,7 +240,7 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
-CELERY_TASK_ALWAYS_EAGER = DEBUG
+CELERY_TASK_ALWAYS_EAGER = DEBUG  # Setting this to true will run tasks synchronously and block the main thread
 ########################################
 
 
