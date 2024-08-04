@@ -90,8 +90,6 @@ def nyu_callback(request):
                 role=DEFAULT_ROLE,
             )
 
-            full_name = user_info['firstname'] + ' ' + user_info['lastname']
-
             # We set the user's profile avatar
             set_profile_avatar.delay(serialize_obj(user))
 
@@ -104,7 +102,7 @@ def nyu_callback(request):
 
             # We create a default NS for the user
             ns_name = user_info['sub'] + '-' + random_str()
-            ns = Namespace.objects.create(nsid=ns_name, name=full_name, default=True)
+            ns = Namespace.objects.create(nsid=ns_name, name='Default', default=True)
             logging.info(f"Default namespace {ns_name} created for user {user.username}")
 
             # We add the user to the NS role Table wih owner role
