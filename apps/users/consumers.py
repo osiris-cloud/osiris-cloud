@@ -42,4 +42,4 @@ class UserSearchConsumer(AsyncWebsocketConsumer):
         except ws_exceptions.ConnectionClosed:
             pass
         except Exception as e:
-            logging.exception(e)
+            logging.info(e)
