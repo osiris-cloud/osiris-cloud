@@ -29,7 +29,7 @@ class User(AbstractUser):
             'username': self.username,
             'name': f'{self.first_name} {self.last_name}',
             'email': self.email,
-            'avatar': self.avatar,
+            'avatar': self.avatar or 'https://blob.osiriscloud.io/profile.webp',
         }
 
     class Meta:
@@ -63,7 +63,7 @@ class Event(models.Model):
 
 
 class Group(models.Model):
-    gid = models.CharField(max_length=64, unique=True)
+    gid = models.CharField(max_length=64, unique=True, primary_key=True)
     name = models.CharField(max_length=128)
     owners = models.ManyToManyField(User, related_name='groups_owned')
     members = models.ManyToManyField(User, related_name='groups_partof')

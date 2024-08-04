@@ -203,10 +203,10 @@
                                 id="user-menu-button-2" aria-expanded="false" data-dropdown-toggle="dropdown-2">
                             {% if request.user.avatar %}
                                 <img class="w-8 h-8 rounded-full" src="{{ request.user.avatar }}"
-                                     alt="user photo">
+                                     alt="avatar">
                             {% else %}
-                                <img class="w-8 h-8 rounded-full" src="{% static "dist/img/default-user.png" %}"
-                                     alt="user profile">
+                                <img class="w-8 h-8 rounded-full" src="https://blob.osiriscloud.io/profile.webp"
+                                     alt="avatar">
                             {% endif %}
                         </button>
                     </div>
