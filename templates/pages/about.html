@@ -1,0 +1,25 @@
+{% extends 'layouts/base-public.html' %}
+{% load static %}
+
+{% block content %}
+    <section class="grow mt-8 bg-white dark:bg-gray-900 px-4">
+        <div class="mx-auto max-w-screen-xl">
+            <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">About</h2>
+            <div class="grid pt-6 text-left border-t border-gray-200 dark:border-gray-700">
+                <p class="text-gray-500 dark:text-gray-400">
+                    Osiris Cloud is a self-hosted cloud infrastructure platform created by 
+                    <a href="https://github.com/sproutmaster" target="_blank" class="text-blue-600 hover:underline">Joe Prakash</a> 
+                    for automating and simplifying infrastructure at the 
+                    <a href="https://osiris.cyber.nyu.edu/" target="_blank" class="text-blue-600 hover:underline">NYU OSIRIS Lab</a>.
+                    The original goal of the project was to run CSAW CTF on premise.
+                </p>
+                <h2 class="mt-6 text-xl text-gray-500 dark:text-gray-400">
+                    Contributors
+                </h2>
+                <p class="mt-4 text-gray-500 dark:text-gray-400">
+                    < Add names here >
+                </p>
+            </div>
+        </div>
+    </section>
+{% endblock content %}
