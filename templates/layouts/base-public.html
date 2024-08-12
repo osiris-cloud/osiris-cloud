@@ -38,44 +38,12 @@
             document.documentElement.classList.remove('dark')
         }
     </script>
-    <style>
-        #main-hero {
-            width: 100%;
-            background: url('https://blob.osiriscloud.io/cloud-bg.webp') no-repeat;
-            background-size: cover;
-            height: fit-content;
-        }
-    </style>
 </head>
 
-<body class="bg-gray-50 dark:bg-gray-900">
-
-{% block header %}
-    <header>
-        <nav class="bg-white border-gray-200 px-4 lg:px-6 py-2.5 dark:bg-gray-800">
-            <div class="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl">
-                <a href="/" class="flex items-center">
-                    <img src="{% static 'common/icon.png' %}" class="h-8 mr-2" alt="Osiris Cloud Logo"/>
-                    <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">Osiris Cloud</span>
-                </a>
-                <div class="flex items-center lg:order-2">
-                    <a href="/login"
-                       class="text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 
-                   dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800">
-                        {% if request.user.is_authenticated %}
-                            Dashboard
-                        {% else %}
-                            Login
-                        {% endif %}
-                    </a>
-                </div>
-            </div>
-        </nav>
-    </header>
-{% endblock header %}
-
-{% block body %} {% endblock body %}
-
+<body class="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+{% include 'components/navbar-public.html' %}
+{% block content %} {% endblock content %}
+{% include 'components/footer-public.html' %}
 </body>
 
-{% block footer %} {% endblock footer %}
+</html>

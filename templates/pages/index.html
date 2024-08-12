@@ -1,7 +1,10 @@
 {% extends 'layouts/base-public.html' %}
 {% load static %}
 
-{% block body %}
+{% block title %}Osiris Cloud - Enterprise Infrastructure Systems{% endblock title %}
+
+{% block content %}
+    
     <style>
         .bg-gradient1 {
             background: linear-gradient(to right, rgba(0, 255, 255, 0.86), rgba(255, 255, 0, 0.85));
@@ -10,26 +13,34 @@
         }
 
         .bg-gradient2 {
-            background: linear-gradient(to right, #4080f8 0%, #e55e5c 100%);
+            background: linear-gradient(to right, #4080f8 0%, #e5915c 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        #main-hero {
+            width: 100%;
+            background: url('https://blob.osiriscloud.io/cloud-bg.webp') no-repeat;
+            background-size: cover;
+            height: fit-content;
+        }
     </style>
+    
     <section id="main-hero" class="bg-white py-8 dark:bg-gray-900">
         <div class="grid max-w-screen-xl px-4 py-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:grid-cols-12">
             <div class="mr-auto place-self-center lg:col-span-7">
                 <h1 class="max-w-2xl mb-3 mr-2.5 text-4xl text-white font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block dark:text-white bg-gradient1">
                     Infrastructure
                 </h1>
-                <h1 class="max-w-2xl mb-3 text-4xl text-white font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block dark:text-white">
+                <h1 class="max-w-2xl mb-3 text-4xl text-gray-100 font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block dark:text-gray-100">
                     for
                 </h1>
                 <h1 class="max-w-2xl mb-5 text-4xl text-white font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl dark:text-white bg-gradient2">
                     the better web
                 </h1>
-                
+
                 <p class="max-w-2xl mb-6 font-light text-gray-400 lg:mb-8 md:text-lg lg:text-xl">
-                    Simple, dev-centric, and automated infrastructure</p>
+                    Dev-centric, self-hosted and automated cloud</p>
                 <a href="https://forms.office.com/r/bauDGf8CEM" target="_blank"
                    class="inline-flex items-center justify-center px-5 py-3 text-base text-white font-medium text-center border rounded-lg
                hover:border-lime-500">
@@ -44,10 +55,9 @@
             <div class="max-w-screen-md mb-8 lg:mb-16">
                 <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">Designed by
                     Developers, for Developers</h2>
-                <p class="text-gray-500 sm:text-xl dark:text-gray-400">Osiris Cloud brings together a desirable
-                    infrastructure
-                    experience with easy
-                    to use cloud-native cybersecurity tooling</p>
+                <p class="text-gray-500 sm:text-xl dark:text-gray-400">
+                    Osiris Cloud combines the industrial strength of Kubernetes with the reliability of enterprise-grade
+                    infrastructure software to deliver a robust, scalable, and secure cloud environment</p>
             </div>
             <div class="space-y-8 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-12 md:space-y-0">
                 <div>
@@ -61,7 +71,7 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="mb-2 text-xl font-bold dark:text-white">Simple yet Powerful</h3>
+                    <h3 class="mb-2 text-xl font-bold dark:text-white">Easy to Use</h3>
                     <p class="text-gray-500 dark:text-gray-400">Plan it, code it, launch it. Get your app out to the
                         world
                         faster with a few clicks, with worry free auto-scaling</p>
@@ -78,14 +88,14 @@
 
                     </div>
                     <h3 class="mb-2 text-xl font-bold dark:text-white">DevOps Ready</h3>
-                    <p class="text-gray-500 dark:text-gray-400">Each code update gets deployed separately, enabling
+                    <p class="text-gray-500 dark:text-gray-400">Each project update gets deployed separately, enabling
                         version
                         validation and rolling updates</p>
                 </div>
 
                 <div>
                     <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-900">
-                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true"
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white"
                              xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
                              viewBox="0 0 24 24">
                             <path fill-rule="evenodd"
@@ -101,18 +111,19 @@
                 </div>
                 <div>
                     <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-900">
-                        <svg class="w-6 h-6 text-gray-800 dark:text-white" fill="currentColor"
-                             viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path>
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white"
+                             xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                             viewBox="0 0 24 24">
                             <path fill-rule="evenodd"
-                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
+                                  d="M17 10v1.126c.367.095.714.24 1.032.428l.796-.797 1.415 1.415-.797.796c.188.318.333.665.428 1.032H21v2h-1.126c-.095.367-.24.714-.428 1.032l.797.796-1.415 1.415-.796-.797a3.979 3.979 0 0 1-1.032.428V20h-2v-1.126a3.977 3.977 0 0 1-1.032-.428l-.796.797-1.415-1.415.797-.796A3.975 3.975 0 0 1 12.126 16H11v-2h1.126c.095-.367.24-.714.428-1.032l-.797-.796 1.415-1.415.796.797A3.977 3.977 0 0 1 15 11.126V10h2Zm.406 3.578.016.016c.354.358.574.85.578 1.392v.028a2 2 0 0 1-3.409 1.406l-.01-.012a2 2 0 0 1 2.826-2.83ZM5 8a4 4 0 1 1 7.938.703 7.029 7.029 0 0 0-3.235 3.235A4 4 0 0 1 5 8Zm4.29 5H7a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h6.101A6.979 6.979 0 0 1 9 15c0-.695.101-1.366.29-2Z"
                                   clip-rule="evenodd">
                             </path>
                         </svg>
+
                     </div>
-                    <h3 class="mb-2 text-xl font-bold dark:text-white">Affordable</h3>
-                    <p class="text-gray-500 dark:text-gray-400">Our modern infrastructure architecture lets you have
-                        enterprise features at an affordable price</p>
+                    <h3 class="mb-2 text-xl font-bold dark:text-white">Customizable</h3>
+                    <p class="text-gray-500 dark:text-gray-400">The platform is built with extensibility and versatility
+                        in mind</p>
                 </div>
                 <div>
                     <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-900">
@@ -122,12 +133,12 @@
                         </svg>
                     </div>
                     <h3 class="mb-2 text-xl font-bold dark:text-white">Enterprise Ready</h3>
-                    <p class="text-gray-500 dark:text-gray-400">The platform is built to support everything from hobby
-                        projects to advanced compute systems</p>
+                    <p class="text-gray-500 dark:text-gray-400">The platform is built to support everything from home
+                        lab to datacenter</p>
                 </div>
                 <div>
                     <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-900">
-                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true"
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white"
                              xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                             <path stroke="currentColor" stroke-linecap="round" stroke-width="2"
                                   d="M16 19h4a1 1 0 0 0 1-1v-1a3 3 0 0 0-3-3h-2m-2.236-4a3 3 0 1 0 0-4M3 18v-1a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Zm8-10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z">
@@ -135,28 +146,22 @@
                         </svg>
 
                     </div>
-                    <h3 class="mb-2 text-xl font-bold dark:text-white">Human Support</h3>
-                    <p class="text-gray-500 dark:text-gray-400">Our expert service team is there to help you with
-                        anything
-                        from infra questions to architecture design, for free</p>
+                    <h3 class="mb-2 text-xl font-bold dark:text-white">Open Source</h3>
+                    <p class="text-gray-500 dark:text-gray-400">Our open model allows us to create transparent yet
+                        secure software. We build tomorrow together</p>
                 </div>
             </div>
         </div>
     </section>
 
-
     <section class="bg-white dark:bg-gray-900">
         <div class="gap-8 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-16 lg:px-6">
-            {#        <img class="w-full dark:hidden"#}
-            {#             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/cta/cta-dashboard-mockup.svg"#}
-            {#             alt="dashboard image">#}
             <img class="w-full hidden dark:block"
                  src="{% static 'home/server.webp' %}"
                  alt="dashboard image">
             <div class="mt-4 md:mt-0">
-                <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">Making
-                    cybersecurity
-                    accessible for developers</h2>
+                <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">Making open source
+                    cloud accessible to developers</h2>
                 <p class="mb-6 font-light text-gray-500 md:text-lg dark:text-gray-400">Osiris cloud is built to improve
                     infrastructure experience and to provide tools to make the cyberspace secure and accessible for
                     everyone</p>
@@ -168,10 +173,9 @@
         <div class="py-8 px-4 mx-auto max-w-screen-xl sm:py-16 lg:px-6">
             <div class="mx-auto max-w-screen-sm text-center">
                 <h2 class="mb-4 text-4xl tracking-tight font-extrabold leading-tight text-gray-900 dark:text-white">
-                    Start
-                    for free today</h2>
-                <p class="mb-6 font-light text-gray-500 dark:text-gray-400 md:text-lg">Includes free services. No credit
-                    card required.</p>
+                    Start building today</h2>
+                <p class="mb-6 font-light text-gray-500 dark:text-gray-400 md:text-lg">Project is under development.
+                    Contact us to check it out early</p>
 
                 <a href="https://forms.office.com/r/bauDGf8CEM" target="_blank"
                    class="inline-flex items-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:focus:ring-primary-900">
@@ -188,9 +192,5 @@
             </div>
         </div>
     </section>
-{% endblock body %}
-
-{% block footer %}
-    {% include 'components/footer-public.html' %}
-{% endblock footer %}
-
+    
+{% endblock content %}

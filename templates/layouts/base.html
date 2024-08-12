@@ -10,9 +10,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
 
-<body class="bg-gray-50  dark:bg-gray-800">
-
-{% block messages %}{% endblock messages %}
+<body class="bg-gray-50 dark:bg-gray-800">
 
 {% block navigation %}
     {% include "components/navbar.html" %}
@@ -31,9 +29,10 @@
         {% block content %}{% endblock content %}
         {% block footer %}{% endblock footer %}
         {% block copy %} 
-            <div class="my-4 text-sm text-center text-gray-500">&copy; 2024 Osiris Cloud (version {{ ver }})</div>
+            <div class="my-4 text-sm text-center text-gray-500">&copy; 2024 Osiris Cloud by Link Layer (version {{ ver }})</div>
         {% endblock copy %}
     </div>
+
 </div>
 
 <script src="{% static 'dist/main.bundle.js' %}"></script>
