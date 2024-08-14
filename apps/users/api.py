@@ -37,7 +37,12 @@ def namespace(request, ns_name=None):
                 if not namespaces.exists():
                     return JsonResponse(error_message('No namespace found'))
 
-                result = [ns.info() for ns in namespaces]
+                result = []
+
+                for ns in namespaces:
+                    ns_info = ns.info()
+                    ns_info['users'] = ns.get_users_info()
+                    result.append(ns_info)
 
                 if ns_name:
                     return JsonResponse(success_message('Get namespace', result[0]))
@@ -53,11 +58,17 @@ def namespace(request, ns_name=None):
                 ns_data = json_loads(ns_data)
                 print(ns_data)
 
+                ns = Namespace.objects.create(
+                    name=ns_data.get('name'),
+                    owner=request.user
+                )
+
                 JsonResponse(success_message('Create namespace', {}))
 
     except Exception as e:
         logging.error(str(e))
         return JsonResponse(error_message(str(e)))
+
 
 # @csrf_exempt
 # @api_view(['GET'])
@@ -90,3 +101,26 @@ def namespace(request, ns_name=None):
 #
 #     except Exception as e:
 #         return JsonResponse(error_message(str(e)))
+
+"""
+{
+	"status": "success",
+	"namespaces": [
+		{
+			"nsid": "jp5999-naoa",
+			"name": "Joe Prakash",
+			"default": true,
+			"created_at": "00:23:36, Sun 04 Aug 2024",
+			"updated_at": "00:23:36, Sun 04 Aug 2024",
+			"owner": {
+				"username": "jp5999",
+				"name": "Joe Prakash",
+				"email": "jp5999@nyu.edu",
+				"avatar": "https://blob.osiriscloud.io/profile.webp"
+			}
+		}
+	],
+	"message": "Get namespaces"
+}
+
+"""
