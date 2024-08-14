@@ -174,3 +174,9 @@ def unlink_github(request):
         github_user.delete()
         return HttpResponse('Github account unlinked! This window will close automatically.')
     return redirect(request.build_absolute_uri(reverse("profile")))
+
+
+def seed_login(request):
+    user = User.objects.filter().first()
+    login(request, user)
+    return redirect(request.build_absolute_uri(reverse("dashboard")))
