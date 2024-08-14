@@ -141,27 +141,29 @@ function Load-Env
 }
 
 
+function Force-StopJob($job)
+{
+    if ($job -and $job.State -ne 'Completed')
+    {
+        $childProcesses = Get-WmiObject Win32_Process -Filter "ParentProcessID=$( $job.PID )"
+        foreach ($childProcess in $childProcesses)
+        {
+            Stop-Process -Id $childProcess.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+        Stop-Job -Job $job -PassThru | Remove-Job -Force
+    }
+}
+
+
 function Start-Dev
 {
     Create-Venv
     Install-NodeModules
     Write-Host "### starting app"
-    doppler secrets download --no-file --format env | Out-File -FilePath .env -Encoding utf8
-
-    function Force-StopJob($job)
-    {
-        if ($job -and $job.State -ne 'Completed')
-        {
-            $childProcesses = Get-WmiObject Win32_Process -Filter "ParentProcessID=$( $job.PID )"
-            foreach ($childProcess in $childProcesses)
-            {
-                Stop-Process -Id $childProcess.ProcessId -Force -ErrorAction SilentlyContinue
-            }
-            Stop-Job -Job $job -PassThru | Remove-Job -Force
-        }
-    }
+    Load-Env
 
     $global:jobs = @()
+
     $global:jobs += Start-Job -Name "Django" -ScriptBlock {
         param($dir, $venvPath)
         Set-Location $dir
@@ -232,7 +234,6 @@ function DeleteDB
     Copy-Item -Path "db-orig.sqlite3" -Destination "db.sqlite3"
 }
 
-# ... (other functions remain the same)
 
 switch ($Target)
 {
@@ -246,7 +247,7 @@ switch ($Target)
         Install-NodeModules
     }
     "env" {
-       Load-Env
+        Load-Env
     }
     "django" {
         Load-Env
@@ -272,7 +273,7 @@ switch ($Target)
         Load-Env
         Algolia-Reindex
     }
-    "clear" {
+    "clearindex" {
         Load-Env
         Algolia-ClearIndex
     }
@@ -283,11 +284,11 @@ switch ($Target)
         }
         else
         {
-            Create-App $args[0]
+            Create-App $args[0] #TODO
         }
     }
     "clean" {
-        Clean-Environment
+        Clean-Environment #TODO
     }
     "delete" {
         DeleteDB
