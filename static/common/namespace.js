@@ -1,76 +1,60 @@
 let CurrentNamespace = localStorage.getItem('namespace');
 
-window.addEventListener('DOMContentLoaded', () => {
-        if (!CurrentNamespace) {
-            switchNamespace();
-        }
-    }
-);
+(!CurrentNamespace) ? loadNamespace('default') : loadNamespace(CurrentNamespace);
 
-let $NSModalTitle;
-let $NSModalName;
-let $sharingSpinner;
-let $checkedSvg;
-let $userSearch;
-let $userSearchDropdown;
-let $userSearchResults;
-let userSearchSocket;
+
+let $NSModalTitle = $('#ns-modal-title');
+let $NSModalName = $('#ns-modal-name');
+let $sharingSpinner = $('#sharing-spinner');
+let $checkedSvg = $('#role-selected-svg');
+let $userSearch = $('#user-search');
+let $userSearchDropdown = $('#user-search-dropdown');
+let $userSearchResults = $('#user-search-results');
+let userSearchSocket = null;
 
 let NSUsers = [];
 
-window.addEventListener('DOMContentLoaded', () => {
-    $NSModalTitle = $('#ns-modal-title');
-    $NSModalName = $('#ns-modal-name');
-    $sharingSpinner = $('#sharing-spinner');
-    $checkedSvg = $('#role-selected-svg');
-    $userSearch = $('#user-search');
-    $userSearchDropdown = $('#user-search-dropdown');
-    $userSearchResults = $('#user-search-results');
-
-    $userSearch.on('input', () => {
-        handleSearchUsers()
-    });
-    $("#role-owner").on('click', () => {
-        handleChangeRole('owner')
-    });
-    $("#role-manager").on('click', () => {
-        handleChangeRole('manager')
-    });
-    $("#role-viewer").on('click', () => {
-        handleChangeRole('viewer')
-    });
-
+$userSearch.on('input', () => {
+    handleSearchUsers()
+});
+$("#role-owner").on('click', () => {
+    handleChangeRole('owner')
+});
+$("#role-manager").on('click', () => {
+    handleChangeRole('manager')
+});
+$("#role-viewer").on('click', () => {
+    handleChangeRole('viewer')
 });
 
 
-window.addEventListener('DOMContentLoaded', () => {
-    $('#CreateNamespace').on('click', () => {
-        let namespace = $('NamespaceName').val();
+$('#CreateNamespace').on('click', () => {
+    let namespace = $('NamespaceName').val();
 
 
-        // $.ajax({
-        //         url: '/api/namespace',
-        //         type: 'POST',
-        //         data: {name: namespace},
-        //         success: (data) => {
-        //             if (data.status === 'success') {
-        //                 switchNamespace(namespace);
-        //             }
-        //         }
-        //     }
-        // );
-    });
+    // $.ajax({
+    //         url: '/api/namespace',
+    //         type: 'POST',
+    //         data: {name: namespace},
+    //         success: (data) => {
+    //             if (data.status === 'success') {
+    //                 switchNamespace(namespace);
+    //             }
+    //         }
+    //     }
+    // );
 });
 
-function switchNamespace(namespace = 'default') {
+
+function loadNamespace(namespace = 'default') {
     $.ajax({
             url: '/api/namespace/' + namespace,
             type: 'GET',
             success: (data) => {
                 if (data.status === 'success') {
-                    $('dropdown-ns-button').text(data.namespace.name);
-                    localStorage.setItem('namespace', data.namespace.nsid);
-                    CurrentNamespace = data.namespace.nsid;
+                    $('#dropdown-ns-button').text(data.name);
+                    localStorage.setItem('namespace', data.nsid);
+                    CurrentNamespace = data.nsid;
                 }
             }
         }
