@@ -1,0 +1,19 @@
+[
+  {
+    "username": "fb123",
+    "first_name": "Foo",
+    "last_name": "Bar",
+    "email": "fb123@nyu.edu",
+    "role": "user",
+    "sub": "fb123",
+    "eduperson_primary_affiliation": "student",
+    "avatar": "https://blob.osiriscloud.io/profile.webp",
+    "limits": {
+      "cpu": 4,
+      "memory": 8,
+      "disk": 50,
+      "public_ip": 4,
+      "gpu": 1
+    }
+  }
+]
