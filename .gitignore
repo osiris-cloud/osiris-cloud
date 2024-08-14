@@ -6,14 +6,16 @@ __pycache__
 
 node_modules
 package-lock.json
+
 staticfiles/*
+static/dist/*
 
 .env
+
 kubeconfig
 kubeconfig.yaml
+seed/kubeconfig.yaml
 
 _testing
 
 db.sqlite3
-
-static/dist/*
