@@ -108,6 +108,7 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.vm",
 
+    "django_seed",
     'drf_spectacular',
     'django_api_gen',
     'encrypted_model_fields',

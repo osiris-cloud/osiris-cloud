@@ -32,3 +32,9 @@ def logout_view(request):
 
 def not_found(request):
     return render(request, "404.html", status=404)
+
+
+def seed(request):
+    from .seeder import create_users
+    create_users()
+    return redirect('login_view')
