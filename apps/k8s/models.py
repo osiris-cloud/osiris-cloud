@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from encrypted_model_fields.fields import EncryptedTextField
 from ..users.models import User
 from core.utils import eastern_time
@@ -27,13 +28,10 @@ class Namespace(models.Model):
 
     def get_users_info(self):
         u_info = lambda u: {
-            'username': u.username,
-            'name': f'{u.first_name} {u.last_name}',
-            'email': u.email,
-            'avatar': u.avatar,
+            **u.info(),
             'role': self.get_role(u),
         }
-        return [u_info(u) for u in self.users.all()]
+        return [u_info(u) for u in self.users.filter(~Q(namespaceroles__role='owner'))]
 
     def info(self):
         return {
