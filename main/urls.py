@@ -1,8 +1,8 @@
-from django.urls import path
+from django.urls import path, include
 
 from . import views
 
-from django.urls import include
+from core.settings import DEBUG
 
 urlpatterns = [
     path("", views.index, name="index"),
@@ -14,3 +14,8 @@ urlpatterns = [
     path("dashboard", views.dashboard, name="dashboard"),
     path("vm", include('apps.vm.urls')),
 ]
+
+if DEBUG:
+    urlpatterns += [
+        path("seed", views.seed, name="seed"),
+    ]

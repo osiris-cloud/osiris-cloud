@@ -1,4 +1,5 @@
 from django.urls import path
+from core.settings import DEBUG
 
 from . import views
 
@@ -11,3 +12,8 @@ urlpatterns = [
     path('/link-account', views.link_github, name="link_github"),
     path('/unlink-account', views.unlink_github, name="unlink_github"),
 ]
+
+if DEBUG:
+    urlpatterns += [
+        path('/seed', views.seed_login, name="seed_login"),
+    ]
