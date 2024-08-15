@@ -18,11 +18,6 @@ class Namespace(models.Model):
     def owner(self):
         return self.users.filter(namespaceroles__role='owner').first()
 
-    def save(self, *args, **kwargs):
-        if not self.nsid:
-            self.nsid = random_str(9)
-        super().save(*args, **kwargs)
-
     def get_limit(self):
         return self.limit.first()
 
