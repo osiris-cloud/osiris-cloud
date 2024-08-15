@@ -3,6 +3,7 @@ from django.db.models import Q
 from encrypted_model_fields.fields import EncryptedTextField
 from ..users.models import User
 from core.utils import eastern_time
+from core.utils import random_str
 
 
 class Namespace(models.Model):
@@ -16,6 +17,11 @@ class Namespace(models.Model):
     @property
     def owner(self):
         return self.users.filter(namespaceroles__role='owner').first()
+
+    def save(self, *args, **kwargs):
+        if not self.nsid:
+            self.nsid = random_str(9)
+        super().save(*args, **kwargs)
 
     def get_limit(self):
         return self.limit.first()

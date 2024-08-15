@@ -15,5 +15,39 @@
       "public_ip": 4,
       "gpu": 1
     }
+  },
+  {
+    "username": "aa456",
+    "first_name": "Alice",
+    "last_name": "Algorithm",
+    "email": "aa456@nyu.edu",
+    "role": "user",
+    "sub": "aa456",
+    "eduperson_primary_affiliation": "student",
+    "avatar": "https://blob.osiriscloud.io/profile.webp",
+    "limits": {
+      "cpu": 4,
+      "memory": 8,
+      "disk": 50,
+      "public_ip": 4,
+      "gpu": 1
+    }
+  },
+  {
+    "username": "bb789",
+    "first_name": "Bob",
+    "last_name": "Binary",
+    "email": "bb789@nyu.edu",
+    "role": "user",
+    "sub": "bb789",
+    "eduperson_primary_affiliation": "student",
+    "avatar": "https://blob.osiriscloud.io/profile.webp",
+    "limits": {
+      "cpu": 4,
+      "memory": 8,
+      "disk": 50,
+      "public_ip": 4,
+      "gpu": 1
+    }
   }
 ]

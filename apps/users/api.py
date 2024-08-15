@@ -4,9 +4,10 @@ from rest_framework.decorators import api_view
 from django.http import JsonResponse
 from json import loads as json_loads
 
-from core.utils import success_message, error_message
+from core.utils import success_message, error_message, random_str
 from .models import User
 from ..k8s.models import Namespace, NamespaceRoles
+from ..users.utils import sanitize_nsid
 
 
 def get_user_default_ns(user: User) -> Namespace:
@@ -52,18 +53,65 @@ def namespace(request, ns_name=None):
                 }))
 
             case 'POST':
-                ns_data = request.data.get('namespace')
-                if not ns_data:
+                if not request.body:
                     return JsonResponse(error_message('No data provided'))
-                ns_data = json_loads(ns_data)
-                print(ns_data)
+                
+                ns_data = json_loads(request.body)
 
+                ns_name = ns_data.get('name')
+                if not ns_name:
+                    return JsonResponse(error_message('No name provided'))
+
+                # Max length 20 chars
+                ns_nsid = sanitize_nsid(ns_name)[:20]
+                ns_nsid = ns_nsid + '-' + random_str(19 - len(ns_nsid))
+
+                ns_default = ns_data.get('default', False)
+                
+                # If the new namespace is set as default, update other namespaces owned by the user
+                if ns_default:
+                    Namespace.objects.filter(users=request.user, default=True).update(default=False)
+
+                # List of usernames with their role to add to the namespace.
+                ns_users = ns_data.get('users', [])
+
+                # Create namespace
                 ns = Namespace.objects.create(
-                    name=ns_data.get('name'),
-                    owner=request.user
+                    nsid = ns_nsid,
+                    name=ns_name,
+                    default=ns_default
                 )
 
-                JsonResponse(success_message('Create namespace', {}))
+                if not ns:
+                    return JsonResponse(error_message('Failed to create namespace'))
+
+                # Add creator as owner
+                NamespaceRoles.objects.create(
+                    namespace=ns,
+                    user=request.user,
+                    role='owner'
+                )
+                
+                # Add users to namespace.
+                for user in ns_users:
+                    user_obj = User.objects.filter(username=user['username']).first()
+                    
+                    if not user_obj:
+                        continue
+
+                    role = user['role']
+                    if role not in ['manager', 'viewer']:
+                        return JsonResponse(error_message('Invalid role', {}))
+
+                    NamespaceRoles.objects.create(
+                        namespace=ns,
+                        user=user_obj,
+                        role=role
+                    )
+
+                ns_info = ns.info()
+                ns_info['users'] = ns.get_users_info()
+                return JsonResponse(success_message('Create namespace', ns_info))
 
     except Exception as e:
         logging.error(str(e))
