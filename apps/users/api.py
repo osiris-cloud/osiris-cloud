@@ -154,8 +154,9 @@ def namespace(request, ns_name=None):
                 if not ns:
                     return JsonResponse(error_message('No namespace found'))
                 
-                if ns.owner != request.user:
-                    return JsonResponse(error_message('Only the owner can update the namespace'))
+                # Check if user is the owner or a manager
+                if not ns.owner == request.user and not ns.get_role(request.user) == 'manager':
+                    return JsonResponse(error_message('Only the owner or a manager can update the namespace'))
 
                 if ns_name:
                     ns.name = ns_name
