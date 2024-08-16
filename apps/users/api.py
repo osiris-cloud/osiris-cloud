@@ -112,6 +112,26 @@ def namespace(request, ns_name=None):
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()
                 return JsonResponse(success_message('Create namespace', ns_info))
+            
+            case 'DELETE':
+                if not request.body:
+                    return JsonResponse(error_message('No data provided'))
+                
+                ns_data = json_loads(request.body)
+                ns_nsid = ns_data.get('nsid')
+
+                if not ns_nsid:
+                    return JsonResponse(error_message('No namespace ID provided'))
+                
+                # Only allow user to delete their own namespace
+                ns = Namespace.objects.filter(nsid=ns_nsid, users=request.user).first()
+
+                if not ns:
+                    return JsonResponse(error_message('No namespace found or you do not have permission to delete this namespace'))
+                
+                ns.delete()
+
+                return JsonResponse(success_message('Delete namespace', {'nsid': ns_nsid}))
 
     except Exception as e:
         logging.error(str(e))
