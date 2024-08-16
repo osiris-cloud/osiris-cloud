@@ -123,11 +123,13 @@ def namespace(request, ns_name=None):
                 if not ns_nsid:
                     return JsonResponse(error_message('No namespace ID provided'))
                 
-                # Only allow user to delete their own namespace
-                ns = Namespace.objects.filter(nsid=ns_nsid, users=request.user).first()
+                ns = Namespace.objects.filter(nsid=ns_nsid).first()
 
                 if not ns:
-                    return JsonResponse(error_message('No namespace found or you do not have permission to delete this namespace'))
+                    return JsonResponse(error_message('No namespace found'))
+                
+                if ns.owner != request.user:
+                    return JsonResponse(error_message('Only the owner can delete the namespace'))
                 
                 ns.delete()
 
