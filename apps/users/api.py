@@ -1,4 +1,5 @@
 import logging
+import sys
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
@@ -98,7 +99,7 @@ def namespace(request, ns_name=None):
                     
                     if not user_obj:
                         continue
-
+                    
                     role = user['role']
                     if role not in ['manager', 'viewer']:
                         return JsonResponse(error_message('Invalid role', {}))
@@ -155,11 +156,11 @@ def namespace(request, ns_name=None):
                     return JsonResponse(error_message('No namespace found'))
                 
                 # Check if user is the owner or a manager
+                if request.user not in ns.get_users():
+                    return JsonResponse(error_message('User is not part of the namespace'))
+                
                 if not ns.owner == request.user and not ns.get_role(request.user) == 'manager':
                     return JsonResponse(error_message('Only the owner or a manager can update the namespace'))
-
-                if ns_name:
-                    ns.name = ns_name
 
                 if ns_default:
                     if ns.owner != request.user:
@@ -168,10 +169,17 @@ def namespace(request, ns_name=None):
 
                 if ns_owner:
                     new_owner_obj = User.objects.filter(username=ns_owner.get('username')).first()
+
                     if not new_owner_obj:
                         return JsonResponse(error_message('Owner username not found'))
+                    
                     # Remove the current owner role
                     NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
+                    
+                    # Check if the new owner is already part of the namespace, if so, delete the user's role
+                    if NamespaceRoles.objects.filter(namespace=ns, user=new_owner_obj).exists():
+                        NamespaceRoles.objects.filter(namespace=ns, user=new_owner_obj).delete()
+
                     NamespaceRoles.objects.create(
                         namespace=ns,
                         user=new_owner_obj,
@@ -179,7 +187,7 @@ def namespace(request, ns_name=None):
                     )
                 
                 if ns_users:
-                    # Remove current manager and viewer roles
+                    # Remove all current manager and viewer roles
                     NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
                     for user in ns_users:
                         user_obj = User.objects.filter(username=user['username']).first()
@@ -196,6 +204,10 @@ def namespace(request, ns_name=None):
                             role=role
                         )
 
+                if ns_name:
+                    ns.name = ns_name
+
+                ns.save()
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()
                 return JsonResponse(success_message('Update namespace', ns_info))
