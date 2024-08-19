@@ -1,14 +1,14 @@
 import logging
-import sys
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
+from django.db import IntegrityError
 from json import loads as json_loads
 
 from core.utils import success_message, error_message, random_str
 from .models import User
 from ..k8s.models import Namespace, NamespaceRoles
-from ..users.utils import sanitize_nsid
+from ..users.utils import sanitize_nsid, validate_ns_creation
 
 
 def get_user_default_ns(user: User) -> Namespace:
@@ -58,14 +58,18 @@ def namespace(request, ns_name=None):
                     return JsonResponse(error_message('No data provided'))
                 
                 ns_data = json_loads(request.body)
+                valid, resp = validate_ns_creation(ns_data)
+
+                if not valid:
+                    return JsonResponse(resp)
 
                 ns_name = ns_data.get('name')
-                if not ns_name:
-                    return JsonResponse(error_message('No name provided'))
+                ns_nsid = sanitize_nsid(ns_name)
 
-                # Max length 20 chars
-                ns_nsid = sanitize_nsid(ns_name)[:20]
-                ns_nsid = ns_nsid + '-' + random_str(19 - len(ns_nsid))
+                if ns_nsid:
+                    ns_nsid = ns_nsid + '-' + random_str(4)
+                else:
+                    ns_nsid = random_str(4) + '-' + random_str(4)
 
                 ns_default = ns_data.get('default', False)
                 
@@ -77,38 +81,42 @@ def namespace(request, ns_name=None):
                 ns_users = ns_data.get('users', [])
 
                 # Create namespace
-                ns = Namespace.objects.create(
-                    nsid = ns_nsid,
-                    name=ns_name,
-                    default=ns_default
-                )
-
-                if not ns:
+                try:
+                    ns = Namespace.objects.create(
+                        nsid=ns_nsid,
+                        name=ns_name,
+                        default=ns_default
+                    )
+                except IntegrityError:
                     return JsonResponse(error_message('Failed to create namespace'))
-
+                    
                 # Add creator as owner
-                NamespaceRoles.objects.create(
-                    namespace=ns,
-                    user=request.user,
-                    role='owner'
-                )
+                try:
+                    NamespaceRoles.objects.create(
+                        namespace=ns,
+                        user=request.user,
+                        role='owner'
+                    )
+                except IntegrityError:
+                    return JsonResponse(error_message('Failed to assign role to creator'))
                 
                 # Add users to namespace.
                 for user in ns_users:
                     user_obj = User.objects.filter(username=user['username']).first()
                     
                     if not user_obj:
-                        continue
+                        return JsonResponse(error_message(f'User {user["username"]} not found'))
                     
                     role = user['role']
-                    if role not in ['manager', 'viewer']:
-                        return JsonResponse(error_message('Invalid role', {}))
-
-                    NamespaceRoles.objects.create(
-                        namespace=ns,
-                        user=user_obj,
-                        role=role
-                    )
+                    
+                    try:
+                        NamespaceRoles.objects.create(
+                            namespace=ns,
+                            user=user_obj,
+                            role=role
+                        )
+                    except IntegrityError:
+                        return JsonResponse(error_message(f'Failed to assign role to {user["username"]}'))
 
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()
