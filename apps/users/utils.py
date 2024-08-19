@@ -50,4 +50,25 @@ def validate_ns_creation(ns_data: dict) -> tuple[bool, dict]:
 
 def sanitize_nsid(nsid: str) -> str:
     nsid = nsid.lower().replace(' ', '-')
-    return ''.join(ch for ch in nsid if ch in VALID_NAME_CHARLIST)
+    nsid = ''.join(ch for ch in nsid if ch in VALID_NAME_CHARLIST)
+
+    # Ensure nsid does not start or end with a hyphen
+    nsid = nsid.strip('-')
+
+    # Split nsid into words
+    words = nsid.split('-')
+
+    # Reconstruct nsid ensuring it does not exceed 15 characters
+    trimmed_nsid = ''
+    for word in words:
+        if len(trimmed_nsid) + len(word) + 1 > 15:
+            break
+        if trimmed_nsid:
+            trimmed_nsid += '-'
+        trimmed_nsid += word
+
+    # Handle case where trimmed_nsid is empty
+    if not trimmed_nsid:
+        trimmed_nsid = nsid[:15]
+
+    return trimmed_nsid
