@@ -134,11 +134,8 @@ def namespace(request, ns_name=None):
                 
                 ns = Namespace.objects.filter(nsid=ns_nsid).first()
 
-                if not ns:
-                    return JsonResponse(error_message('No namespace found'))
-                
-                if ns.owner != request.user:
-                    return JsonResponse(error_message('Only the owner can delete the namespace'))
+                if not ns or ns.owner != request.user:
+                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
                 
                 ns.delete()
 
