@@ -10,14 +10,14 @@ def validate_ns_creation(ns_data: dict) -> tuple[bool, dict]:
     """
 
     if ns_data is None:
-        return False, error_message('Missing specs')
+        return False, error_message('Missing data')
 
-    str_types = ['name', 'default', 'users']
+    str_types = ['name']
     user_role_options = ['manager', 'viewer']
 
     for field in str_types:
         if field not in ns_data.keys():
-            return False, error_message(f'Wrong type for {field}')
+            return False, error_message(f'Missing field: {field}')
     
     # Validate name
     ns_name = ns_data.get('name')
@@ -25,27 +25,72 @@ def validate_ns_creation(ns_data: dict) -> tuple[bool, dict]:
         return False, error_message('Invalid or missing namespace name')
 
     # Validate default
-    ns_default = ns_data.get('default', False)
-    if not isinstance(ns_default, bool):
-        return False, error_message('Default value must be a boolean')
+    ns_default = ns_data.get('default')
+    if ns_default is not None and not isinstance(ns_default, bool):
+        return False, error_message('Invalid default type')
     
     # Validate users
-    ns_users = ns_data.get('users', [])
-    if not isinstance(ns_users, list):
-        return False, error_message('Users must be a list')
-    else:
+    ns_users = ns_data.get('users')
+    if ns_users is not None:
+        if not isinstance(ns_users, list):
+            return False, error_message('Invalid users type')
         for user in ns_users:
             if not isinstance(user, dict):
-                return False, error_message('Invalid users data type')
+                return False, error_message('Invalid user data type')
+            if 'username' not in user or not isinstance(user['username'], str):
+                return False, error_message('Invalid user username type')
+            if 'role' not in user or user['role'] not in user_role_options:
+                return False, error_message('Invalid user role')
+
+    return True, success_message()
+
+def validate_ns_update(ns_data: dict) -> tuple[bool, dict]:
+    """
+    Validate the data for updating a namespace
+    Returns a tuple of (valid, message)
+    """
+
+    if ns_data is None:
+        return False, error_message('Missing data')
+    
+    str_types = ['nsid']
+    user_role_options = ['manager', 'viewer']
+
+    for field in str_types:
+        if field not in ns_data.keys():
+            return False, error_message(f'Missing field: {field}')
+    
+    ns_nsid = ns_data.get('nsid')
+    if not ns_nsid or not isinstance(ns_nsid, str):
+        return False, error_message('Invalid or missing nsid')
+    
+    ns_name = ns_data.get('name')
+    if ns_name is not None and not isinstance(ns_name, str):
+        return False, error_message('Invalid name type')
+    
+    ns_default = ns_data.get('default')
+    if ns_default is not None and not isinstance(ns_default, bool):
+        return False, error_message('Invalid default type')
+
+    ns_owner = ns_data.get('owner')
+    if ns_owner is not None:
+        if not isinstance(ns_owner, dict):
+            return False, error_message('Invalid owner type')
+        if 'username' not in ns_owner or not isinstance(ns_owner['username'], str):
+            return False, error_message('Invalid owner username type')
+
+    ns_users = ns_data.get('users')
+    if ns_users is not None:
+        if not isinstance(ns_users, list):
+            return False, error_message('Invalid users type')
+        for user in ns_users:
+            if not isinstance(user, dict):
+                return False, error_message('Invalid user data type')
+            if 'username' not in user or not isinstance(user['username'], str):
+                return False, error_message('Invalid user username type')
+            if 'role' not in user or user['role'] not in user_role_options:
+                return False, error_message('Invalid user role')
             
-            username = user.get('username', '')
-            role = user.get('role', '')
-
-            if not isinstance(username, str):
-                return False, error_message('Invalid username type')
-            if role not in user_role_options:
-                return False, error_message('Invalid role for user')
-
     return True, success_message()
 
 def sanitize_nsid(nsid: str) -> str:
