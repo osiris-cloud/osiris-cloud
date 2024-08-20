@@ -186,7 +186,11 @@ def namespace(request, ns_name=None):
                             for user in ns_users:
                                 user_obj = User.objects.filter(username=user['username']).first()
                                 if not user_obj:
-                                    continue
+                                    return JsonResponse(error_message(f'User {user["username"]} not found'))
+                                
+                                # Ensure the owner cannot assign themselves additional roles
+                                if user_obj == ns.owner:
+                                    return JsonResponse(error_message('Owner cannot be assigned additional roles'))
 
                                 role = user['role']
                                 if role not in ['manager', 'viewer']:
@@ -202,7 +206,7 @@ def namespace(request, ns_name=None):
                             new_owner_obj = User.objects.filter(username=ns_owner.get('username')).first()
 
                             if not new_owner_obj:
-                                return JsonResponse(error_message('Owner username not found'))
+                                return JsonResponse(error_message('New owner\'s username not found'))
                             
                             # Remove the current owner role
                             NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
