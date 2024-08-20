@@ -8,7 +8,7 @@ from json import loads as json_loads
 from core.utils import success_message, error_message, random_str
 from .models import User
 from ..k8s.models import Namespace, NamespaceRoles
-from ..users.utils import sanitize_nsid, validate_ns_creation
+from ..users.utils import sanitize_nsid, validate_ns_creation, validate_ns_update
 
 
 def get_user_default_ns(user: User) -> Namespace:
@@ -146,6 +146,12 @@ def namespace(request, ns_name=None):
                     return JsonResponse(error_message('No data provided'))
                 
                 ns_data = json_loads(request.body)
+                valid, resp = validate_ns_update(ns_data)
+
+                if not valid:
+                    return JsonResponse(resp)
+                
+                ns_data = json_loads(request.body)
                 ns_nsid = ns_data.get('nsid')
                 ns_name = ns_data.get('name')
                 ns_default = ns_data.get('default', False)
@@ -158,39 +164,24 @@ def namespace(request, ns_name=None):
                 ns = Namespace.objects.filter(nsid=ns_nsid).first()
 
                 if not ns:
-                    return JsonResponse(error_message('No namespace found'))
+                    return JsonResponse(error_message('No namespace found or user does not have permission to update this namespace'))
                 
                 # Check if user is the owner or a manager
                 if request.user not in ns.get_users():
-                    return JsonResponse(error_message('User is not part of the namespace'))
+                    return JsonResponse(error_message('No namespace found or user does not have permission to update this namespace'))
                 
-                if not ns.owner == request.user and not ns.get_role(request.user) == 'manager':
+                if ns.get_role(request.user) == 'viewer':
                     return JsonResponse(error_message('Only the owner or a manager can update the namespace'))
 
-                if ns_default:
+                if ns_default and ns_owner:
+                    return JsonResponse(error_message('Cannot specify owner and set namespace as default at the same time'))
+                
+                elif ns_default and not ns_owner:
                     if ns.owner != request.user:
                         return JsonResponse(error_message('Only the owner can set the namespace as default'))
                     ns.default = ns_default
+                    request.session['namespace'] = ns_nsid
 
-                if ns_owner:
-                    new_owner_obj = User.objects.filter(username=ns_owner.get('username')).first()
-
-                    if not new_owner_obj:
-                        return JsonResponse(error_message('Owner username not found'))
-                    
-                    # Remove the current owner role
-                    NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
-                    
-                    # Check if the new owner is already part of the namespace, if so, delete the user's role
-                    if NamespaceRoles.objects.filter(namespace=ns, user=new_owner_obj).exists():
-                        NamespaceRoles.objects.filter(namespace=ns, user=new_owner_obj).delete()
-
-                    NamespaceRoles.objects.create(
-                        namespace=ns,
-                        user=new_owner_obj,
-                        role='owner'
-                    )
-                
                 if ns_users:
                     # Remove all current manager and viewer roles
                     NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
@@ -203,11 +194,40 @@ def namespace(request, ns_name=None):
                         if role not in ['manager', 'viewer']:
                             return JsonResponse(error_message('Invalid role', {}))
                         
-                        NamespaceRoles.objects.create(
-                            namespace=ns,
-                            user=user_obj,
-                            role=role
-                        )
+                        try:
+                            NamespaceRoles.objects.create(
+                                namespace=ns,
+                                user=user_obj,
+                                role=role
+                            )
+                        except IntegrityError:
+                            return JsonResponse(error_message('Failed to assign role to user'))
+                        
+                if ns_owner:
+                    new_owner_obj = User.objects.filter(username=ns_owner.get('username')).first()
+
+                    if not new_owner_obj:
+                        return JsonResponse(error_message('Owner username not found'))
+                    
+                    # Remove the current owner role
+                    NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
+
+                    # Check if the new owner is already part of the namespace, if so, delete the user's role
+                    existing_role = NamespaceRoles.objects.filter(namespace=ns, user=new_owner_obj).first()
+                    if existing_role:
+                        existing_role.role = 'owner'
+                        existing_role.save()
+                    else:
+                        try:
+                            NamespaceRoles.objects.create(
+                                namespace=ns,
+                                user=new_owner_obj,
+                                role='owner'
+                            )
+                        except IntegrityError:
+                            return JsonResponse(error_message('Failed to assign role to new owner'))
+                
+                    ns.default = False
 
                 if ns_name:
                     ns.name = ns_name
