@@ -201,7 +201,7 @@ Returns: `application/json`
 Sample Request:
 
 ```bash
-curl "https://osiriscloud.io/api/namespace/my-namespace-a5jt" -H "Authorization : Token <token>"
+curl -X DELETE "https://osiriscloud.io/api/namespace/my-namespace-a5jt" -H "Authorization: Token <token>"
 ```
 
 Sample Output:
