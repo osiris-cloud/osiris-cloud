@@ -13,7 +13,9 @@ Parameters
 
 Sample Request:
 
-`curl "https://osiriscloud.io/api/namespace/default" -H "Authorization : Token <token>"`
+```bash
+curl "https://osiriscloud.io/api/namespace/default" -H "Authorization : Token <token>"
+```
 
 Sample Output:
 
