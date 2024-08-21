@@ -8,7 +8,7 @@ Returns: `application/json`
 
 Parameters
 
-- `nsid` (str, optional): The id of the namespace to get. If not provided, all namespaces the user is part of will be
+- `nsid` (string, optional): The id of the namespace to get. If not provided, all namespaces the user is part of will be
   returned. Using `default` as nsid will return the default namespace.
 
 Sample Request:
