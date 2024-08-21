@@ -137,7 +137,6 @@ Sample Input:
 
 ```json
 {
-  "nsid": "my-namespace-a5jt",
   "name": "My Namespace for Real",
   "default": false,
   "owner": {
