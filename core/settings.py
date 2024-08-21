@@ -51,6 +51,7 @@ FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
 
 @dataclass
 class Env:
+    debug = DEBUG
     nyu_client_id = os.getenv('NYU_CLIENT_ID')
     nyu_client_secret = os.getenv('NYU_CLIENT_SECRET')
     nyu_openid_meta = os.getenv('NYU_META_URL')
