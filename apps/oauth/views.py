@@ -61,7 +61,8 @@ def login_view(request):
 
 
 def nyu_login(request):
-    redirect_uri = request.build_absolute_uri('/login/nyu/callback')
+    base_uri = request.scheme + '://' if env.debug else 'https://'
+    redirect_uri = base_uri + request.get_host() + '/login/nyu/callback'
     return nyu_oauth.nyu.authorize_redirect(request, redirect_uri)
 
 
@@ -122,7 +123,8 @@ def nyu_callback(request):
 
 
 def github_login(request):
-    redirect_uri = request.build_absolute_uri('/login/github/callback')
+    base_uri = request.scheme + '://' if env.debug else 'https://'
+    redirect_uri = base_uri + request.get_host() + '/login/github/callback'
     return github_oauth.github.authorize_redirect(request, redirect_uri)
 
 
