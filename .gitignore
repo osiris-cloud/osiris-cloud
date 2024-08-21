@@ -8,7 +8,9 @@ node_modules
 package-lock.json
 
 staticfiles/*
-static/dist/*
+static/dist/main.css
+static/dist/css/output.css
+static/dist/main.bundle.js
 
 .env
 
