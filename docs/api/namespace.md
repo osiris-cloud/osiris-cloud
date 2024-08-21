@@ -8,12 +8,14 @@ Returns: `application/json`
 
 Parameters
 
-- `nsid` (str, optional): The id of the namespace to get. If not provided, all namespaces the user is part of will be
+- `nsid` (string, optional): The id of the namespace to get. If not provided, all namespaces the user is part of will be
   returned. Using `default` as nsid will return the default namespace.
 
 Sample Request:
 
-`curl "https://osiriscloud.io/api/namespace/default" -H "Authorization : Token <token>"`
+```bash
+curl "https://osiriscloud.io/api/namespace/default" -H "Authorization : Token <token>"
+```
 
 Sample Output:
 
@@ -46,9 +48,9 @@ Returns: `application/json`
 
 Request body parameters:
 
-- `name` (str, required): The name of the namespace to create.
+- `name` (string, required): The name of the namespace to create.
 - `default` (bool, optional): Whether the namespace should be set as the default namespace. Defaults to false.
-- `users` (list [dict], optional): A list of usernames with their role to add to the namespace. Defaults to an empty
+- `users` (array [object], optional): A list of usernames with their role to add to the namespace. Defaults to an empty
   list.
 
 Available roles are `manager` and `viewer`. `nsid` will be generated automatically and is immutable.
@@ -108,7 +110,7 @@ Sample Output:
 }
 ```
 
-### Update Namespace [/namespace]
+### Update Namespace [/namespace/{nsid}]
 
 Method: `PATCH`
 
@@ -118,11 +120,10 @@ Returns: `application/json`
 
 Request body parameters:
 
-- `nsid` (str, required): The id of the namespace to update
-- `name` (str, optional): The new name of the namespace
-- `default` (bool, optional): Whether the namespace should be set as the default namespace
-- `owner` (dict, optional): The username of the new owner of the namespace
-- `users` (list [dict], optional): A list of usernames with their role in to the namespace
+- `name` (string, optional): The new name of the namespace.
+- `default` (bool, optional): Whether the namespace should be set as the default namespace.
+- `owner` (object, optional): The username of the new owner of the namespace.
+- `users` (array [object], optional): A list of usernames with their role in to the namespace.
 
 <u>Note this when transferring the ownership</u>:
 
@@ -191,18 +192,16 @@ Sample Output:
 }
 ```
 
-### Delete Namespace [/namespace]
+### Delete Namespace [/namespace/{nsid}]
 
 Method: `DELETE`
 
 Returns: `application/json`
 
-Sample Input:
+Sample Request:
 
-```json
-{
-  "nsid": "my-namespace-a5jt"
-}
+```bash
+curl -X DELETE "https://osiriscloud.io/api/namespace/my-namespace-a5jt" -H "Authorization: Token <token>"
 ```
 
 Sample Output:
