@@ -217,6 +217,12 @@ def namespace(request, ns_name=None):
                             ns.default = False
 
                         if ns_users:
+                            # Check if the new owner is also in ns_users
+                            if ns_owner:
+                                for user in ns_users:
+                                    if user['username'] == ns_owner['username']:
+                                        raise ValueError('New owner cannot be assigned additional roles')
+
                             # Remove all current manager and viewer roles
                             NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
                             for user in ns_users:
