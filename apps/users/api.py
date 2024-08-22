@@ -101,8 +101,11 @@ def namespace(request, ns_name=None):
                             user_obj = User.objects.filter(username=user['username']).first()
                             
                             if not user_obj:
-                                return JsonResponse(error_message(f'User {user["username"]} not found'))
-                            
+                                raise ValueError(f'User {user["username"]} not found')
+                                                        
+                            if user_obj == request.user:
+                                raise ValueError('Owner cannot be assigned additional roles')
+                                                        
                             role = user['role']
                             
                             NamespaceRoles.objects.create(
@@ -111,19 +114,20 @@ def namespace(request, ns_name=None):
                                 role=role
                             )
 
-                except IntegrityError:
-                    return JsonResponse(error_message('Failed to create namespace'))
+                except (IntegrityError, ValueError) as e:
+                    return JsonResponse(error_message(str(e)))
 
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()
                 return JsonResponse(success_message('Create namespace', ns_info))
             
             case 'DELETE':
-                if not request.body:
-                    return JsonResponse(error_message('No data provided'))
-                
-                ns_data = json_loads(request.body)
-                ns_nsid = ns_data.get('nsid')
+                # Extract nsid from the resource path, expected to follow format /api/namespace/{nsid}
+                path_segments = request.path.split('/')
+                if len(path_segments) >= 4 and path_segments[1] == 'api' and path_segments[2] == 'namespace':
+                    ns_nsid = path_segments[3]
+                else:
+                    return JsonResponse(error_message('Invalid path format'))
 
                 if not ns_nsid:
                     return JsonResponse(error_message('No namespace ID provided'))
@@ -138,17 +142,22 @@ def namespace(request, ns_name=None):
                 return JsonResponse(success_message('Delete namespace', {'nsid': ns_nsid}))
 
             case 'PATCH':
-                if not request.body:
-                    return JsonResponse(error_message('No data provided'))
+                # Extract nsid from the resource path, expected to follow format /api/namespace/{nsid}
+                path_segments = request.path.split('/')
+                if len(path_segments) >= 4 and path_segments[1] == 'api' and path_segments[2] == 'namespace':
+                    ns_nsid = path_segments[3]
+                else:
+                    return JsonResponse(error_message('Invalid path format'))
+            
+                if not ns_nsid:
+                    return JsonResponse(error_message('No namespace ID provided'))
                 
                 ns_data = json_loads(request.body)
-                valid, resp = validate_ns_update(ns_data)
+                valid, resp = validate_ns_update(ns_data, ns_nsid)
 
                 if not valid:
                     return JsonResponse(resp)
                 
-                ns_data = json_loads(request.body)
-                ns_nsid = ns_data.get('nsid')
                 ns_name = ns_data.get('name')
                 ns_default = ns_data.get('default', False)
                 ns_owner = ns_data.get('owner')
@@ -176,37 +185,20 @@ def namespace(request, ns_name=None):
                     with transaction.atomic():
                         if ns_default and not ns_owner:
                             if ns.owner != request.user:
-                                return JsonResponse(error_message('Only the owner can set the namespace as default'))
+                                raise ValueError('Only the owner can set the namespace as default')
                             ns.default = ns_default
                             request.session['namespace'] = ns_nsid
 
-                        if ns_users:
-                            # Remove all current manager and viewer roles
-                            NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
-                            for user in ns_users:
-                                user_obj = User.objects.filter(username=user['username']).first()
-                                if not user_obj:
-                                    return JsonResponse(error_message(f'User {user["username"]} not found'))
-                                
-                                # Ensure the owner cannot assign themselves additional roles
-                                if user_obj == ns.owner:
-                                    return JsonResponse(error_message('Owner cannot be assigned additional roles'))
-
-                                role = user['role']
-                                if role not in ['manager', 'viewer']:
-                                    return JsonResponse(error_message('Invalid role', {}))
-                                
-                                NamespaceRoles.objects.create(
-                                    namespace=ns,
-                                    user=user_obj,
-                                    role=role
-                                )
-                                
+                        existing_role = None
+            
                         if ns_owner:
                             new_owner_obj = User.objects.filter(username=ns_owner.get('username')).first()
 
                             if not new_owner_obj:
-                                return JsonResponse(error_message('New owner\'s username not found'))
+                                raise ValueError('New owner\'s username not found')
+                            
+                            if new_owner_obj == ns.owner:
+                                raise ValueError('User is already the owner of the namespace')
                             
                             # Remove the current owner role
                             NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
@@ -215,7 +207,6 @@ def namespace(request, ns_name=None):
                             existing_role = NamespaceRoles.objects.filter(namespace=ns, user=new_owner_obj).first()
                             if existing_role:
                                 existing_role.role = 'owner'
-                                existing_role.save()
                             else:
                                 NamespaceRoles.objects.create(
                                     namespace=ns,
@@ -225,14 +216,40 @@ def namespace(request, ns_name=None):
                         
                             ns.default = False
 
+                        if ns_users:
+                            # Remove all current manager and viewer roles
+                            NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
+                            for user in ns_users:
+                                user_obj = User.objects.filter(username=user['username']).first()
+                                if not user_obj:
+                                    raise ValueError(f'User {user["username"]} not found')
+                                
+                                # Ensure the owner cannot assign themselves additional roles
+                                if user_obj == ns.owner:
+                                    raise ValueError('Owner cannot be assigned additional roles')
+
+                                role = user['role']
+                                if role not in ['manager', 'viewer']:
+                                    raise ValueError('Invalid role')
+                                
+                                NamespaceRoles.objects.create(
+                                    namespace=ns,
+                                    user=user_obj,
+                                    role=role
+                                )
+
                         if ns_name:
                             ns.name = ns_name
 
                         # push changes to the database
                         ns.save()
+
+                        # Save the existing role changes
+                        if existing_role:
+                            existing_role.save()
                 
-                except IntegrityError:
-                    return JsonResponse(error_message('Failed to update namespace'))
+                except (IntegrityError, ValueError) as e:
+                    return JsonResponse(error_message(str(e)))
 
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()

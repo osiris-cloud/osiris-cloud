@@ -44,25 +44,16 @@ def validate_ns_creation(ns_data: dict) -> tuple[bool, dict]:
 
     return True, success_message()
 
-def validate_ns_update(ns_data: dict) -> tuple[bool, dict]:
+def validate_ns_update(ns_data: dict, nsid: str) -> tuple[bool, dict]:
     """
     Validate the data for updating a namespace
     Returns a tuple of (valid, message)
     """
 
-    if ns_data is None:
-        return False, error_message('Missing data')
-    
-    str_types = ['nsid']
-    user_role_options = ['manager', 'viewer']
-
-    for field in str_types:
-        if field not in ns_data.keys():
-            return False, error_message(f'Missing field: {field}')
-    
-    ns_nsid = ns_data.get('nsid')
-    if not ns_nsid or not isinstance(ns_nsid, str):
+    if not nsid or not isinstance(nsid, str):
         return False, error_message('Invalid or missing nsid')
+    
+    user_role_options = ['manager', 'viewer']
     
     ns_name = ns_data.get('name')
     if ns_name is not None and not isinstance(ns_name, str):
