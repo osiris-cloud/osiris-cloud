@@ -3,6 +3,7 @@ from django.db.models import Q
 from encrypted_model_fields.fields import EncryptedTextField
 from ..users.models import User
 from core.utils import eastern_time
+from core.utils import random_str
 
 
 class Namespace(models.Model):
