@@ -186,6 +186,9 @@ def namespace(request, ns_name=None):
                         if ns_default and not ns_owner:
                             if ns.owner != request.user:
                                 raise ValueError('Only the owner can set the namespace as default')
+                            
+                            # If the namespace is set as default, update other namespaces owned by the user
+                            Namespace.objects.filter(users=request.user, default=True).update(default=False)
                             ns.default = ns_default
                             request.session['namespace'] = ns_nsid
 

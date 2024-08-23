@@ -1,4 +1,5 @@
 import string
+import re
 from core.utils import error_message, success_message
 
 VALID_NAME_CHARLIST = list(string.ascii_lowercase + string.digits + '_' + '-')
@@ -85,7 +86,8 @@ def validate_ns_update(ns_data: dict, nsid: str) -> tuple[bool, dict]:
     return True, success_message()
 
 def sanitize_nsid(nsid: str) -> str:
-    nsid = nsid.lower().replace(' ', '-')
+    # Replace one or more spaces with a single dash
+    nsid = re.sub(r'\s+', '-', nsid.lower())
     nsid = ''.join(ch for ch in nsid if ch in VALID_NAME_CHARLIST)
 
     # Ensure nsid does not start or end with a hyphen
