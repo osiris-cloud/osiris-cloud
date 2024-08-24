@@ -24,6 +24,9 @@ class User(AbstractUser):
     def not_manager(self):
         return self.username != 'manager'
 
+    def get_limit(self):
+        return self.limit.first()
+    
     def info(self):
         return {
             'username': self.username,
@@ -73,6 +76,25 @@ class Group(models.Model):
     class Meta:
         db_table = 'groups'
 
+class Limit(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='limit')
+    cpu = models.IntegerField(default=0)
+    memory = models.IntegerField(default=0)
+    disk = models.IntegerField(default=0)
+    public_ip = models.IntegerField(default=0)
+    gpu = models.IntegerField(default=0)
+
+    def info(self):
+        return {
+            'vcpu': self.cpu,
+            'memory': self.memory,
+            'disk': self.disk,
+            'public_ip': self.public_ip,
+            'gpu': self.gpu,
+        }
+
+    class Meta:
+        db_table = 'user_limits'
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):

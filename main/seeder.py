@@ -2,8 +2,8 @@ def create_users():
     from django.utils import timezone
     from json import load as json_load
 
-    from apps.k8s.models import Namespace, NamespaceRoles, Limit
-    from apps.users.models import User
+    from apps.k8s.models import Namespace, NamespaceRoles
+    from apps.users.models import User, Limit
     from apps.oauth.models import NYUUser
     from core.utils import random_str
 
@@ -32,6 +32,6 @@ def create_users():
 
         ns = Namespace.objects.create(nsid=ns_name, name='Default', default=True)
         NamespaceRoles.objects.create(namespace=ns, user=sample_user, role='owner')
-        Limit.objects.create(namespace=ns, **user['limits'])
+        Limit.objects.create(user=sample_user, **user['limits'])
 
 # TODO: Add seed data for other models
