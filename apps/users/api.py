@@ -19,7 +19,7 @@ def get_user_default_ns(user: User) -> Namespace:
 @api_view(['GET', 'POST', 'PATCH', 'DELETE'])
 def namespace(request, nsid=None):
     """
-    Get properties of all namespaces the user is part of, and it's limit
+    Get properties of all namespaces the user is part of
     """
     ns_filter = {}
     if nsid:
