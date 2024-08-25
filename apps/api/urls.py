@@ -21,7 +21,7 @@ vm_urlpatterns = [
 
 user_urlpatterns = [
     re_path(r'^/namespace$', user_api.namespace),  # Matches /namespace
-    re_path(r'^/namespace/(?P<ns_name>[^/]+)$', user_api.namespace),  # Matches /namespace/<ns_name>
+    re_path(r'^/namespace/(?P<nsid>[^/]+)$', user_api.namespace),  # Matches /namespace/<nsid>
 ]
 
 urlpatterns = vm_urlpatterns + user_urlpatterns

@@ -17,18 +17,18 @@ def get_user_default_ns(user: User) -> Namespace:
 
 @csrf_exempt
 @api_view(['GET', 'POST', 'PATCH', 'DELETE'])
-def namespace(request, ns_name=None):
+def namespace(request, nsid=None):
     """
     Get properties of all namespaces the user is part of, and it's limit
     """
     ns_filter = {}
-    if ns_name:
-        if ns_name == 'default':
+    if nsid:
+        if nsid == 'default':
             if request.session.get('namespace') is None:
                 request.session['namespace'] = get_user_default_ns(request.user).nsid
             ns_filter['nsid'] = request.session.get('namespace')
         else:
-            ns_filter['nsid'] = ns_name
+            ns_filter['nsid'] = nsid
 
     try:
         match request.method:
@@ -46,7 +46,7 @@ def namespace(request, ns_name=None):
                     ns_info['users'] = ns.get_users_info()
                     result.append(ns_info)
 
-                if ns_name:
+                if nsid:
                     return JsonResponse(success_message('Get namespace', result[0]))
 
                 return JsonResponse(success_message('Get namespaces', {
@@ -122,12 +122,7 @@ def namespace(request, ns_name=None):
                 return JsonResponse(success_message('Create namespace', ns_info))
             
             case 'DELETE':
-                # Extract nsid from the resource path, expected to follow format /api/namespace/{nsid}
-                path_segments = request.path.split('/')
-                if len(path_segments) >= 4 and path_segments[1] == 'api' and path_segments[2] == 'namespace':
-                    ns_nsid = path_segments[3]
-                else:
-                    return JsonResponse(error_message('Invalid path format'))
+                ns_nsid = nsid
 
                 if not ns_nsid:
                     return JsonResponse(error_message('No namespace ID provided'))
@@ -142,12 +137,7 @@ def namespace(request, ns_name=None):
                 return JsonResponse(success_message('Delete namespace', {'nsid': ns_nsid}))
 
             case 'PATCH':
-                # Extract nsid from the resource path, expected to follow format /api/namespace/{nsid}
-                path_segments = request.path.split('/')
-                if len(path_segments) >= 4 and path_segments[1] == 'api' and path_segments[2] == 'namespace':
-                    ns_nsid = path_segments[3]
-                else:
-                    return JsonResponse(error_message('Invalid path format'))
+                ns_nsid = nsid
             
                 if not ns_nsid:
                     return JsonResponse(error_message('No namespace ID provided'))
