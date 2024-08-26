@@ -7,8 +7,10 @@ from json import loads as json_loads
 
 from core.utils import success_message, error_message, random_str
 from .models import User, Limit
-from ..k8s.models import Namespace, NamespaceRoles
-from ..users.utils import sanitize_nsid, validate_ns_creation, validate_ns_update, validate_user_update
+from ..k8s.models import PVC, Namespace, NamespaceRoles
+from ..vm.models import VM
+from ..oauth.models import NYUUser
+from ..users.utils import sanitize_nsid, validate_ns_creation, validate_ns_update, validate_user_update, delete_owner_resources
 
 
 def get_user_default_ns(user: User) -> Namespace:
@@ -311,31 +313,70 @@ def user(request, username=None):
                 if not valid:
                     return JsonResponse(resp)
                 
-                # Update user fields
-                if 'first_name' in user_data:
-                    user_obj.first_name = user_data['first_name']
-                if 'last_name' in user_data:
-                    user_obj.last_name = user_data['last_name']
-                if 'email' in user_data:
-                    user_obj.email = user_data['email']
-                if 'avatar' in user_data:
-                    user_obj.avatar = user_data['avatar']
-                if 'cluster_role' in user_data:
-                    if request.user.role == 'admin' and user_data['cluster_role'] == 'super_admin':
-                        return JsonResponse(error_message('Admin cannot assign super_admin role'))
-                    if request.user.role in ['admin', 'super_admin']:
-                        user_obj.role = user_data['cluster_role']
-                if 'resource_limit' in user_data and request.user.role in ['admin', 'super_admin']:
-                    user_limit_obj = Limit.objects.filter(user=user_obj).first()
+                try:
+                    with transaction.atomic():
+                        # Update user fields
+                        if 'first_name' in user_data:
+                            user_obj.first_name = user_data['first_name']
+                        if 'last_name' in user_data:
+                            user_obj.last_name = user_data['last_name']
+                        if 'email' in user_data:
+                            user_obj.email = user_data['email']
+                        if 'avatar' in user_data:
+                            user_obj.avatar = user_data['avatar']
+                        if 'cluster_role' in user_data:
+                            if request.user.role == 'admin' and user_data['cluster_role'] == 'super_admin':
+                                return JsonResponse(error_message('Admin cannot assign super_admin role'))
+                            if request.user.role in ['admin', 'super_admin']:
+                                user_obj.role = user_data['cluster_role']
+                        if 'resource_limit' in user_data and request.user.role in ['admin', 'super_admin']:
+                            user_limit_obj = Limit.objects.filter(user=user_obj).first()
+                            for key, value in user_data['resource_limit'].items():
+                                setattr(user_limit_obj, key, value)
 
-                    for key, value in user_data['resource_limit'].items():
-                        setattr(user_limit_obj, key, value)
+                            user_limit_obj.save()
 
-                    user_limit_obj.save()
+                        user_obj.save()
 
-                user_obj.save()
+                except Exception as e:
+                    return JsonResponse(error_message('Failed to update user'))
 
                 return JsonResponse(success_message('Update user', user_obj.detailed_info()))
+            
+            case 'DELETE':
+                if not username:
+                    return JsonResponse(error_message('No username provided'))
+                
+                if request.user.role not in ['admin', 'super_admin']:
+                    return JsonResponse(error_message('Permission denied'))
+                
+                user_obj = User.objects.filter(username=username).first()
+                if not user_obj:
+                    return JsonResponse(error_message('User not found'))
+                
+                # Nuke all resources of namespaces owned by the user
+                if delete_owner_resources(user_obj):
+                    # Update DB tables
+                    try:
+                        with transaction.atomic():
+                            # Get namespace ids user owns from NamespaceRoles
+                            namespace_ids = NamespaceRoles.objects.filter(user=user_obj, role='owner').values_list('namespace_id', flat=True)
+
+                            for namespace_id in namespace_ids:
+                                PVC.objects.filter(namespace_id=namespace_id).delete()
+                                VM.objects.filter(namespace_id=namespace_id).delete()
+                                NamespaceRoles.objects.filter(namespace_id=namespace_id).delete()
+                                Namespace.objects.filter(id=namespace_id).delete()
+
+                            Limit.objects.filter(user=user_obj).delete()
+                            NYUUser.objects.filter(user=user_obj).delete()
+                            user_obj.delete()
+
+                            return JsonResponse(success_message('Delete user', {'username': username}))
+                    except Exception as e:
+                        return JsonResponse(error_message('Failed to delete user'))
+                else:
+                    return JsonResponse(error_message('Failed to delete user resources'))
 
     except Exception as e:
         logging.error(str(e))
