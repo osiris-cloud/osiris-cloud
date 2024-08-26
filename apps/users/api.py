@@ -258,7 +258,35 @@ def namespace(request, nsid=None):
         logging.error(str(e))
         return JsonResponse(error_message(str(e)))
 
+@csrf_exempt
+@api_view(['GET', 'POST', 'PATCH', 'DELETE'])
+def user(request, username=None):
+    try:
+        match request.method:
+            case 'GET':
+                if username:
+                    user_obj = User.objects.filter(username=username).first()
+                    if not user_obj:
+                        return JsonResponse(error_message('User not found'))
+                    
+                    # Check if requester is the user themselves or a admin or super_admin
+                    if request.user != user_obj and request.user.role not in ['admin', 'super_admin']:
+                        return JsonResponse(error_message('Permission denied'))
 
+                    return JsonResponse(success_message('Get user', user_obj.detailed_info()))
+                else:  # no username provided
+                    if request.user.role in ['admin', 'super_admin']:
+                        # Admin or super_admin: return all users' detailed info
+                        users_info = [user.detailed_info() for user in User.objects.all()]
+                        return JsonResponse(success_message('Get users', {'users': users_info}))
+                    else:
+                        # Normal user: return their own detailed info
+                        return JsonResponse(success_message('Get user', request.user.detailed_info()))
+
+    except Exception as e:
+        logging.error(str(e))
+        return JsonResponse(error_message(str(e)))
+    
 # @csrf_exempt
 # @api_view(['GET'])
 # def namespace_info(request, ns_name):
