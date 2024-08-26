@@ -41,9 +41,14 @@
 </head>
 
 <body class="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-{% include 'components/navbar-public.html' %}
+{% block navbar %}
+    {% include 'components/navbar-public.html' %}
+{% endblock navbar %}
 {% block content %} {% endblock content %}
-{% include 'components/footer-public.html' %}
+{% block footer %}
+    {% include 'components/footer-public.html' %}
+{% endblock footer %}
+<script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
 </body>
 
 </html>
