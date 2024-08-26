@@ -3,14 +3,14 @@
 
 {% block title %}Log In{% endblock title %}
 
-{% block header %}{% endblock header %}
+{% block navbar %}{% endblock navbar %}
 
 {% block content %}
     <div class="flex flex-col items-center justify-center px-6 mx-auto h-screen dark:bg-gray-900">
-        <div class="flex items-center justify-center text-2xl font-semibold mb-5 mt-2 dark:text-white">
+        <a href="/" class="flex items-center justify-center text-2xl font-semibold mb-5 mt-2 dark:text-white">
             <img src="{% static 'common/icon.png' %}" class="mr-4 h-11" alt="Osiris Cloud Logo">
             <span>Osiris Cloud</span>
-        </div>
+        </a>
         <p class="text-white">Login for EAP members only</p>
         <div class="w-full max-w-xl sm:p-8">
             <div class="mt-2 flex items-center justify-center">
@@ -36,3 +36,5 @@
         </div>
     </div>
 {% endblock content %}
+
+{% block footer %}{% endblock footer %}
