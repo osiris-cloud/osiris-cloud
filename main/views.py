@@ -15,6 +15,14 @@ def about(request):
     return render(request, "pages/about.html")
 
 
+def architecture(request):
+    return render(request, "pages/architecture.html")
+
+
+def observability(request):
+    return render(request, "pages/observability.html")
+
+
 @login_required
 def dashboard(request):
     context = {

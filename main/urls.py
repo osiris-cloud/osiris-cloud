@@ -11,6 +11,8 @@ urlpatterns = [
     path("profile", include('apps.users.urls')),
     path("faq", views.faq, name="faq"),
     path("about", views.about, name="about"),
+    path("architecture", views.architecture, name="architecture"),
+    path("observability", views.observability, name="observability"),
     path("dashboard", views.dashboard, name="dashboard"),
     path("vm", include('apps.vm.urls')),
 ]
