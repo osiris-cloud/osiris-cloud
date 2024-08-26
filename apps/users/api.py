@@ -171,6 +171,10 @@ def namespace(request, nsid=None):
                 if ns_default and ns_owner:
                     return JsonResponse(error_message('Cannot specify owner and set namespace as default at the same time'))
                 
+                # Check if the namespace is the requester's default namespace
+                if ns.owner == request.user and ns.default and ns_owner:
+                    return JsonResponse(error_message('You must set another namespace as your default before transferring ownership'))
+                
                 try:
                     with transaction.atomic():
                         if ns_default and not ns_owner:
