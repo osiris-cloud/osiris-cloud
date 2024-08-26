@@ -6,9 +6,9 @@ from django.db import transaction, IntegrityError
 from json import loads as json_loads
 
 from core.utils import success_message, error_message, random_str
-from .models import User
+from .models import User, Limit
 from ..k8s.models import Namespace, NamespaceRoles
-from ..users.utils import sanitize_nsid, validate_ns_creation, validate_ns_update
+from ..users.utils import sanitize_nsid, validate_ns_creation, validate_ns_update, validate_user_update
 
 
 def get_user_default_ns(user: User) -> Namespace:
@@ -263,7 +263,7 @@ def namespace(request, nsid=None):
         return JsonResponse(error_message(str(e)))
 
 @csrf_exempt
-@api_view(['GET', 'POST', 'PATCH', 'DELETE'])
+@api_view(['GET', 'PATCH', 'DELETE'])
 def user(request, username=None):
     try:
         match request.method:
@@ -286,6 +286,56 @@ def user(request, username=None):
                     else:
                         # Normal user: return their own detailed info
                         return JsonResponse(success_message('Get user', request.user.detailed_info()))
+            
+            case 'PATCH':
+                if not username:
+                    return JsonResponse(error_message('No username provided'))
+                
+                user_obj = User.objects.filter(username=username).first()
+                if not user_obj:
+                    return JsonResponse(error_message('User not found'))
+                
+                # Non-admins can only update their own info
+                if request.user != user_obj and request.user.role not in ['admin', 'super_admin']:
+                    return JsonResponse(error_message('Permission denied'))
+                
+                user_data = json_loads(request.body)
+                
+                # Non-admins cannot update cluster_role or resource_limit
+                if request.user.role not in ['admin', 'super_admin']:
+                    if 'cluster_role' in user_data or 'resource_limit' in user_data:
+                        return JsonResponse(error_message('Permission denied'))
+
+                valid, resp = validate_user_update(user_data)
+
+                if not valid:
+                    return JsonResponse(resp)
+                
+                # Update user fields
+                if 'first_name' in user_data:
+                    user_obj.first_name = user_data['first_name']
+                if 'last_name' in user_data:
+                    user_obj.last_name = user_data['last_name']
+                if 'email' in user_data:
+                    user_obj.email = user_data['email']
+                if 'avatar' in user_data:
+                    user_obj.avatar = user_data['avatar']
+                if 'cluster_role' in user_data:
+                    if request.user.role == 'admin' and user_data['cluster_role'] == 'super_admin':
+                        return JsonResponse(error_message('Admin cannot assign super_admin role'))
+                    if request.user.role in ['admin', 'super_admin']:
+                        user_obj.role = user_data['cluster_role']
+                if 'resource_limit' in user_data and request.user.role in ['admin', 'super_admin']:
+                    user_limit_obj = Limit.objects.filter(user=user_obj).first()
+
+                    for key, value in user_data['resource_limit'].items():
+                        setattr(user_limit_obj, key, value)
+
+                    user_limit_obj.save()
+
+                user_obj.save()
+
+                return JsonResponse(success_message('Update user', user_obj.detailed_info()))
 
     except Exception as e:
         logging.error(str(e))
