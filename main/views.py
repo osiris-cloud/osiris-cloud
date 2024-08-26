@@ -19,7 +19,7 @@ def about(request):
 def dashboard(request):
     context = {
         'segment': ['dashboard'],
-        'ver': '1.0',
+        'ver': '0.1',
     }
     return render(request, "dashboard/app.html", context)
 
