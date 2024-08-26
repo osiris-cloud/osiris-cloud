@@ -147,3 +147,11 @@ def validate_user_update(user_data: dict) -> tuple[bool, dict]:
                 return False, error_message(f'Invalid resource limit value for {key}')
     
     return True, success_message('User data is valid')
+
+def delete_owner_resources(user_obj):
+    # TODO: Handle actual resource deletion
+    return True
+
+def delete_namespace_resources(user_obj):
+    # TODO: Handle actual resource deletion
+    return True
