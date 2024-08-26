@@ -1,0 +1,20 @@
+[
+    {
+        "name": "pvc1",
+        "size": 20,
+        "owner_id": 1,
+        "namespace_id": 1
+    },
+    {
+        "name": "pvc2",
+        "size": 30,
+        "owner_id": 1,
+        "namespace_id": 1
+    },
+    {
+        "name": "pvc3",
+        "size": 50,
+        "owner_id": 3,
+        "namespace_id": 3
+    }
+]

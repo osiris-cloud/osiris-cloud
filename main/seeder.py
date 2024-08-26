@@ -34,4 +34,45 @@ def create_users():
         NamespaceRoles.objects.create(namespace=ns, user=sample_user, role='owner')
         Limit.objects.create(user=sample_user, **user['limits'])
 
+
+def create_pvcs():
+    from json import load as json_load
+    from apps.users.models import User
+    from apps.k8s.models import Namespace, PVC
+    with open(r'./seed/pvcs.json') as f:
+        pvcs = json_load(f)
+
+    for pvc in pvcs:
+        owner = User.objects.get(id=pvc['owner_id'])
+        namespace = Namespace.objects.get(id=pvc['namespace_id'])
+
+        PVC.objects.create(
+            name=pvc['name'],
+            size=pvc['size'],
+            owner=owner,
+            namespace=namespace
+        )
+
 # TODO: Add seed data for other models
+def create_vms():
+    from json import load as json_load
+    from apps.k8s.models import Namespace, PVC
+    from apps.vm.models import VM
+    from apps.users.models import User
+    with open(r'./seed/vms.json') as f:
+        vms = json_load(f)
+
+    for vm in vms:
+        disk = PVC.objects.get(id=vm['disk_id'])
+        owner = User.objects.get(id=vm['owner_id'])
+        namespace = Namespace.objects.get(id=vm['namespace_id'])
+
+        VM.objects.create(
+                name=vm['name'],
+                k8s_name=vm['k8s_name'],
+                cpu=vm['cpu'],
+                memory=vm['memory'],
+                disk=disk,
+                owner=owner,
+                namespace=namespace
+            )

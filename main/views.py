@@ -35,6 +35,8 @@ def not_found(request):
 
 
 def seed(request):
-    from .seeder import create_users
+    from .seeder import create_users, create_vms, create_pvcs
     create_users()
+    create_pvcs()
+    create_vms()
     return redirect('login_view')
