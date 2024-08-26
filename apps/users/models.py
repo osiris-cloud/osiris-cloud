@@ -146,11 +146,11 @@ class Group(models.Model):
 
 class Limit(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='limit')
-    cpu = models.IntegerField(default=0)
-    memory = models.IntegerField(default=0)
-    disk = models.IntegerField(default=0)
-    public_ip = models.IntegerField(default=0)
-    gpu = models.IntegerField(default=0)
+    cpu = models.IntegerField(null=True, default=0)
+    memory = models.IntegerField(null=True, default=0)
+    disk = models.IntegerField(null=True, default=0)
+    public_ip = models.IntegerField(null=True, default=0)
+    gpu = models.IntegerField(null=True, default=0)
 
     def info(self):
         return {
