@@ -378,13 +378,7 @@ def user(request, username=None):
                             namespace_ids = NamespaceRoles.objects.filter(user=user_obj, role='owner').values_list('namespace_id', flat=True)
 
                             for namespace_id in namespace_ids:
-                                PVC.objects.filter(namespace_id=namespace_id).delete()
-                                VM.objects.filter(namespace_id=namespace_id).delete()
-                                NamespaceRoles.objects.filter(namespace_id=namespace_id).delete()
                                 Namespace.objects.filter(id=namespace_id).delete()
-
-                            Limit.objects.filter(user=user_obj).delete()
-                            NYUUser.objects.filter(user=user_obj).delete()
                             user_obj.delete()
 
                             return JsonResponse(success_message('Delete user', {'username': username}))
