@@ -9,7 +9,8 @@ from django.utils import timezone
 from core.settings import env
 from core.utils import random_str, serialize_obj
 
-from ..k8s.models import Namespace, NamespaceRoles, Limit
+from ..k8s.models import Namespace, NamespaceRoles
+from ..users.models import Limit
 
 from ..oauth.models import GithubUser, NYUUser
 from ..users.models import User
@@ -109,7 +110,7 @@ def nyu_callback(request):
             # We add the user to the NS role Table wih owner role
             NamespaceRoles.objects.create(namespace=ns, user=user, role='owner')
 
-            Limit.objects.create(namespace=ns, **DEFAULT_LIMIT)
+            Limit.objects.create(user=user, **DEFAULT_LIMIT)
             logging.info(f"Default limits applied for namespace {ns_name}")
 
         request.session['namespace'] = ns_name

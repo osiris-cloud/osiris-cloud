@@ -74,8 +74,6 @@ Request body parameters:
 + `last_name` (string, optional): New last name.
 + `email` (string, optional): New email of the user.
 + `avatar` (string, optional): Valid image url. Supports JPEG, PNG, and GIF. Max file size is 5 MB.
-+ `default_nsid` (string, optional): `nsid` of the default namespace. The user is assumed to be the owner of the new
-  namespace.
 + `cluster_role` (string, optional): Cluster role of the user. This can be set only by a cluster admin. Available roles
   are:
     + `super_admin`: Has full control of the cluster and can view, edit or delete any resource.

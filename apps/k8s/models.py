@@ -3,6 +3,7 @@ from django.db.models import Q
 from encrypted_model_fields.fields import EncryptedTextField
 from ..users.models import User
 from core.utils import eastern_time
+from core.utils import random_str
 
 
 class Namespace(models.Model):
@@ -16,9 +17,6 @@ class Namespace(models.Model):
     @property
     def owner(self):
         return self.users.filter(namespaceroles__role='owner').first()
-
-    def get_limit(self):
-        return self.limit.first()
 
     def get_users(self):
         return self.users.all()
@@ -62,27 +60,6 @@ class NamespaceRoles(models.Model):
 
     class Meta:
         db_table = 'namespace_roles'
-
-
-class Limit(models.Model):
-    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='limit')
-    cpu = models.IntegerField(default=0)
-    memory = models.IntegerField(default=0)
-    disk = models.IntegerField(default=0)
-    public_ip = models.IntegerField(default=0)
-    gpu = models.IntegerField(default=0)
-
-    def info(self):
-        return {
-            'vcpu': self.cpu,
-            'memory': self.memory,
-            'disk': self.disk,
-            'public_ip': self.public_ip,
-            'gpu': self.gpu,
-        }
-
-    class Meta:
-        db_table = 'ns_limits'
 
 
 class Secret(models.Model):
