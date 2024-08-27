@@ -10,7 +10,7 @@ from .models import User, Limit
 from ..k8s.models import PVC, Namespace, NamespaceRoles
 from ..vm.models import VM
 from ..oauth.models import NYUUser
-from ..users.utils import sanitize_nsid, validate_ns_creation, validate_ns_update, validate_user_update, delete_owner_resources
+from ..users.utils import delete_namespace_resources, sanitize_nsid, validate_ns_creation, validate_ns_update, validate_user_update, delete_owner_resources
 
 
 def get_user_default_ns(user: User) -> Namespace:
@@ -198,6 +198,10 @@ def namespace(request, nsid=None):
                             
                             if new_owner_obj == ns.owner:
                                 raise ValueError('User is already the owner of the namespace')
+                            
+                            # TODO: 
+                            # Compare allocated resources with new owner's limit
+                            # Implement logic for user consent to take ownership
                             
                             # Remove the current owner role
                             NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
