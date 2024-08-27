@@ -1,3 +1,94 @@
 {% extends 'layouts/base-public.html' %}
 {% load static %}
 
+{% block content %}
+    <section class="grow mt-8 bg-white dark:bg-gray-900 px-4">
+        <div class="mx-auto max-w-screen-xl p-4">
+            <div class="grid text-left">
+                <h2 class="mb-4 text-4xl tracking-tight font-bold text-gray-900 dark:text-white">
+                    Privacy Policy
+                </h2>
+                <p class="mb-4 text-gray-400">
+                    Osiris Cloud is mostly compliant under NYU digital privacy rules. However, additional/separate
+                    policies apply, which are described below.
+                </p>
+                <p class="mb-4 text-gray-400">
+                    This privacy policy outlines the types of information we collect, how we use it, and the steps we
+                    take to ensure your information is kept secure.
+                </p>
+                <h3 class="text-white font-bold">
+                    Information We Collect
+                </h3>
+                <ul class="mt-4 space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
+                    <li class="list-item">
+                        Personal Information: When you sign up for our services, we may collect personal information
+                        from NYU such as your name, email address, and affiliation.
+                    </li>
+                    <li class="list-item">
+                        Usage Data: We may collect data about how you use our services, including IP addresses, browser
+                        types, and usage patterns.
+                    </li>
+                </ul>
+                <h3 class="text-white font-bold mt-4">
+                    How We Use Your Information
+                </h3>
+                <ul class="mt-4 space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
+                    <li class="list-item">
+                        Service Delivery: We use your personal information to provide, maintain, and improve our cloud
+                        services.
+                    </li>
+                    <li class="list-item">
+                        Communication: We may use your contact information to send you updates, promotional materials,
+                        or service-related notices. You can opt out of receiving promotional communications at any time.
+                    </li>
+                    <li class="list-item">
+                        Security: We use your data to detect, prevent, and respond to security incidents, as well as to
+                        protect the integrity of our services.
+                    </li>
+                </ul>
+                <h3 class="text-white font-bold mt-4">
+                    Information Sharing and Disclosure
+                </h3>
+                <p class="mt-4 text-gray-400">
+                    We may disclose your information if required by law or in response to valid requests by NYU and/or
+                    public authorities.
+                </p>
+                <h3 class="text-white font-bold mt-4">
+                    Data Security
+                </h3>
+                <p class="mt-4 text-gray-400">
+                    We take appropriate measures to protect your personal information from unauthorized access, use, or
+                    disclosure. These measures include encryption, access controls, and regular security assessments.
+                </p>
+                <h3 class="text-white font-bold mt-4">
+                    Your Rights
+                </h3>
+                <p class="mt-4 text-gray-400">
+                    You have the right to access, update, or delete the personal information we hold about you. You can
+                    also object to or restrict certain processing activities. To exercise these rights, please contact
+                    us at infra [at] osiriscloud.io
+                </p>
+                <h3 class="text-white font-bold mt-4">
+                    Changes to This Privacy Policy
+                </h3>
+                <p class="mt-4 text-gray-400">
+                    We may update this privacy policy from time to time. If we make significant changes, we will notify
+                    you through our services or via email. Your continued use of our services after such changes
+                    indicates your acceptance of the updated policy.
+                </p>
+                <a href="https://www.nyu.edu/footer/copyright-and-fair-use/digital-privacy-statement.html"
+                   target="_blank"
+                   class="inline-flex items-center mt-4 font-medium text-primary-600 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-700">
+                    NYU Digital Privacy Statement
+                    <svg class="ml-1 w-6 h-6" fill="currentColor" viewBox="0 0 20 20"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd"
+                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                              clip-rule="evenodd">
+                        </path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+{% endblock content %}

@@ -23,6 +23,10 @@ def observability(request):
     return render(request, "pages/observability.html")
 
 
+def privacy(request):
+    return render(request, "pages/privacy.html")
+
+
 @login_required
 def dashboard(request):
     context = {
