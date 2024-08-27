@@ -134,7 +134,18 @@ def namespace(request, nsid=None):
                 if not ns or ns.owner != request.user:
                     return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
                 
-                ns.delete()
+                # If the namespace is set as default, user has to set another namespace as default before deleting
+                if ns.default:
+                    return JsonResponse(error_message('Cannot delete default namespace'))
+
+                if delete_namespace_resources(ns):
+                    try:
+                        with transaction.atomic():
+                            ns.delete()
+                    except Exception as e:
+                        return JsonResponse(error_message('Failed to delete namespace'))
+                else:
+                    return JsonResponse(error_message('Failed to delete namespace resources'))
 
                 return JsonResponse(success_message('Delete namespace', {'nsid': ns_nsid}))
 
