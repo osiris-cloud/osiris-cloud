@@ -9,6 +9,8 @@ package-lock.json
 
 staticfiles/*
 static/dist/main.css
+static/dist/main.css.map
+
 static/dist/css/output.css
 static/dist/main.bundle.js
 

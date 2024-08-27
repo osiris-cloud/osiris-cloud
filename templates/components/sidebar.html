@@ -31,7 +31,7 @@
                             <span class="ml-3" sidebar-toggle-item>Virtual Machines</span>
                         </a>
                     </li>
-                
+
                     <li>
                         <a href="/container-app"
                            class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'container-app' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
@@ -59,108 +59,94 @@
                         </a>
                     </li>
 
-                    {#                    <li>#}
-                    {#                        <a href="/k8s"#}
-                    {#                           class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'k8s' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">#}
-                    {#                            <svg class="w-6 h-6 text-gray-800 dark:text-white" fill="currentColor" width="120px"#}
-                    {#                                 height="120px" viewBox="0 0 24.00 24.00"#}
-                    {#                                 xmlns="http://www.w3.org/2000/svg">#}
-                    {#                                <path d="m10.204 14.35.007.01-.999 2.413a5.171 5.171 0 0 1-2.075-2.597l2.578-.437.004.005a.44.44 0 0 1 .484.606zm-.833-2.129a.44.44 0 0 0 .173-.756l.002-.011L7.585 9.7a5.143 5.143 0 0 0-.73 3.255l2.514-.725.002-.009zm1.145-1.98a.44.44 0 0 0 .699-.337l.01-.005.15-2.62a5.144 5.144 0 0 0-3.01 1.442l2.147 1.523.004-.002zm.76 2.75.723.349.722-.347.18-.78-.5-.623h-.804l-.5.623.179.779zm1.5-3.095a.44.44 0 0 0 .7.336l.008.003 2.134-1.513a5.188 5.188 0 0 0-2.992-1.442l.148 2.615.002.001zm10.876 5.97-5.773 7.181a1.6 1.6 0 0 1-1.248.594l-9.261.003a1.6 1.6 0 0 1-1.247-.596l-5.776-7.18a1.583 1.583 0 0 1-.307-1.34L2.1 5.573c.108-.47.425-.864.863-1.073L11.305.513a1.606 1.606 0 0 1 1.385 0l8.345 3.985c.438.209.755.604.863 1.073l2.062 8.955c.108.47-.005.963-.308 1.34zm-3.289-2.057c-.042-.01-.103-.026-.145-.034-.174-.033-.315-.025-.479-.038-.35-.037-.638-.067-.895-.148-.105-.04-.18-.165-.216-.216l-.201-.059a6.45 6.45 0 0 0-.105-2.332 6.465 6.465 0 0 0-.936-2.163c.052-.047.15-.133.177-.159.008-.09.001-.183.094-.282.197-.185.444-.338.743-.522.142-.084.273-.137.415-.242.032-.024.076-.062.11-.089.24-.191.295-.52.123-.736-.172-.216-.506-.236-.745-.045-.034.027-.08.062-.111.088-.134.116-.217.23-.33.35-.246.25-.45.458-.673.609-.097.056-.239.037-.303.033l-.19.135a6.545 6.545 0 0 0-4.146-2.003l-.012-.223c-.065-.062-.143-.115-.163-.25-.022-.268.015-.557.057-.905.023-.163.061-.298.068-.475.001-.04-.001-.099-.001-.142 0-.306-.224-.555-.5-.555-.275 0-.499.249-.499.555l.001.014c0 .041-.002.092 0 .128.006.177.044.312.067.475.042.348.078.637.056.906a.545.545 0 0 1-.162.258l-.012.211a6.424 6.424 0 0 0-4.166 2.003 8.373 8.373 0 0 1-.18-.128c-.09.012-.18.04-.297-.029-.223-.15-.427-.358-.673-.608-.113-.12-.195-.234-.329-.349a2.691 2.691 0 0 0-.111-.088.594.594 0 0 0-.348-.132.481.481 0 0 0-.398.176c-.172.216-.117.546.123.737l.007.005.104.083c.142.105.272.159.414.242.299.185.546.338.743.522.076.082.09.226.1.288l.16.143a6.462 6.462 0 0 0-1.02 4.506l-.208.06c-.055.072-.133.184-.215.217-.257.081-.546.11-.895.147-.164.014-.305.006-.48.039-.037.007-.09.02-.133.03l-.004.002-.007.002c-.295.071-.484.342-.423.608.061.267.349.429.645.365l.007-.001.01-.003.129-.029c.17-.046.294-.113.448-.172.33-.118.604-.217.87-.256.112-.009.23.069.288.101l.217-.037a6.5 6.5 0 0 0 2.88 3.596l-.09.218c.033.084.069.199.044.282-.097.252-.263.517-.452.813-.091.136-.185.242-.268.399-.02.037-.045.095-.064.134-.128.275-.034.591.213.71.248.12.556-.007.69-.282v-.002c.02-.039.046-.09.062-.127.07-.162.094-.301.144-.458.132-.332.205-.68.387-.897.05-.06.13-.082.215-.105l.113-.205a6.453 6.453 0 0 0 4.609.012l.106.192c.086.028.18.042.256.155.136.232.229.507.342.84.05.156.074.295.145.457.016.037.043.09.062.129.133.276.442.402.69.282.247-.118.341-.435.213-.71-.02-.039-.045-.096-.065-.134-.083-.156-.177-.261-.268-.398-.19-.296-.346-.541-.443-.793-.04-.13.007-.21.038-.294-.018-.022-.059-.144-.083-.202a6.499 6.499 0 0 0 2.88-3.622c.064.01.176.03.213.038.075-.05.144-.114.28-.104.266.039.54.138.87.256.154.06.277.128.448.173.036.01.088.019.13.028l.009.003.007.001c.297.064.584-.098.645-.365.06-.266-.128-.537-.423-.608zM16.4 9.701l-1.95 1.746v.005a.44.44 0 0 0 .173.757l.003.01 2.526.728a5.199 5.199 0 0 0-.108-1.674A5.208 5.208 0 0 0 16.4 9.7zm-4.013 5.325a.437.437 0 0 0-.404-.232.44.44 0 0 0-.372.233h-.002l-1.268 2.292a5.164 5.164 0 0 0 3.326.003l-1.27-2.296h-.01zm1.888-1.293a.44.44 0 0 0-.27.036.44.44 0 0 0-.214.572l-.003.004 1.01 2.438a5.15 5.15 0 0 0 2.081-2.615l-2.6-.44-.004.005z">#}
-                    {#                                </path>#}
-                    {#                            </svg>#}
-                    {#                            <span class="ml-3" sidebar-toggle-item>Kubernetes</span>#}
-                    {#                        </a>#}
-                    {#                    </li>#}
+                    <li>
+                        <a href="/k8s"
+                           class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'k8s' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
+                            <svg class="w-6 h-6 text-gray-800 dark:text-white" fill="currentColor" width="120px"
+                                 height="120px" viewBox="0 0 24.00 24.00"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="m10.204 14.35.007.01-.999 2.413a5.171 5.171 0 0 1-2.075-2.597l2.578-.437.004.005a.44.44 0 0 1 .484.606zm-.833-2.129a.44.44 0 0 0 .173-.756l.002-.011L7.585 9.7a5.143 5.143 0 0 0-.73 3.255l2.514-.725.002-.009zm1.145-1.98a.44.44 0 0 0 .699-.337l.01-.005.15-2.62a5.144 5.144 0 0 0-3.01 1.442l2.147 1.523.004-.002zm.76 2.75.723.349.722-.347.18-.78-.5-.623h-.804l-.5.623.179.779zm1.5-3.095a.44.44 0 0 0 .7.336l.008.003 2.134-1.513a5.188 5.188 0 0 0-2.992-1.442l.148 2.615.002.001zm10.876 5.97-5.773 7.181a1.6 1.6 0 0 1-1.248.594l-9.261.003a1.6 1.6 0 0 1-1.247-.596l-5.776-7.18a1.583 1.583 0 0 1-.307-1.34L2.1 5.573c.108-.47.425-.864.863-1.073L11.305.513a1.606 1.606 0 0 1 1.385 0l8.345 3.985c.438.209.755.604.863 1.073l2.062 8.955c.108.47-.005.963-.308 1.34zm-3.289-2.057c-.042-.01-.103-.026-.145-.034-.174-.033-.315-.025-.479-.038-.35-.037-.638-.067-.895-.148-.105-.04-.18-.165-.216-.216l-.201-.059a6.45 6.45 0 0 0-.105-2.332 6.465 6.465 0 0 0-.936-2.163c.052-.047.15-.133.177-.159.008-.09.001-.183.094-.282.197-.185.444-.338.743-.522.142-.084.273-.137.415-.242.032-.024.076-.062.11-.089.24-.191.295-.52.123-.736-.172-.216-.506-.236-.745-.045-.034.027-.08.062-.111.088-.134.116-.217.23-.33.35-.246.25-.45.458-.673.609-.097.056-.239.037-.303.033l-.19.135a6.545 6.545 0 0 0-4.146-2.003l-.012-.223c-.065-.062-.143-.115-.163-.25-.022-.268.015-.557.057-.905.023-.163.061-.298.068-.475.001-.04-.001-.099-.001-.142 0-.306-.224-.555-.5-.555-.275 0-.499.249-.499.555l.001.014c0 .041-.002.092 0 .128.006.177.044.312.067.475.042.348.078.637.056.906a.545.545 0 0 1-.162.258l-.012.211a6.424 6.424 0 0 0-4.166 2.003 8.373 8.373 0 0 1-.18-.128c-.09.012-.18.04-.297-.029-.223-.15-.427-.358-.673-.608-.113-.12-.195-.234-.329-.349a2.691 2.691 0 0 0-.111-.088.594.594 0 0 0-.348-.132.481.481 0 0 0-.398.176c-.172.216-.117.546.123.737l.007.005.104.083c.142.105.272.159.414.242.299.185.546.338.743.522.076.082.09.226.1.288l.16.143a6.462 6.462 0 0 0-1.02 4.506l-.208.06c-.055.072-.133.184-.215.217-.257.081-.546.11-.895.147-.164.014-.305.006-.48.039-.037.007-.09.02-.133.03l-.004.002-.007.002c-.295.071-.484.342-.423.608.061.267.349.429.645.365l.007-.001.01-.003.129-.029c.17-.046.294-.113.448-.172.33-.118.604-.217.87-.256.112-.009.23.069.288.101l.217-.037a6.5 6.5 0 0 0 2.88 3.596l-.09.218c.033.084.069.199.044.282-.097.252-.263.517-.452.813-.091.136-.185.242-.268.399-.02.037-.045.095-.064.134-.128.275-.034.591.213.71.248.12.556-.007.69-.282v-.002c.02-.039.046-.09.062-.127.07-.162.094-.301.144-.458.132-.332.205-.68.387-.897.05-.06.13-.082.215-.105l.113-.205a6.453 6.453 0 0 0 4.609.012l.106.192c.086.028.18.042.256.155.136.232.229.507.342.84.05.156.074.295.145.457.016.037.043.09.062.129.133.276.442.402.69.282.247-.118.341-.435.213-.71-.02-.039-.045-.096-.065-.134-.083-.156-.177-.261-.268-.398-.19-.296-.346-.541-.443-.793-.04-.13.007-.21.038-.294-.018-.022-.059-.144-.083-.202a6.499 6.499 0 0 0 2.88-3.622c.064.01.176.03.213.038.075-.05.144-.114.28-.104.266.039.54.138.87.256.154.06.277.128.448.173.036.01.088.019.13.028l.009.003.007.001c.297.064.584-.098.645-.365.06-.266-.128-.537-.423-.608zM16.4 9.701l-1.95 1.746v.005a.44.44 0 0 0 .173.757l.003.01 2.526.728a5.199 5.199 0 0 0-.108-1.674A5.208 5.208 0 0 0 16.4 9.7zm-4.013 5.325a.437.437 0 0 0-.404-.232.44.44 0 0 0-.372.233h-.002l-1.268 2.292a5.164 5.164 0 0 0 3.326.003l-1.27-2.296h-.01zm1.888-1.293a.44.44 0 0 0-.27.036.44.44 0 0 0-.214.572l-.003.004 1.01 2.438a5.15 5.15 0 0 0 2.081-2.615l-2.6-.44-.004.005z">
+                                </path>
+                            </svg>
+                            <span class="ml-3" sidebar-toggle-item>Kubernetes</span>
+                        </a>
+                    </li>
 
-{#                    <li>#}
-{#                        <a href="/db"#}
-{#                           class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'db' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">#}
-{#                            <svg class="w-6 h-6 text-gray-800 dark:text-white"#}
-{#                                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"#}
-{#                                 viewBox="0 0 24 24">#}
-{#                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"#}
-{#                                      stroke-width="2"#}
-{#                                      d="M19 6c0 1.657-3.134 3-7 3S5 7.657 5 6m14 0c0-1.657-3.134-3-7-3S5 4.343 5 6m14 0v6M5 6v6m0 0c0 1.657 3.134 3 7 3s7-1.343 7-3M5 12v6c0 1.657 3.134 3 7 3s7-1.343 7-3v-6"></path>#}
-{#                            </svg>#}
-{##}
-{#                            <span class="ml-3" sidebar-toggle-item>Databases</span>#}
-{#                        </a>#}
-{#                    </li>#}
+                    <li>
+                        <a href="/db"
+                           class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'db' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
+                            <svg class="w-6 h-6 text-gray-800 dark:text-white"
+                                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                                 viewBox="0 0 24 24">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M19 6c0 1.657-3.134 3-7 3S5 7.657 5 6m14 0c0-1.657-3.134-3-7-3S5 4.343 5 6m14 0v6M5 6v6m0 0c0 1.657 3.134 3 7 3s7-1.343 7-3M5 12v6c0 1.657 3.134 3 7 3s7-1.343 7-3v-6"></path>
+                            </svg>
 
-                    {#                    <li>#}
-                    {#                        <a href="/dns"#}
-                    {#                           class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'dns' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">#}
-                    {#                            <svg class="w-6 h-6 text-gray-800 dark:text-white"#}
-                    {#                                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">#}
-                    {#                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"#}
-                    {#                                      stroke-width="1.2" d="M20 20h10v2H20zm0 4h6v2h-6z"></path>#}
-                    {#                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"#}
-                    {#                                      stroke-width="1.9" d="M30 17v-1a13.987 13.987 0 1 0-10.77 13.625l-.46-1.946A12.042 12.042 0 0 1 16 28c-.19 0-.375-.019-.563-.027A20.304 20.304 0 0 1 12.026 17Zm-2.042-2h-5.983a24.284 24.284 0 0 0-2.774-10.559A12.023 12.023 0 0 1 27.96 15ZM16.564 4.027A20.304 20.304 0 0 1 19.974 15h-7.948a20.304 20.304 0 0 1 3.411-10.973C15.625 4.02 15.81 4 16 4s.375.019.563.027Zm-3.764.414A24.284 24.284 0 0 0 10.025 15H4.04A12.023 12.023 0 0 1 12.8 4.441Zm0 23.118A12.023 12.023 0 0 1 4.042 17h5.983a24.284 24.284 0 0 0 2.774 10.559Z"></path>#}
-                    {#                            </svg>#}
-                    {#                            <span class="ml-3" sidebar-toggle-item>DNS Manager</span>#}
-                    {#                        </a>#}
-                    {#                    </li>#}
+                            <span class="ml-3" sidebar-toggle-item>Databases</span>
+                        </a>
+                    </li>
 
-                    {#                    <li>#}
-                    {#                        <button type="button"#}
-                    {#                                class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700#}
-                    {#                            {% if 'apps' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}"#}
-                    {#                                data-collapse-toggle="dropdown-dashboard">#}
-                    {##}
-                    {#                            <svg class="w-6 h-6 text-gray-800 dark:text-white" xmlns="http://www.w3.org/2000/svg"#}
-                    {#                                 viewBox="0 0 24 24"#}
-                    {#                                 fill="none" stroke="#000" stroke-width="2">#}
-                    {#                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"#}
-                    {#                                      stroke-width="2"#}
-                    {#                                      d="M14 17.5c0-1.404 0-2.107.337-2.611a2 2 0 0 1 .552-.552C15.393 14 16.096 14 17.5 14h0 0c1.404 0 2.107 0 2.611.337a2 2 0 0 1 .552.552C21 15.393 21 16.096 21 17.5h0 0c0 1.404 0 2.107-.337 2.611a2 2 0 0 1-.552.552C19.607 21 18.905 21 17.5 21h0 0c-1.404 0-2.107 0-2.611-.337a2 2 0 0 1-.552-.552C14 19.607 14 18.905 14 17.5h0 0zm-11 0c0-1.404 0-2.107.337-2.611a2 2 0 0 1 .552-.552C4.393 14 5.096 14 6.5 14h0 0c1.404 0 2.107 0 2.611.337a2 2 0 0 1 .552.552C10 15.393 10 16.096 10 17.5h0 0c0 1.404 0 2.107-.337 2.611a2 2 0 0 1-.552.552C8.607 21 7.904 21 6.5 21h0 0c-1.404 0-2.107 0-2.611-.337a2 2 0 0 1-.552-.552C3 19.607 3 18.905 3 17.5h0 0zm0-11c0-1.404 0-2.107.337-2.611a2 2 0 0 1 .552-.552C4.393 3 5.096 3 6.5 3h0 0c1.404 0 2.107 0 2.611.337a2 2 0 0 1 .552.552C10 4.393 10 5.096 10 6.5h0 0c0 1.404 0 2.107-.337 2.611a2 2 0 0 1-.552.552C8.607 10 7.904 10 6.5 10h0 0c-1.404 0-2.107 0-2.611-.337a2 2 0 0 1-.552-.552C3 8.607 3 7.904 3 6.5h0 0z"></path>#}
-                    {#                                <g stroke-linecap="round" stroke-linejoin="round">#}
-                    {#                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"#}
-                    {#                                          stroke-width="2" d="M14 6.5h7"></path>#}
-                    {#                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"#}
-                    {#                                          stroke-width="2" d="M17.5 3v7"></path>#}
-                    {#                                </g>#}
-                    {#                            </svg>#}
-                    {##}
-                    {#                            <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Apps</span>#}
-                    {##}
-                    {#                            <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"#}
-                    {#                                 xmlns="http://www.w3.org/2000/svg">#}
-                    {#                                <path fill-rule="evenodd"#}
-                    {#                                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"#}
-                    {#                                      clip-rule="evenodd"></path>#}
-                    {#                            </svg>#}
-                    {#                        </button>#}
+                    <li>
+                        <a href="/dns"
+                           class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'dns' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
+                            <svg class="w-6 h-6 text-gray-800 dark:text-white"
+                                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="1.2" d="M20 20h10v2H20zm0 4h6v2h-6z"></path>
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="1.9"
+                                      d="M30 17v-1a13.987 13.987 0 1 0-10.77 13.625l-.46-1.946A12.042 12.042 0 0 1 16 28c-.19 0-.375-.019-.563-.027A20.304 20.304 0 0 1 12.026 17Zm-2.042-2h-5.983a24.284 24.284 0 0 0-2.774-10.559A12.023 12.023 0 0 1 27.96 15ZM16.564 4.027A20.304 20.304 0 0 1 19.974 15h-7.948a20.304 20.304 0 0 1 3.411-10.973C15.625 4.02 15.81 4 16 4s.375.019.563.027Zm-3.764.414A24.284 24.284 0 0 0 10.025 15H4.04A12.023 12.023 0 0 1 12.8 4.441Zm0 23.118A12.023 12.023 0 0 1 4.042 17h5.983a24.284 24.284 0 0 0 2.774 10.559Z"></path>
+                            </svg>
+                            <span class="ml-3" sidebar-toggle-item>DNS Manager</span>
+                        </a>
+                    </li>
 
-                    {#                        <ul id="dropdown-dashboard"#}
-                    {#                            class="py-2 space-y-2 block {% if 'apps' not in segment %} hidden {% endif %}">#}
-                    {#                            <li>#}
-                    {#                                <a href="/my-apps"#}
-                    {#                                   class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 {% if 'my-apps' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">My#}
-                    {#                                    Apps</a>#}
-                    {#                            </li>#}
-                    {#                            <li>#}
-                    {#                                <a href="/marketplace"#}
-                    {#                                   class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 {% if 'marketplace' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">Marketplace</a>#}
-                    {#                            </li>#}
-                    {#                        </ul>#}
-                    {#                    </li>#}
+                    <li>
+                        <button type="button"
+                                class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700
+                                                {% if 'apps' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}"
+                                data-collapse-toggle="dropdown-dashboard">
+
+                            <svg class="w-6 h-6 text-gray-800 dark:text-white" xmlns="http://www.w3.org/2000/svg"
+                                 viewBox="0 0 24 24"
+                                 fill="none" stroke="#000" stroke-width="2">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M14 17.5c0-1.404 0-2.107.337-2.611a2 2 0 0 1 .552-.552C15.393 14 16.096 14 17.5 14h0 0c1.404 0 2.107 0 2.611.337a2 2 0 0 1 .552.552C21 15.393 21 16.096 21 17.5h0 0c0 1.404 0 2.107-.337 2.611a2 2 0 0 1-.552.552C19.607 21 18.905 21 17.5 21h0 0c-1.404 0-2.107 0-2.611-.337a2 2 0 0 1-.552-.552C14 19.607 14 18.905 14 17.5h0 0zm-11 0c0-1.404 0-2.107.337-2.611a2 2 0 0 1 .552-.552C4.393 14 5.096 14 6.5 14h0 0c1.404 0 2.107 0 2.611.337a2 2 0 0 1 .552.552C10 15.393 10 16.096 10 17.5h0 0c0 1.404 0 2.107-.337 2.611a2 2 0 0 1-.552.552C8.607 21 7.904 21 6.5 21h0 0c-1.404 0-2.107 0-2.611-.337a2 2 0 0 1-.552-.552C3 19.607 3 18.905 3 17.5h0 0zm0-11c0-1.404 0-2.107.337-2.611a2 2 0 0 1 .552-.552C4.393 3 5.096 3 6.5 3h0 0c1.404 0 2.107 0 2.611.337a2 2 0 0 1 .552.552C10 4.393 10 5.096 10 6.5h0 0c0 1.404 0 2.107-.337 2.611a2 2 0 0 1-.552.552C8.607 10 7.904 10 6.5 10h0 0c-1.404 0-2.107 0-2.611-.337a2 2 0 0 1-.552-.552C3 8.607 3 7.904 3 6.5h0 0z"></path>
+                                <g stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                          stroke-width="2" d="M14 6.5h7"></path>
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                          stroke-width="2" d="M17.5 3v7"></path>
+                                </g>
+                            </svg>
+
+                            <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Apps</span>
+
+                            <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd"
+                                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                      clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+
+                        <ul id="dropdown-dashboard"
+                            class="py-2 space-y-2 block {% if 'apps' not in segment %} hidden {% endif %}">
+                            <li>
+                                <a href="/my-apps"
+                                   class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 {% if 'my-apps' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">My
+                                    Apps</a>
+                            </li>
+                            <li>
+                                <a href="/marketplace"
+                                   class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 {% if 'marketplace' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">Marketplace</a>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
-
-                {#                {% if request.user.is_authenticated %}#}
-                {#                    {% if request.user.is_superuser %}#}
-                {#                        <div class="pt-2 space-y-2">#}
-                {#                            <a href="/admin" target="_blank"#}
-                {#                               class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700">#}
-                {#                                <svg class="w-6 h-6 text-gray-500 dark:text-white"#}
-                {#                                     xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">#}
-                {#                                    <path#}
-                {#                                            d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z"></path>#}
-                {#                                </svg>#}
-                {#                                <span class="ml-3" sidebar-toggle-item>Users</span>#}
-                {#                            </a>#}
-                {#                        </div>#}
-                {#                    {% endif %}#}
-                {#                {% endif %}#}
+            
             </div>
         </div>
     </div>

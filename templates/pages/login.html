@@ -3,18 +3,18 @@
 
 {% block title %}Log In{% endblock title %}
 
-{% block header %}{% endblock header %}
+{% block navbar %}{% endblock navbar %}
 
 {% block content %}
     <div class="flex flex-col items-center justify-center px-6 mx-auto h-screen dark:bg-gray-900">
-        <div class="flex items-center justify-center text-2xl font-semibold mb-5 mt-2 dark:text-white">
+        <a href="/" class="flex items-center justify-center text-2xl font-semibold mb-5 mt-2 dark:text-white">
             <img src="{% static 'common/icon.png' %}" class="mr-4 h-11" alt="Osiris Cloud Logo">
             <span>Osiris Cloud</span>
-        </div>
+        </a>
         <p class="text-white">Login for EAP members only</p>
         <div class="w-full max-w-xl sm:p-8">
             <div class="mt-2 flex items-center justify-center">
-                <a href="/login/nyu" class="text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100
+                <a href="/login/nyu" class="text-gray-900 bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-100
                 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 me-2 mb-2 w-32">
                     <img src="https://blob.osiriscloud.io/nyu-logo.jpg" class="w-4 h-4 me-2"
                          alt="NYU Logo">
@@ -22,7 +22,7 @@
                 </a>
 
                 <a href="/login/github"
-                   class="text-gray-900 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100
+                   class="text-gray-900 bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-100
                 font-medium rounded-lg text-sm px-5 py-2.5 text-center justify-center inline-flex items-center dark:focus:ring-gray-500 me-2 mb-2 w-32">
                     <svg class="w-4 h-4 me-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
                          fill="currentColor" viewBox="0 0 20 20">
@@ -36,3 +36,5 @@
         </div>
     </div>
 {% endblock content %}
+
+{% block footer %}{% endblock footer %}

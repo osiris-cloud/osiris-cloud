@@ -3,52 +3,72 @@
 
 {% block title %}Osiris Cloud - Enterprise Infrastructure Systems{% endblock title %}
 
+{% block top_import %}
+    <link rel="stylesheet" href="{% static 'home/style.css' %}">
+{% endblock top_import %}
+
 {% block content %}
-    
-    <style>
-        .bg-gradient1 {
-            background: linear-gradient(to right, rgba(0, 255, 255, 0.86), rgba(255, 255, 0, 0.85));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.classList.add('visible');
+                            observer.unobserve(entry.target);
+                        }, 300);
+                    }
+                });
+            }, observerOptions);
 
-        .bg-gradient2 {
-            background: linear-gradient(to right, #4080f8 0%, #e5915c 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+            document.querySelectorAll('.fade-top, .fade-right, .fade-left').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
 
-        #main-hero {
-            width: 100%;
-            background: url('https://blob.osiriscloud.io/cloud-bg.webp') no-repeat;
-            background-size: cover;
-            height: fit-content;
-        }
-    </style>
-    
-    <section id="main-hero" class="bg-white py-8 dark:bg-gray-900">
+    <section id="main-hero" class="bg-white py-8 dark:bg-gray-900 ml-2">
         <div class="grid max-w-screen-xl px-4 py-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:grid-cols-12">
             <div class="mr-auto place-self-center lg:col-span-7">
-                <h1 class="max-w-2xl mb-3 mr-2.5 text-4xl text-white font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block dark:text-white bg-gradient1">
+                <h1 class="max-w-2xl mb-3 mr-2.5 text-4xl text-white font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block bg-gradient1">
                     Infrastructure
                 </h1>
-                <h1 class="max-w-2xl mb-3 text-4xl text-gray-100 font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block dark:text-gray-100">
+                <h1 class="max-w-2xl mb-3 text-4xl text-gray-100 font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block">
                     for
                 </h1>
-                <h1 class="max-w-2xl mb-5 text-4xl text-white font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl dark:text-white bg-gradient2">
-                    the better web
+                <br/>
+                <h1 class="max-w-2xl mb-5 text-4xl text-gray-100 font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block">
+                    the
+                </h1>
+                <h1 class="max-w-2xl mb-5 ml-2.5 text-4xl text-white font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block bg-gradient2">
+                    better
+                </h1>
+                <h1 class="max-w-2xl mb-5 ml-2.5 text-4xl text-white font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block">
+                    web
                 </h1>
 
                 <p class="max-w-2xl mb-6 font-light text-gray-400 lg:mb-8 md:text-lg lg:text-xl">
-                    Dev-centric, self-hosted and automated cloud</p>
+                    Dev-centric, secure and open-source cloud</p>
+
                 <a href="https://forms.office.com/r/bauDGf8CEM" target="_blank"
-                   class="inline-flex items-center justify-center px-5 py-3 text-base text-white font-medium text-center border rounded-lg
-               hover:border-lime-500">
-                    Request Early Access
+                   class="relative inline-flex items-center justify-center px-6 py-3 text-base font-medium text-center 
+                   text-gray-50 hover:no-underline group"
+                >
+                    <span class="relative z-10">Request Early Access</span>
+                    <span class="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-lime-500 transition-all duration-500 ease-in-out group-hover:w-full group-hover:h-full"></span>
+                    <span class="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-lime-500 transition-all duration-500 ease-in-out group-hover:w-full group-hover:h-full"></span>
+                    <span class="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-lime-500 transition-all duration-500 ease-in-out group-hover:w-full group-hover:h-full"></span>
+                    <span class="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-lime-500 transition-all duration-500 ease-in-out group-hover:w-full group-hover:h-full"></span>
                 </a>
             </div>
         </div>
     </section>
+
 
     <section class="bg-white dark:bg-gray-900">
         <div class="py-8 px-4 mx-auto max-w-screen-xl sm:py-16 lg:px-6">
@@ -56,10 +76,11 @@
                 <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">Designed by
                     Developers, for Developers</h2>
                 <p class="text-gray-500 sm:text-xl dark:text-gray-400">
-                    Osiris Cloud combines the industrial strength of Kubernetes with the reliability of enterprise-grade
-                    infrastructure software to deliver a robust, scalable, and secure cloud environment</p>
+                    Osiris Cloud combines the industrial strength of Kubernetes with the reliability of enterprise-class
+                    infrastructure software to deliver robust, scalable, and secure cloud environment
+                </p>
             </div>
-            <div class="space-y-8 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-12 md:space-y-0">
+            <div class="space-y-8 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-12 md:space-y-0 fade-top">
                 <div>
                     <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-900">
                         <svg class="w-6 h-6 text-gray-800 dark:text-white"
@@ -72,9 +93,9 @@
                         </svg>
                     </div>
                     <h3 class="mb-2 text-xl font-bold dark:text-white">Easy to Use</h3>
-                    <p class="text-gray-500 dark:text-gray-400">Plan it, code it, launch it. Get your app out to the
-                        world
-                        faster with a few clicks, with worry free auto-scaling</p>
+                    <p class="text-gray-500 text-justify dark:text-gray-400">Plan it, code it, launch it. Get your app
+                        out to the world faster with a few clicks, with worry free auto-scaling
+                    </p>
                 </div>
 
                 <div>
@@ -88,9 +109,9 @@
 
                     </div>
                     <h3 class="mb-2 text-xl font-bold dark:text-white">DevOps Ready</h3>
-                    <p class="text-gray-500 dark:text-gray-400">Each project update gets deployed separately, enabling
-                        version
-                        validation and rolling updates</p>
+                    <p class="text-gray-500 text-justify dark:text-gray-400">Each project update gets deployed
+                        separately, enabling version validation and rolling updates
+                    </p>
                 </div>
 
                 <div>
@@ -105,9 +126,9 @@
                         </svg>
                     </div>
                     <h3 class="mb-2 text-xl font-bold dark:text-white">Native Security Tools</h3>
-                    <p class="text-gray-500 dark:text-gray-400">Use tools on the platform to assess your deployment from
-                        code push to
-                        runtime error assessment</p>
+                    <p class="text-gray-500 text-justify dark:text-gray-400">Use tools on the platform to assess your
+                        deployment from static code analysis to runtime error assessment
+                    </p>
                 </div>
                 <div>
                     <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-900">
@@ -121,9 +142,10 @@
                         </svg>
 
                     </div>
-                    <h3 class="mb-2 text-xl font-bold dark:text-white">Customizable</h3>
-                    <p class="text-gray-500 dark:text-gray-400">The platform is built with extensibility and versatility
-                        in mind</p>
+                    <h3 class="mb-2 text-xl font-bold dark:text-white">Limitless Automation</h3>
+                    <p class="text-gray-500 text-justify dark:text-gray-400">APIs lets you customize every aspect of
+                        your Cloud, giving you full control over your cloud
+                    </p>
                 </div>
                 <div>
                     <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-900">
@@ -133,8 +155,9 @@
                         </svg>
                     </div>
                     <h3 class="mb-2 text-xl font-bold dark:text-white">Enterprise Ready</h3>
-                    <p class="text-gray-500 dark:text-gray-400">The platform is built to support everything from home
-                        lab to datacenter</p>
+                    <p class="text-gray-500 text-justify dark:text-gray-400">The platform is built to power small scale
+                        home
+                        labs to large scale datacenters</p>
                 </div>
                 <div>
                     <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-900">
@@ -144,53 +167,178 @@
                                   d="M16 19h4a1 1 0 0 0 1-1v-1a3 3 0 0 0-3-3h-2m-2.236-4a3 3 0 1 0 0-4M3 18v-1a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Zm8-10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z">
                             </path>
                         </svg>
-
                     </div>
                     <h3 class="mb-2 text-xl font-bold dark:text-white">Open Source</h3>
-                    <p class="text-gray-500 dark:text-gray-400">Our open model allows us to create transparent yet
-                        secure software. We build tomorrow together</p>
+                    <p class="text-gray-500 text-justify dark:text-gray-400">Our open model allows us to create the next
+                        generation of advanced software with the community</p>
                 </div>
             </div>
         </div>
     </section>
 
+
+    <section class="bg-white dark:bg-gray-900">
+        <div class="gap-6 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-16 lg:px-6">
+            <div class="mt-4 md:mt-0 fade-left">
+                <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">
+                    Secure Platform, Secure Data
+                </h2>
+                <p class="mb-6 max-w-[28em] text-justify font-light text-gray-500 md:text-lg dark:text-gray-400">
+                    Osiris cloud is built with security in mind. Every workload runs in a sandbox, lowering the attack
+                    surface for an intruder
+                </p>
+            </div>
+            <img class="w-full hidden dark:block"
+                 src="{% static '/images/oc_arch.png' %}"
+                 alt="Architecture">
+        </div>
+    </section>
+
+
     <section class="bg-white dark:bg-gray-900">
         <div class="gap-8 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-16 lg:px-6">
-            <img class="w-full hidden dark:block"
-                 src="{% static 'home/server.webp' %}"
+            <img class="w-full hidden dark:block rounded"
+                 src="{% static 'images/obs_demo.png' %}"
                  alt="dashboard image">
-            <div class="mt-4 md:mt-0">
-                <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">Making open source
-                    cloud accessible to developers</h2>
-                <p class="mb-6 font-light text-gray-500 md:text-lg dark:text-gray-400">Osiris cloud is built to improve
-                    infrastructure experience and to provide tools to make the cyberspace secure and accessible for
-                    everyone</p>
+            <div class="mt-4 md:mt-0 fade-right">
+                <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">Greater
+                    Observability, Greater Security</h2>
+                <p class="mb-6 max-w-[28em] text-justify font-light text-gray-500 md:text-lg dark:text-gray-400">
+                    Advanced runtime analysis detects crashes and suspicious behaviour, so you can fix bugs
+                    the earliest
+                </p>
             </div>
         </div>
     </section>
 
+
+    <section class="bg-white dark:bg-gray-900">
+        <div class="gap-6 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-16 lg:px-6">
+            <div class="mt-4 md:mt-0 fade-left">
+                <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">
+                    Everything You Need, In One Place
+                </h2>
+                <p class="mb-6 max-w-[30em] font-light text-gray-500 md:text-lg dark:text-gray-400">
+                    Deliver great experiences fast - without the complexity of traditional on-prem solutions.
+                    Accelerate critical development work, and deploy with ease
+                </p>
+
+                <ul class="grid grid-cols-1 mt-8 sm:grid-cols-2 gap-x-4 gap-y-3">
+                    <li class="flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        <span class="text-base font-normal text-gray-500 dark:text-gray-400">Templating</span>
+                    </li>
+
+                    <li class="flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        <span class="text-base font-normal text-gray-500 dark:text-gray-400">Resource Sharing</span>
+                    </li>
+                    
+                    <li class="flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        <span class="text-base font-normal text-gray-500 dark:text-gray-400">Limit Allocation</span>
+                    </li>
+
+                    <li class="flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        <span class="text-base font-normal text-gray-500 dark:text-gray-400">IAM</span>
+                    </li>
+                </ul>
+            </div>
+
+
+            <div id="default-carousel" class="relative w-full" data-carousel="slide">
+                <!-- Carousel wrapper -->
+                <div class="relative h-56 overflow-hidden rounded-lg md:h-96">
+                    <div class="duration-700 ease-in-out rounded-lg" data-carousel-item>
+                        <img src="{% static 'images/vm_create.png' %}"
+                             class="absolute rounded-lg block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
+                             alt="">
+                    </div>
+                    <div class="duration-700 ease-in-out rounded-lg" data-carousel-item>
+                        <img src="{% static 'images/ns_share.png' %}"
+                             class="absolute rounded-lg block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
+                             alt="">
+                    </div>
+                </div>
+                <div class="absolute z-30 flex space-x-3 -translate-x-1/2 bottom-5 left-1/2">
+                    <button type="button" class="w-3 h-3 rounded-full" aria-current="true" aria-label="Slide 1"
+                            data-carousel-slide-to="0"></button>
+                    <button type="button" class="w-3 h-3 rounded-full" aria-current="false" aria-label="Slide 2"
+                            data-carousel-slide-to="1"></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
     <section class="bg-white dark:bg-gray-900">
         <div class="py-8 px-4 mx-auto max-w-screen-xl sm:py-16 lg:px-6">
-            <div class="mx-auto max-w-screen-sm text-center">
-                <h2 class="mb-4 text-4xl tracking-tight font-extrabold leading-tight text-gray-900 dark:text-white">
-                    Start building today</h2>
-                <p class="mb-6 font-light text-gray-500 dark:text-gray-400 md:text-lg">Project is under development.
-                    Contact us to check it out early</p>
+            <div class="grid gap-8 lg:grid-cols-2">
+                <a href="/architecture"
+                   class="inline-flex justify-center items-center p-5 text-base font-medium text-gray-500 bg-gray-50 rounded-lg hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white">
+                    <svg class="w-6 h-6 text-lime-400 mr-3" aria-hidden="true"
+                         xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9.143 4H4.857A.857.857 0 0 0 4 4.857v4.286c0 .473.384.857.857.857h4.286A.857.857 0 0 0 10 9.143V4.857A.857.857 0 0 0 9.143 4Zm10 0h-4.286a.857.857 0 0 0-.857.857v4.286c0 .473.384.857.857.857h4.286A.857.857 0 0 0 20 9.143V4.857A.857.857 0 0 0 19.143 4Zm-10 10H4.857a.857.857 0 0 0-.857.857v4.286c0 .473.384.857.857.857h4.286a.857.857 0 0 0 .857-.857v-4.286A.857.857 0 0 0 9.143 14Zm10 0h-4.286a.857.857 0 0 0-.857.857v4.286c0 .473.384.857.857.857h4.286a.857.857 0 0 0 .857-.857v-4.286a.857.857 0 0 0-.857-.857Z"></path>
+                    </svg>
 
-                <a href="https://forms.office.com/r/bauDGf8CEM" target="_blank"
-                   class="inline-flex items-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:focus:ring-primary-900">
-                    Get started
-                    <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+                    <span class="w-full">Learn about the Osiris Cloud architecture</span>
+                    <svg class="ml-3 w-6 h-6" fill="currentColor" viewBox="0 0 20 20"
                          xmlns="http://www.w3.org/2000/svg">
                         <path fill-rule="evenodd"
-                              d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                              d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
                               clip-rule="evenodd">
                         </path>
                     </svg>
                 </a>
 
+                <a href="/observability"
+                   class="inline-flex justify-center items-center p-4 text-base font-medium text-gray-500 bg-gray-50 rounded-lg hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white">
+                    <svg class="mr-3 w-8 h-8 text-blue-600" aria-hidden="true"
+                         xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-width="2"
+                              d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z">
+                        </path>
+                        <path stroke="currentColor" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z">
+                        </path>
+                    </svg>
+
+                    <span class="w-full">Read how observability can help you patch bugs faster</span>
+                    <svg class="ml-3 w-6 h-6" fill="currentColor" viewBox="0 0 20 20"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd"
+                              d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+                              clip-rule="evenodd">
+                        </path>
+                    </svg>
+                </a>
             </div>
         </div>
     </section>
-    
+
 {% endblock content %}

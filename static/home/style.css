@@ -1,0 +1,77 @@
+.bg-gradient1 {
+    background: linear-gradient(to right, rgba(0, 255, 102, 0.86), rgba(255, 255, 0, 0.85));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: fadeInTop 1s ease-out forwards;
+}
+
+.bg-gradient2 {
+    background: linear-gradient(to right, #d9f131 0%, #5b8be8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: fadeInTop 1s ease-out forwards;
+}
+
+#main-hero {
+    width: 100%;
+    background: url('https://blob.osiriscloud.io/wave-hero.svg') no-repeat;
+    background-size: cover;
+    height: fit-content;
+}
+
+@keyframes fadeInTop {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.fade-top {
+    opacity: 0;
+}
+
+.fade-right {
+    opacity: 0;
+}
+
+.fade-left {
+    opacity: 0;
+}
+
+.fade-top.visible {
+    animation: fadeInTop 1s ease-out forwards;
+}
+
+.fade-right.visible {
+    animation: fadeInRight 1s ease-out forwards;
+}
+
+.fade-left.visible {
+    animation: fadeInLeft 1s ease-out forwards;
+}

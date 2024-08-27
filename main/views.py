@@ -15,11 +15,23 @@ def about(request):
     return render(request, "pages/about.html")
 
 
+def architecture(request):
+    return render(request, "pages/architecture.html")
+
+
+def observability(request):
+    return render(request, "pages/observability.html")
+
+
+def privacy(request):
+    return render(request, "pages/privacy.html")
+
+
 @login_required
 def dashboard(request):
     context = {
         'segment': ['dashboard'],
-        'ver': '1.0',
+        'ver': '0.1',
     }
     return render(request, "dashboard/app.html", context)
 
