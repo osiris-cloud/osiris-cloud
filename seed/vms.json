@@ -1,0 +1,29 @@
+[
+    {
+        "name": "VM1",
+        "k8s_name": "k8s-vm1",
+        "cpu": 2,
+        "memory": 4,
+        "disk_id": 1,
+        "owner_id": 1,
+        "namespace_id": 1
+    },
+    {
+        "name": "VM2",
+        "k8s_name": "k8s-vm2",
+        "cpu": 2,
+        "memory": 4,
+        "disk_id": 2,
+        "owner_id": 1,
+        "namespace_id": 1
+    },
+    {
+        "name": "VM3",
+        "k8s_name": "k8s-vm3",
+        "cpu": 4,
+        "memory": 4,
+        "disk_id": 3,
+        "owner_id": 3,
+        "namespace_id": 3
+    }
+]
