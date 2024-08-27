@@ -152,6 +152,6 @@ def delete_owner_resources(user_obj):
     # TODO: Handle actual resource deletion
     return True
 
-def delete_namespace_resources(user_obj):
+def delete_namespace_resources(namespace_obj):
     # TODO: Handle actual resource deletion
     return True

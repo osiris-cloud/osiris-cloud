@@ -10,7 +10,7 @@ from .models import User, Limit
 from ..k8s.models import PVC, Namespace, NamespaceRoles
 from ..vm.models import VM
 from ..oauth.models import NYUUser
-from ..users.utils import sanitize_nsid, validate_ns_creation, validate_ns_update, validate_user_update, delete_owner_resources
+from ..users.utils import delete_namespace_resources, sanitize_nsid, validate_ns_creation, validate_ns_update, validate_user_update, delete_owner_resources
 
 
 def get_user_default_ns(user: User) -> Namespace:
@@ -134,7 +134,18 @@ def namespace(request, nsid=None):
                 if not ns or ns.owner != request.user:
                     return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
                 
-                ns.delete()
+                # If the namespace is set as default, user has to set another namespace as default before deleting
+                if ns.default:
+                    return JsonResponse(error_message('Cannot delete default namespace'))
+
+                if delete_namespace_resources(ns):
+                    try:
+                        with transaction.atomic():
+                            ns.delete()
+                    except Exception as e:
+                        return JsonResponse(error_message('Failed to delete namespace'))
+                else:
+                    return JsonResponse(error_message('Failed to delete namespace resources'))
 
                 return JsonResponse(success_message('Delete namespace', {'nsid': ns_nsid}))
 
@@ -198,6 +209,10 @@ def namespace(request, nsid=None):
                             
                             if new_owner_obj == ns.owner:
                                 raise ValueError('User is already the owner of the namespace')
+                            
+                            # TODO: 
+                            # Compare allocated resources with new owner's limit
+                            # Implement logic for user consent to take ownership
                             
                             # Remove the current owner role
                             NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
@@ -363,13 +378,7 @@ def user(request, username=None):
                             namespace_ids = NamespaceRoles.objects.filter(user=user_obj, role='owner').values_list('namespace_id', flat=True)
 
                             for namespace_id in namespace_ids:
-                                PVC.objects.filter(namespace_id=namespace_id).delete()
-                                VM.objects.filter(namespace_id=namespace_id).delete()
-                                NamespaceRoles.objects.filter(namespace_id=namespace_id).delete()
                                 Namespace.objects.filter(id=namespace_id).delete()
-
-                            Limit.objects.filter(user=user_obj).delete()
-                            NYUUser.objects.filter(user=user_obj).delete()
                             user_obj.delete()
 
                             return JsonResponse(success_message('Delete user', {'username': username}))
