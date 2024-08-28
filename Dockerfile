@@ -37,7 +37,7 @@ RUN npm i
 RUN npm run build
 RUN npx tailwindcss -i ./static/assets/style.css -o ./static/dist/css/output.css
 
-doppler secrets download --no-file --format env > .env
+RUN doppler secrets download --no-file --format env > .env
 
 RUN python manage.py makemigrations
 RUN python manage.py manage.py migrate
