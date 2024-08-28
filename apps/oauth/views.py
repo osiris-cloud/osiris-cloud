@@ -71,6 +71,13 @@ def get_user_default_ns(user: User) -> Namespace:
     return user.namespaces.filter(role='owner').filter(namespace__default=True).first().namespace
 
 
+def prevent_login(request, name):
+    context = {
+        'name': name
+    }
+    return render(request, "401.html", context)
+
+
 def nyu_callback(request):
     try:
         user_info = nyu_oauth.nyu.authorize_access_token(request)
@@ -83,6 +90,9 @@ def nyu_callback(request):
         # if user does not exist, we create a new account, and give them user role for now
         else:
             user_info = user_info['userinfo']
+
+            prevent_login(request, f"{user_info['firstname']} {user_info['lastname']}")
+
             user = User.objects.create_user(
                 username=user_info['sub'],
                 first_name=user_info['firstname'],
