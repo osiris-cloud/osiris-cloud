@@ -15,11 +15,9 @@ from urllib.parse import urlparse
 
 import logging
 
-load_dotenv(override=True if os.environ.get('DEBUG') is None else False)
+load_dotenv()
 
 DEBUG = str2bool(os.environ.get('DEBUG'))
-if DEBUG is None:
-    DEBUG = True
 
 print(f'# DEBUG MODE -> {DEBUG}')
 
