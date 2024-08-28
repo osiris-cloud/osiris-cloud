@@ -173,7 +173,7 @@ DB_PORT = os.getenv('DB_PORT')
 DB_NAME = os.getenv('DB_NAME')
 
 DATABASE_CONNECTION_POOLING = False
-if DEBUG == False:
+if False:
     DATABASES = {
         'default': {
             'ENGINE': 'mssql',
