@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  osiris-cloud:
+    container_name: osiris-cloud
+    restart: no
+    build:
+      context: .
+    volumes:
+      - ./db.sqlite3:/db.sqlite3
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.request.rule=Host(`osiriscloud.io`)"
+      - "traefik.http.routers.request.tls=true"
+      - "traefik.http.routers.request.tls.certresolver=tls"
+      - "traefik.http.services.request.loadbalancer.server.port=8000"
+
+networks:
+  traefik:
+    external: true

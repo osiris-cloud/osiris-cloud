@@ -37,6 +37,9 @@ RUN npm i
 RUN npm run build
 RUN npx tailwindcss -i ./static/assets/style.css -o ./static/dist/css/output.css
 
+RUN python manage.py makemigrations
+RUN python manage.py manage.py migrate
+
 # Manage Assets & DB
 RUN python manage.py collectstatic --no-input
 

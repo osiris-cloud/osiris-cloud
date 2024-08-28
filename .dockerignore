@@ -16,5 +16,3 @@ Makefile
 make.ps1
 _testing
 
-db.sqlite3
-db-orig.sqlite3
