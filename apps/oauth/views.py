@@ -72,6 +72,7 @@ def get_user_default_ns(user: User) -> Namespace:
 
 
 def prevent_login(request, name):
+    logging.info(f'Login attempt by {name}')
     context = {
         'name': name
     }
