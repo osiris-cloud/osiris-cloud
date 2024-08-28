@@ -35,8 +35,5 @@ RUN python manage.py collectstatic --no-input
 # Expose the port Daphne will run on
 EXPOSE 8000
 
-# See if app works
-HEALTHCHECK --interval=10s --timeout=30s CMD curl -f http://localhost:8000/ || exit 1
-
 # Run Daphne
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "--proxy-headers", "core.asgi:application"]

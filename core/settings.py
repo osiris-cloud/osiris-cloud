@@ -37,10 +37,10 @@ if DEBUG == False:
 
 logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO)
 
-ALGOLIA = {
-    'APPLICATION_ID': os.environ.get('ALGOLIA_APP_ID'),
-    'API_KEY': os.environ.get('ALGOLIA_API_KEY'),
-}
+# ALGOLIA = {
+#     'APPLICATION_ID': os.environ.get('ALGOLIA_APP_ID'),
+#     'API_KEY': os.environ.get('ALGOLIA_API_KEY'),
+# }
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -97,7 +97,7 @@ INSTALLED_APPS = [
     "django_celery_results",
     'rest_framework',
     'rest_framework.authtoken',
-    "algoliasearch_django",
+    # "algoliasearch_django",
     "main",
     "apps.api",
     "apps.dns_manager",
