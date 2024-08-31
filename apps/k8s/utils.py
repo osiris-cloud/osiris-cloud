@@ -6,7 +6,7 @@ import uuid
 from copy import deepcopy
 
 from core.settings import env
-from core.utils import random_str
+from core.utils import random_str, error_message, success_message
 from django.utils import timezone
 
 from apps.users.models import User
@@ -344,3 +344,46 @@ def create_vm(spec: dict, user: User):
 
     with open("vm_template.yaml", 'w') as f:
         yaml.dump(vm_template, f)
+
+# api data validation
+def validate_secret_creation(secret_data: dict) -> tuple[bool, dict]:
+    """
+    Validate the data for creating a secret
+    Returns a tuple of (valid, message)
+    """
+
+    if secret_data is None:
+        return False, error_message('Missing data')
+    
+    # Validate name
+    secret_name = secret_data.get('name')
+    if not secret_name:
+        return False, error_message('Missing secret name')
+    if not isinstance(secret_name, str) or secret_name.strip() == '':
+        return False, error_message('Invalid or missing secret name')
+    
+    # Validate values
+    secret_values = secret_data.get('values')
+    if not secret_values:
+        return False, error_message('Missing secret values')
+    if not isinstance(secret_values, dict):
+        return False, error_message('Invalid secret values type')
+    
+    return True, success_message()
+
+def validate_secret_update(secret_data: dict) -> tuple[bool, dict]:
+    """
+    Validate the data for updating a secret
+    """
+
+    if secret_data is None:
+        return False, error_message('Missing data')
+    
+    # Validate values
+    secret_values = secret_data.get('values')
+    if not secret_values:
+        return False, error_message('Missing secret values')
+    if not isinstance(secret_values, dict):
+        return False, error_message('Invalid secret values type')
+    
+    return True, success_message()
