@@ -69,6 +69,15 @@ class Secret(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def info(self):
+        return {
+            'nsid': self.namespace.nsid,
+            'name': self.name,
+            'created_at': eastern_time(self.created_at),
+            'updated_at': eastern_time(self.updated_at),
+            'values': self.data
+        }
+    
     class Meta:
         db_table = 'ns_secrets'
 
