@@ -25,9 +25,9 @@ Sample Output:
 {
   "status": "success",
   "message": "Get secret",
-  "nsid": "fb123-ghn5",
   "secrets": [
     {
+      "nsid": "fb123-ghn5",
       "name": "powerdns",
       "created_at": "19:47:02, Wed 14 Aug 2024",
       "updated_at": "19:47:02, Wed 14 Aug 2024",
@@ -37,6 +37,7 @@ Sample Output:
       }
     },
     {
+      "nsid": "fb123-ghn5",
       "name": "myapp",
       "created_at": "19:48:12, Wed 14 Aug 2024",
       "updated_at": "19:48:12, Wed 14 Aug 2024",
