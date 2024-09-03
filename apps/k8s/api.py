@@ -28,15 +28,12 @@ def secret(request, nsid=None, secret_name=None):
             ns = Namespace.objects.filter(nsid=nsid).first()
 
         if not ns:
-            return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
+            return JsonResponse(error_message('Namespace not found or user does not have sufficient permission to access secrets'))
         
         match request.method:
             case 'GET':               
-                if request.user not in ns.get_users():
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
-
                 if ns.get_role(request.user) not in ['owner', 'manager']:
-                    return JsonResponse(error_message('Only the owner or a manager can access secrets'))
+                    return JsonResponse(error_message('Namespace not found or user does not have sufficient permission to access secrets'))
                 
                 if secret_name:
                     secret = Secret.objects.filter(namespace=ns, name=secret_name).first()
@@ -66,11 +63,8 @@ def secret(request, nsid=None, secret_name=None):
 
                 ns = Namespace.objects.filter(nsid=nsid).first()
 
-                if request.user not in ns.get_users():
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
-
                 if ns.get_role(request.user) not in ['owner', 'manager']:
-                    return JsonResponse(error_message('Only the owner or a manager can access secrets'))
+                    return JsonResponse(error_message('Namespace not found or user does not have sufficient permission to access secrets'))
 
                 secret = Secret.objects.filter(namespace=ns, name=new_secret_name).first()
                 if secret:
@@ -97,11 +91,8 @@ def secret(request, nsid=None, secret_name=None):
                 
                 secret_values = secret_data.get('values')
 
-                if request.user not in ns.get_users():
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
-
                 if ns.get_role(request.user) not in ['owner', 'manager']:
-                    return JsonResponse(error_message('Only the owner or a manager can access secrets'))
+                    return JsonResponse(error_message('Namespace not found or user does not have sufficient permission to access secrets'))
 
                 secret = Secret.objects.filter(namespace=ns, name=secret_name).first()
                 if not secret:
@@ -121,11 +112,8 @@ def secret(request, nsid=None, secret_name=None):
                 if not secret_name:
                     return JsonResponse(error_message('No secret name provided'))
 
-                if request.user not in ns.get_users():
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
-
                 if ns.get_role(request.user) not in ['owner', 'manager']:
-                    return JsonResponse(error_message('Only the owner or a manager can access secrets'))
+                    return JsonResponse(error_message('Namespace not found or user does not have sufficient permission to access secrets'))
 
                 secret = Secret.objects.filter(namespace=ns, name=secret_name).first()
                 if not secret:

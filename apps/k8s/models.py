@@ -23,7 +23,10 @@ class Namespace(models.Model):
         return self.users.all()
 
     def get_role(self, user):
-        return self.namespaceroles_set.filter(user=user).first().role
+        try:
+            return self.namespaceroles_set.filter(user=user).first().role
+        except:
+            return None
 
     def get_users_info(self):
         u_info = lambda u: {
