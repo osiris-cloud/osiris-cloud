@@ -1,31 +1,39 @@
-import ast
 import logging
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
 from django.db import transaction, IntegrityError
 from json import loads as json_loads
+from json import dumps as json_dumps
 
 from core.utils import success_message, error_message, random_str
 from .utils import validate_secret_creation, validate_secret_update
-from ..k8s.models import Namespace, Secret
+from ..k8s.models import Namespace, NamespaceRoles, Secret
+from ..users.models import User
+
+def get_user_default_ns(user: User) -> Namespace:
+    return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
 
 @csrf_exempt
 @api_view(['GET', 'POST', 'PATCH', 'DELETE'])
 def secret(request, nsid=None, secret_name=None):
     try:
-        match request.method:
-            case 'GET':
-                if not nsid:
-                    return JsonResponse(error_message('No namespace ID provided'))
-                
-                ns = Namespace.objects.filter(nsid=nsid).first()
+        if not nsid:
+            return JsonResponse(error_message('No namespace ID provided'))
+        
+        if nsid == 'default':
+            ns = get_user_default_ns(request.user)
+            nsid = ns.nsid
+        else:
+            ns = Namespace.objects.filter(nsid=nsid).first()
 
-                if not ns:
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
-                
+        if not ns:
+            return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
+        
+        match request.method:
+            case 'GET':               
                 if request.user not in ns.get_users():
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
+                    return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
 
                 if ns.get_role(request.user) not in ['owner', 'manager']:
                     return JsonResponse(error_message('Only the owner or a manager can access secrets'))
@@ -36,22 +44,17 @@ def secret(request, nsid=None, secret_name=None):
                         return JsonResponse(error_message('Secret not found'))
                     
                     secret_info = secret.info()
-                    secret_info['values'] = ast.literal_eval(secret_info['values'])  # Convert str to dict
-                    return JsonResponse(success_message('Get secret', {'secret': secret_info}))
+                    return JsonResponse(success_message('Get secret', {'nsid': nsid, 'secret': secret_info}))
                 else:
                     result = []
                     secrets = Secret.objects.filter(namespace=ns)
                     for secret in secrets:
                         secret_info = secret.info()
-                        secret_info['values'] = ast.literal_eval(secret_info['values'])  # Convert str to dict
                         result.append(secret_info)
 
-                    return JsonResponse(success_message('Get secrets', {'secrets': result}))
+                    return JsonResponse(success_message('Get secrets', {'nsid': nsid, 'secrets': result}))
 
             case 'POST':
-                if not nsid:
-                    return JsonResponse(error_message('No namespace ID provided'))
-                
                 secret_data = json_loads(request.body)
                 valid, resp = validate_secret_creation(secret_data)
 
@@ -62,13 +65,9 @@ def secret(request, nsid=None, secret_name=None):
                 secret_values = secret_data.get('values')
 
                 ns = Namespace.objects.filter(nsid=nsid).first()
-                
-                # If user is not owner or manager of namespace, return error
-                if not ns:
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
 
                 if request.user not in ns.get_users():
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
+                    return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
 
                 if ns.get_role(request.user) not in ['owner', 'manager']:
                     return JsonResponse(error_message('Only the owner or a manager can access secrets'))
@@ -78,18 +77,15 @@ def secret(request, nsid=None, secret_name=None):
                     return JsonResponse(error_message('Secret already exists'))
                 
                 try:
-                    with transaction.atomic():
-                        secret = Secret.objects.create(namespace=ns, name=new_secret_name, data=secret_values)
+                    secret_values_json = json_dumps(secret_values)  # Convert to JSON string
+                    secret = Secret.objects.create(namespace=ns, name=new_secret_name, data=secret_values_json)
+                except Exception as e:
+                    logging.error(str(e))
+                    return JsonResponse(error_message('Failed to create secret'))          
 
-                except IntegrityError:
-                    return JsonResponse(error_message(str(e)))          
-
-                return JsonResponse(success_message('Create Secret', secret.info()))
+                return JsonResponse(success_message('Create Secret', {'nsid': nsid, 'secret': secret.info()}))
             
             case 'PATCH':
-                if not nsid:
-                    return JsonResponse(error_message('No namespace ID provided'))
-                
                 if not secret_name:
                     return JsonResponse(error_message('No secret name provided'))
                 
@@ -101,13 +97,8 @@ def secret(request, nsid=None, secret_name=None):
                 
                 secret_values = secret_data.get('values')
 
-                ns = Namespace.objects.filter(nsid=nsid).first()
-                
-                if not ns:
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
-
                 if request.user not in ns.get_users():
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
+                    return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
 
                 if ns.get_role(request.user) not in ['owner', 'manager']:
                     return JsonResponse(error_message('Only the owner or a manager can access secrets'))
@@ -117,28 +108,21 @@ def secret(request, nsid=None, secret_name=None):
                     return JsonResponse(error_message('Secret not found'))
                 
                 try:
-                    with transaction.atomic():
-                        secret.data = secret_values
-                        secret.save()
-                except IntegrityError:
-                    return JsonResponse(error_message(str(e)))          
+                    secret_values_json = json_dumps(secret_values)  # Convert to JSON string
+                    secret.data = secret_values_json
+                    secret.save()
+                except Exception as e:
+                    logging.error(str(e))
+                    return JsonResponse(error_message('Failed to update secret'))          
 
-                return JsonResponse(success_message('Update Secret', secret.info()))
+                return JsonResponse(success_message('Update Secret', {'nsid': nsid, 'secret': secret.info()}))
             
             case "DELETE":
-                if not nsid:
-                    return JsonResponse(error_message('No namespace ID provided'))
-                
                 if not secret_name:
                     return JsonResponse(error_message('No secret name provided'))
-                
-                ns = Namespace.objects.filter(nsid=nsid).first()
-                
-                if not ns:
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
 
                 if request.user not in ns.get_users():
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
+                    return JsonResponse(error_message('Namespace not found or user does not have permission to access this namespace'))
 
                 if ns.get_role(request.user) not in ['owner', 'manager']:
                     return JsonResponse(error_message('Only the owner or a manager can access secrets'))
@@ -148,10 +132,10 @@ def secret(request, nsid=None, secret_name=None):
                     return JsonResponse(error_message('Secret not found'))
                 
                 try:
-                    with transaction.atomic():
-                        secret.delete()
-                except IntegrityError:
-                    return JsonResponse(error_message(str(e)))          
+                    secret.delete()
+                except Exception as e:
+                    logging.error(str(e))
+                    return JsonResponse(error_message('Failed to delete secret'))          
 
                 return JsonResponse(success_message('Delete Secret', {'name': secret_name}))
             

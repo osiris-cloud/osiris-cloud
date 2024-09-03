@@ -4,6 +4,7 @@ from encrypted_model_fields.fields import EncryptedTextField
 from ..users.models import User
 from core.utils import eastern_time
 from core.utils import random_str
+from json import loads as json_loads
 
 
 class Namespace(models.Model):
@@ -71,11 +72,10 @@ class Secret(models.Model):
 
     def info(self):
         return {
-            'nsid': self.namespace.nsid,
             'name': self.name,
             'created_at': eastern_time(self.created_at),
             'updated_at': eastern_time(self.updated_at),
-            'values': self.data
+            'values': json_loads(self.data) if isinstance(self.data, str) else self.data
         }
     
     class Meta:

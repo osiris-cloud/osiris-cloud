@@ -346,6 +346,14 @@ def create_vm(spec: dict, user: User):
         yaml.dump(vm_template, f)
 
 # api data validation
+def validate_dict(d):
+    if not isinstance(d, dict):
+        return False
+    for key, value in d.items():
+        if not isinstance(value, str):
+            return False
+    return True
+
 def validate_secret_creation(secret_data: dict) -> tuple[bool, dict]:
     """
     Validate the data for creating a secret
@@ -366,10 +374,10 @@ def validate_secret_creation(secret_data: dict) -> tuple[bool, dict]:
     secret_values = secret_data.get('values')
     if not secret_values:
         return False, error_message('Missing secret values')
-    if not isinstance(secret_values, dict):
+    if not validate_dict(secret_values):
         return False, error_message('Invalid secret values type')
     
-    return True, success_message()
+    return True, success_message({})
 
 def validate_secret_update(secret_data: dict) -> tuple[bool, dict]:
     """
@@ -383,7 +391,7 @@ def validate_secret_update(secret_data: dict) -> tuple[bool, dict]:
     secret_values = secret_data.get('values')
     if not secret_values:
         return False, error_message('Missing secret values')
-    if not isinstance(secret_values, dict):
+    if not validate_dict(secret_values):
         return False, error_message('Invalid secret values type')
     
-    return True, success_message()
+    return True, success_message({})
