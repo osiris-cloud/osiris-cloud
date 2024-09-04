@@ -4,6 +4,7 @@ from encrypted_model_fields.fields import EncryptedTextField
 from ..users.models import User
 from core.utils import eastern_time
 from core.utils import random_str
+from json import loads as json_loads
 
 
 class Namespace(models.Model):
@@ -22,7 +23,10 @@ class Namespace(models.Model):
         return self.users.all()
 
     def get_role(self, user):
-        return self.namespaceroles_set.filter(user=user).first().role
+        try:
+            return self.namespaceroles_set.filter(user=user).first().role
+        except:
+            return None
 
     def get_users_info(self):
         u_info = lambda u: {
@@ -69,6 +73,14 @@ class Secret(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def info(self):
+        return {
+            'name': self.name,
+            'created_at': eastern_time(self.created_at),
+            'updated_at': eastern_time(self.updated_at),
+            'values': json_loads(self.data) if isinstance(self.data, str) else self.data
+        }
+    
     class Meta:
         db_table = 'ns_secrets'
 
