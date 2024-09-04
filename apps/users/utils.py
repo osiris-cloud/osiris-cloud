@@ -4,6 +4,14 @@ from core.utils import error_message, success_message
 
 VALID_NAME_CHARLIST = list(string.ascii_lowercase + string.digits + '_' + '-')
 
+def validate_dict(d):
+    if not isinstance(d, dict):
+        return False
+    for key, value in d.items():
+        if not isinstance(value, str):
+            return False
+    return True
+
 def validate_ns_creation(ns_data: dict) -> tuple[bool, dict]:
     """
     Validate the data for creating a namespace
@@ -22,8 +30,12 @@ def validate_ns_creation(ns_data: dict) -> tuple[bool, dict]:
     
     # Validate name
     ns_name = ns_data.get('name')
-    if not ns_name or not isinstance(ns_name, str) or ns_name.strip() == '':
-        return False, error_message('Invalid or missing namespace name')
+    if not ns_name:
+        return False, error_message('Missing namespace name')
+    if not isinstance(ns_name, str):
+        return False, error_message('Invalid namespace name type')
+    if ns_name.strip() == '':
+        return False, error_message('Namespace name cannot be empty')
 
     # Validate default
     ns_default = ns_data.get('default')
@@ -36,14 +48,18 @@ def validate_ns_creation(ns_data: dict) -> tuple[bool, dict]:
         if not isinstance(ns_users, list):
             return False, error_message('Invalid users type')
         for user in ns_users:
-            if not isinstance(user, dict):
+            if not validate_dict(user):
                 return False, error_message('Invalid user data type')
-            if 'username' not in user or not isinstance(user['username'], str):
+            if 'username' not in user:
+                return False, error_message('Missing user username')
+            if not isinstance(user['username'], str):
                 return False, error_message('Invalid user username type')
-            if 'role' not in user or user['role'] not in user_role_options:
+            if 'role' not in user:
+                return False, error_message('Missing user role')
+            if user['role'] not in user_role_options:
                 return False, error_message('Invalid user role')
 
-    return True, success_message()
+    return True, success_message({})
 
 def validate_ns_update(ns_data: dict, nsid: str) -> tuple[bool, dict]:
     """
@@ -66,7 +82,7 @@ def validate_ns_update(ns_data: dict, nsid: str) -> tuple[bool, dict]:
 
     ns_owner = ns_data.get('owner')
     if ns_owner is not None:
-        if not isinstance(ns_owner, dict):
+        if not validate_dict(ns_owner):
             return False, error_message('Invalid owner type')
         if 'username' not in ns_owner or not isinstance(ns_owner['username'], str):
             return False, error_message('Invalid owner username type')
@@ -76,14 +92,18 @@ def validate_ns_update(ns_data: dict, nsid: str) -> tuple[bool, dict]:
         if not isinstance(ns_users, list):
             return False, error_message('Invalid users type')
         for user in ns_users:
-            if not isinstance(user, dict):
+            if not validate_dict(user):
                 return False, error_message('Invalid user data type')
-            if 'username' not in user or not isinstance(user['username'], str):
+            if 'username' not in user:
+                return False, error_message('Missing user username')
+            if not isinstance(user['username'], str):
                 return False, error_message('Invalid user username type')
-            if 'role' not in user or user['role'] not in user_role_options:
+            if 'role' not in user:
+                return False, error_message('Missing user role')
+            if user['role'] not in user_role_options:
                 return False, error_message('Invalid user role')
             
-    return True, success_message()
+    return True, success_message({})
 
 def sanitize_nsid(nsid: str) -> str:
     # Replace one or more spaces with a single dash
@@ -138,7 +158,7 @@ def validate_user_update(user_data: dict) -> tuple[bool, dict]:
             return False, error_message('Invalid cluster role')
     
     if 'resource_limit' in user_data:
-        if not isinstance(user_data['resource_limit'], dict):
+        if not validate_dict(user_data['resource_limit']):
             return False, error_message('Invalid resource limit type')
         for key, value in user_data['resource_limit'].items():
             if key not in valid_resource_limits:
