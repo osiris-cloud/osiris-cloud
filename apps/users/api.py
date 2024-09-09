@@ -116,15 +116,21 @@ def namespace(request, nsid=None):
                                 role=role
                             )
 
-                except (IntegrityError, ValueError) as e:
+                except ValueError as e:
                     return JsonResponse(error_message(str(e)))
+                except Exception as e:
+                    logging.error(str(e))
+                    return JsonResponse(error_message('Failed to create namespace'))
 
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()
                 return JsonResponse(success_message('Create namespace', ns_info))
             
             case 'DELETE':
-                ns_nsid = nsid
+                if nsid == 'default':
+                    ns_nsid = request.session.get('namespace')
+                else:
+                    ns_nsid = nsid
 
                 if not ns_nsid:
                     return JsonResponse(error_message('No namespace ID provided'))
@@ -140,9 +146,9 @@ def namespace(request, nsid=None):
 
                 if delete_namespace_resources(ns):
                     try:
-                        with transaction.atomic():
-                            ns.delete()
+                        ns.delete()
                     except Exception as e:
+                        logging.error(str(e))
                         return JsonResponse(error_message('Failed to delete namespace'))
                 else:
                     return JsonResponse(error_message('Failed to delete namespace resources'))
@@ -150,7 +156,10 @@ def namespace(request, nsid=None):
                 return JsonResponse(success_message('Delete namespace', {'nsid': ns_nsid}))
 
             case 'PATCH':
-                ns_nsid = nsid
+                if nsid == 'default':
+                    ns_nsid = request.session.get('namespace')
+                else:
+                    ns_nsid = nsid
             
                 if not ns_nsid:
                     return JsonResponse(error_message('No namespace ID provided'))
@@ -174,12 +183,8 @@ def namespace(request, nsid=None):
                 if not ns:
                     return JsonResponse(error_message('No namespace found or user does not have permission to update this namespace'))
                 
-                # Check if user is the owner or a manager
-                if request.user not in ns.get_users():
+                if ns.get_role(request.user) not in ['owner', 'manager']:
                     return JsonResponse(error_message('No namespace found or user does not have permission to update this namespace'))
-                
-                if ns.get_role(request.user) == 'viewer':
-                    return JsonResponse(error_message('Only the owner or a manager can update the namespace'))
 
                 if ns_default and ns_owner:
                     return JsonResponse(error_message('Cannot specify owner and set namespace as default at the same time'))
@@ -268,8 +273,11 @@ def namespace(request, nsid=None):
                         if existing_role:
                             existing_role.save()
                 
-                except (IntegrityError, ValueError) as e:
+                except ValueError as e:
                     return JsonResponse(error_message(str(e)))
+                except Exception as e:
+                    logging.error(str(e))
+                    return JsonResponse(error_message('Failed to update namespace'))
 
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()
@@ -277,7 +285,7 @@ def namespace(request, nsid=None):
 
     except Exception as e:
         logging.error(str(e))
-        return JsonResponse(error_message(str(e)))
+        return JsonResponse('Internal server error', status=500)
 
 @csrf_exempt
 @api_view(['GET', 'PATCH', 'DELETE'])
@@ -354,6 +362,7 @@ def user(request, username=None):
                         user_obj.save()
 
                 except Exception as e:
+                    logging.error(str(e))
                     return JsonResponse(error_message('Failed to update user'))
 
                 return JsonResponse(success_message('Update user', user_obj.detailed_info()))
@@ -383,13 +392,14 @@ def user(request, username=None):
 
                             return JsonResponse(success_message('Delete user', {'username': username}))
                     except Exception as e:
+                        logging.error(str(e))
                         return JsonResponse(error_message('Failed to delete user'))
                 else:
                     return JsonResponse(error_message('Failed to delete user resources'))
 
     except Exception as e:
         logging.error(str(e))
-        return JsonResponse(error_message(str(e)))
+        return JsonResponse('Internal server error', status=500)
     
 # @csrf_exempt
 # @api_view(['GET'])
