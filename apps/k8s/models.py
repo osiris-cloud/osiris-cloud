@@ -2,7 +2,6 @@ from django.db import models
 from django.db.models import Q
 from encrypted_model_fields.fields import EncryptedTextField
 from ..users.models import User
-from core.utils import eastern_time
 from core.utils import random_str
 from json import loads as json_loads
 
@@ -40,8 +39,8 @@ class Namespace(models.Model):
             'nsid': self.nsid,
             'name': self.name,
             'default': self.default,
-            'created_at': eastern_time(self.created_at),
-            'updated_at': eastern_time(self.updated_at),
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
             'owner': self.owner.info(),
         }
 
@@ -76,8 +75,8 @@ class Secret(models.Model):
     def info(self):
         return {
             'name': self.name,
-            'created_at': eastern_time(self.created_at),
-            'updated_at': eastern_time(self.updated_at),
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
             'values': json_loads(self.data) if isinstance(self.data, str) else self.data
         }
     
