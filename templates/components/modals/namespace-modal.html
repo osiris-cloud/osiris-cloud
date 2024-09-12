@@ -1,18 +1,17 @@
-<div id="NamespaceModal" tabindex="-1"
+<div id="namespace-modal" tabindex="-1"
      class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
-     onmouseenter="connectSearch()" onmouseleave="connectSearch(false)"
->
+     xmlns="http://www.w3.org/1999/html">
     <div class="relative p-4 w-full max-w-md max-h-full">
         <!-- Modal content -->
-        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+        <div class="relative bg-white rounded-lg shadow dark:bg-gray-800">
             <!-- Modal header -->
             <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white" id="ns-modal-title">
-                    Edit CSAW Finals
+                    Namespace
                 </h3>
                 <button type="button"
                         class="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-                        data-modal-hide="NamespaceModal">
+                        data-modal-hide="namespace-modal">
                     <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none"
                          viewBox="0 0 14 14">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -27,13 +26,15 @@
                 <div class="space-y-4">
                     <div>
                         <div class="relative">
-                            <input type="text" id="ns-modal-name"
+                            <input type="text" id="ns-modal-name" value=""
                                    class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg 
                                    border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-500 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                   placeholder="My Project"/>
+                                   placeholder="My Project"
+                            />
+
                             <label for="ns-modal-name"
                                    class="p-0.5 absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 
-                                   top-2 z-10 origin-[0] bg-white dark:bg-gray-700 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 
+                                   top-2 z-10 origin-[0] bg-white dark:bg-gray-800 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 
                                    peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
                                 Namespace name
                             </label>
@@ -44,7 +45,7 @@
 
                         <div class="flex items-center ">
                             <h2 class="dark:text-white">Sharing</h2>
-                            <div role="status" class="ml-3" id="sharing-spinner">
+                            <div role="status" class="ml-3 hidden" id="sharing-spinner">
                                 <svg class="inline w-4 h-4 text-gray-200 animate-spin dark:text-gray-600 fill-blue-500"
                                      viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
@@ -71,7 +72,7 @@
                                 <label for="user-search"></label>
                                 <input type="text" id="user-search"
                                        class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 
-                                           focus:border-blue-600 dark:bg-gray-700 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                           focus:border-blue-600 dark:bg-gray-800 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                                        placeholder="Search users">
                             </div>
 
@@ -80,159 +81,18 @@
                         <!-- User Search Dropdown menu -->
                         <div id="user-search-dropdown"
                              class="hidden z-10 min-w-64 ml-8 absolute bg-white rounded-lg shadow dark:bg-gray-600">
-                            <ul id="user-search-results" class="max-h-48 overflow-y-auto text-gray-700 dark:text-gray-200">
+                            <ul id="user-search-results"
+                                class="max-h-48 overflow-y-auto text-gray-700 dark:text-gray-200">
                             </ul>
                         </div>
-
-
+                        
                         <!-- Dropdown menu -->
-                        <div id="role-dropdown"
-                             class="z-10 hidden w-50 bg-white divide-y divide-gray-100 rounded shadow dark:bg-gray-600 dark:divide-gray-600">
-                            <ul class="text-sm text-gray-700 dark:text-gray-200">
-                                <li id="role-owner"
-                                    class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
-{#                                    <svg id="role-selected-svg" class="w-5.5 h-5.5 text-gray-500 dark:text-gray-300"#}
-{#                                         xmlns="http://www.w3.org/2000/svg" width="24" height="24"#}
-{#                                         fill="none" viewBox="0 0 24 24">#}
-{#                                        <path stroke="currentColor" stroke-linecap="round"#}
-{#                                              stroke-linejoin="round" stroke-width="2"#}
-{#                                              d="M5 11.917 9.724 16.5 19 7.5">#}
-{#                                        </path>#}
-{#                                    </svg>#}
-                                    <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Owner
-                                    </div>
-                                </li>
-                                <li id="role-manager"
-                                    class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
-                                    <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Manager
-                                    </div>
-                                </li>
-                                <li id="role-viewer"
-                                    class="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
-                                                                        <svg id="role-selected-svg" class="w-5.5 h-5.5 text-gray-500 dark:text-gray-300"
-                                         xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                         fill="none" viewBox="0 0 24 24">
-                                        <path stroke="currentColor" stroke-linecap="round"
-                                              stroke-linejoin="round" stroke-width="2"
-                                              d="M5 11.917 9.724 16.5 19 7.5">
-                                        </path>
-                                    </svg>
-                                    <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Viewer
-                                    </div>
-                                </li>
-                                <li id="transfer-ownership"
-                                    class="flex items-center p-2 pr-3 rounded-b hover:bg-gray-100 dark:hover:bg-gray-500">
-                                    <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Transfer Ownership
-                                    </div>
-                                </li>
-                                <li id="remove-user"
-                                    class="flex items-center mt-0.5 p-2 rounded-b hover:bg-gray-100 dark:hover:bg-gray-500 border-t border-gray-400">
-                                    <div class="ml-4 text-gray-500 dark:text-gray-300 cursor-default">Remove
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
+                        {% include 'components/dropdowns/ns_role_dropdown.html' %}
                         <!-- End Dropdown menu -->
 
-                        <ul class="max-h-52 pb-3 overflow-y-auto text-sm text-gray-700 dark:text-gray-200 cursor-default">
-                            <li class="flex py-2 px-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
-                                <div class="flex items-center justify-between w-full">
-                                    <div class="flex items-center justify-between">
-                                        <img class="w-10 h-10 rounded-full ml-0.5"
-                                             src="https://ui-avatars.com/api/?name=Foo+Bar&background=random"
-                                             alt="avatar"
-                                        >
-                                        <div class="ml-2.5 py-0.5">
-                                            <span class="text-black dark:text-white">Foo Bar</span>
-                                            <p class="text-xs font-normal text-gray-500 dark:text-gray-300">
-                                                fb123@nyu.edu
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div id="role-dropdown-button" data-dropdown-toggle="role-dropdown"
-                                         data-dropdown-placement="right-start"
-                                         class="text-gray-500 dark:text-gray-300 bg-transparent font-medium rounded text-xs px-2.5 py-2 
-                                         text-center inline-flex items-center dark:hover:bg-gray-700 hover:bg-gray-300"
-                                    >
-                                        Owner
-                                        <svg class="w-2.5 h-2.5 ms-3"
-                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                                            <path stroke="currentColor" stroke-linecap="round"
-                                                  stroke-linejoin="round"
-                                                  stroke-width="2" d="m1 1 4 4 4-4">
-                                            </path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </li>
-                            
-                            <li class="flex py-2 px-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
-                                <div class="flex items-center justify-between w-full">
-                                    <div class="flex items-center justify-between">
-                                        <img class="w-10 h-10 rounded-full ml-0.5"
-                                             src="https://ui-avatars.com/api/?name=Alice+Algorithm&background=random"
-                                             alt="avatar"
-                                        >
-                                        <div class="ml-2.5 py-0.5">
-                                            <span class="text-black dark:text-white">Alice Algorithm</span>
-                                            <p class="text-xs font-normal text-gray-500 dark:text-gray-300">
-                                                aa456@nyu.edu
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div data-dropdown-toggle="role-dropdown"
-                                         data-dropdown-placement="right-start"
-                                         class="text-gray-500 dark:text-gray-300 bg-transparent font-medium rounded text-xs px-2.5 py-2 
-                                         text-center inline-flex items-center dark:hover:bg-gray-700 hover:bg-gray-300"
-                                    >
-                                        Manager
-                                        <svg class="w-2.5 h-2.5 ms-3"
-                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                                            <path stroke="currentColor" stroke-linecap="round"
-                                                  stroke-linejoin="round"
-                                                  stroke-width="2" d="m1 1 4 4 4-4">
-                                            </path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </li>
-                            
-                            
-                                                        
-                            <li class="flex py-2 px-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
-                                <div class="flex items-center justify-between w-full">
-                                    <div class="flex items-center justify-between">
-                                        <img class="w-10 h-10 rounded-full ml-0.5"
-                                             src="https://ui-avatars.com/api/?name=Bob+Binary&background=random"
-                                             alt="avatar"
-                                        >
-                                        <div class="ml-2.5 py-0.5">
-                                            <span class="text-black dark:text-white">Bob Binary</span>
-                                            <p class="text-xs font-normal text-gray-500 dark:text-gray-300"> 
-                                                bb789@nyu.edu
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div data-dropdown-toggle="role-dropdown"
-                                         data-dropdown-placement="right-start"
-                                         class="text-gray-500 dark:text-gray-300 bg-transparent font-medium rounded text-xs px-2.5 py-2 
-                                         text-center inline-flex items-center dark:hover:bg-gray-700 hover:bg-gray-300"
-                                    >
-                                        Viewer
-                                        <svg class="w-2.5 h-2.5 ms-3"
-                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                                            <path stroke="currentColor" stroke-linecap="round"
-                                                  stroke-linejoin="round"
-                                                  stroke-width="2" d="m1 1 4 4 4-4">
-                                            </path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </li>
-                            
+                        <ul id="ns-user-list"
+                            class="max-h-52 pb-3 overflow-y-auto text-sm text-gray-700 dark:text-gray-200 cursor-default"
+                        >
                         </ul>
 
                     </div>
@@ -242,10 +102,13 @@
                             <div class="flex items-center h-5">
                                 <input id="switch-after-creation" type="checkbox" checked value=""
                                        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
-                                       required/>
+                                       required
+                                />
                             </div>
                             <label for="switch-after-creation"
-                                   class="ml-2 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Set as Default</label>
+                                   class="ml-2 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                Set as Default
+                            </label>
                         </div>
                     </div>
                     <button type="submit"

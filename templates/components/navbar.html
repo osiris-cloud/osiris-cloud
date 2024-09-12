@@ -3,11 +3,13 @@
 <!-- NS Modal -->
 {% include 'components/modals/namespace-modal.html' %}
 
+<!-- Popup Modal -->
+{% include 'components/modals/popup-modal.html' %}
+
 
 <nav class="fixed z-30 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
     <div class="px-3 py-3 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
-
             <div class="flex items-center justify-start">
                 <button id="toggleSidebarMobile" aria-expanded="true" aria-controls="sidebar"
                         class="p-2 text-gray-600 rounded cursor-pointer lg:hidden hover:text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:focus:bg-gray-700 focus:ring-2 focus:ring-gray-100 dark:focus:ring-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
@@ -38,7 +40,7 @@
                     <div id="dropdown-ns" data-dropdown-toggle="dropdown-ns-menu" data-dropdown-placement="bottom"
                          class="text-black hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 font-medium rounded-lg 
                             text-sm px-5 py-2.5 text-center inline-flex items-center dark:hover:bg-gray-700 dark:text-white cursor-pointer">
-                        <button id="dropdown-ns-button" 
+                        <button id="dropdown-ns-button"
                                 class="text-black font-medium text-sm text-center inline-flex items-center dark:text-white"
                                 type="button"
                         >
@@ -59,8 +61,10 @@
                     <div id="dropdown-ns-menu" class="z-10 hidden bg-white rounded-lg shadow dark:bg-gray-700">
                         <div>
                             <div>
-                                <div id="CreateNamespace" data-modal-target="NamespaceModal"
-                                     data-modal-toggle="NamespaceModal" class="flex items-center p-3 text-sm font-medium text-blue-600 border-t border-gray-200 rounded-b-lg bg-gray-50 
+                                <div id="create-namespace"
+                                     data-modal-target="namespace-modal"
+                                     data-modal-toggle="namespace-modal"
+                                     class="flex items-center p-3 text-sm font-medium text-blue-600 border-t border-gray-200 rounded-b-lg bg-gray-50
                                 cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-lime-500">
                                     <svg class="w-6 h-6 text-gray-800 dark:text-white mr-2"
                                          xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -106,19 +110,21 @@
                             </ul>
 
 
-                            <div>
-                                <div class="flex items-center p-3 text-sm font-medium text-blue-600 border-t border-gray-200 rounded-b-lg bg-gray-50 
+                            <div id="namespace-settings"
+                                 data-modal-target="namespace-modal"
+                                 data-modal-toggle="namespace-modal"
+                                 class="flex items-center p-3 text-sm font-medium text-blue-600 border-t border-gray-200 rounded-b-lg bg-gray-50
                                 cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-lime-500">
-                                    <svg class="w-6 h-6 text-gray-800 dark:text-white mr-2"
-                                         xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                         fill="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path d="M10.83 5a3.001 3.001 0 0 0-5.66 0H4a1 1 0 1 0 0 2h1.17a3.001 3.001 0 0 0 5.66 0H20a1 1 0 1 0 0-2h-9.17ZM4 11h9.17a3.001 3.001 0 0 1 5.66 0H20a1 1 0 1 1 0 2h-1.17a3.001 3.001 0 0 1-5.66 0H4a1 1 0 1 1 0-2Zm1.17 6H4a1 1 0 1 0 0 2h1.17a3.001 3.001 0 0 0 5.66 0H20a1 1 0 1 0 0-2h-9.17a3.001 3.001 0 0 0-5.66 0Z">
-                                        </path>
-                                    </svg>
-                                    Namespace Settings
-                                </div>
+                                <svg class="w-6 h-6 text-gray-800 dark:text-white mr-2"
+                                     xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                     fill="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path d="M10.83 5a3.001 3.001 0 0 0-5.66 0H4a1 1 0 1 0 0 2h1.17a3.001 3.001 0 0 0 5.66 0H20a1 1 0 1 0 0-2h-9.17ZM4 11h9.17a3.001 3.001 0 0 1 5.66 0H20a1 1 0 1 1 0 2h-1.17a3.001 3.001 0 0 1-5.66 0H4a1 1 0 1 1 0-2Zm1.17 6H4a1 1 0 1 0 0 2h1.17a3.001 3.001 0 0 0 5.66 0H20a1 1 0 1 0 0-2h-9.17a3.001 3.001 0 0 0-5.66 0Z">
+                                    </path>
+                                </svg>
+                                Namespace Settings
                             </div>
+
                         </div>
 
                     </div>
