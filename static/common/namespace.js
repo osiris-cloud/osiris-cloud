@@ -1,5 +1,3 @@
-loadNamespace();
-
 let nsModal;
 let popupModal;
 let roleDropdown;
@@ -29,6 +27,9 @@ let nsUsers = [];
 let selectedUser = {};
 let nsOwner = {};
 let userSelf = {};
+
+loadNamespace();
+loadAllNamespaces();
 window.addEventListener('load', function () {
     nsModal = FlowbiteInstances.getInstance('Modal', 'namespace-modal');
     nsModal._options.onShow = () => {
@@ -52,14 +53,10 @@ window.addEventListener('load', function () {
 
 function loadNamespace(nsid = '', apply = true, callback = null) {
     let currentNS = window.localStorage.getItem('nsid');
-    if (!nsid && !currentNS)
-        nsid = 'default';
-    if (callback)
-        showShareSpinner();
+    if (!nsid && !currentNS) nsid = 'default';
+    if (callback) showShareSpinner();
     $.ajax({
-        url: '/api/namespace/' + (nsid ? nsid : currentNS),
-        type: 'GET',
-        success: (resp) => {
+        url: '/api/namespace/' + (nsid ? nsid : currentNS), type: 'GET', success: (resp) => {
             if (resp.status === 'success') {
                 nsUsers = resp.users;
                 nsOwner = resp.owner;
@@ -67,11 +64,9 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
                     $('#dropdown-ns-button').text(resp.name);
                     localStorage.setItem('nsid', resp.nsid);
                     window.namespace = resp.nsid;
-                } else {
-                    if (!callback)
-                        return;
-                    callback(resp);
                 }
+                if (!callback) return;
+                callback(resp);
             } else if (resp.status === 'error') {
                 loadNamespace('default', apply, callback);
             }
@@ -109,57 +104,56 @@ roleViewer.on('click', () => {
     handleChangeRole(selectedUser, 'viewer')
 });
 roleTransferOwner.on('click', () => {
-    console.log(selectedUser.username);
     handleChangeRole(selectedUser, 'owner');
 });
 roleRemoveUser.on('click', () => {
-    nsUsers = nsUsers.filter(user => user.username !== selectedUser);
-    $(`#ns-list-user-${selectedUser}`).remove();
+    $(`#ns-list-user-${selectedUser.username}`).remove();
+    nsUsers = nsUsers.filter(u => u.username !== selectedUser.username);
+    roleDropdown.hide();
+    selectedUser = {};
 });
 
+
 function handleChangeRole(user, newRole = '') {
-
-    console.log("1. Transfer Ownership from", nsOwner.username, "to", user.username);
-
     selectedUser = {...user};
 
     if (newRole === '') {
         // Adjusts the role of the user in the dropdown
-        console.log("Adjust role dropdown", user.username);
         $selectedSvg.prependTo(`#role-${user.role}`);
-        roleDropdown.show(); // show the dropdown whe they click on the role
+        roleDropdown.show(); // show the dropdown when they click on the role
     } else if (newRole === 'owner') {
         // Transfer ownership
-
         Confirm(`Are you sure you want to transfer ownership to ${user.name.split(' ')[0]}?`, (ok) => {
-            if (!ok)
-                return;
-
-            console.log("2. Transfer Ownership from", nsOwner.username, "to", user.username);
+            if (!ok) return;
 
             let oldOwner = {...nsOwner, 'role': 'manager'};
-            let newOwner = {...user, 'role': 'owner'};
+            let newOwner = {...selectedUser, 'role': 'owner'};
 
-            let $oldOwner = createUserListItem(oldOwner);
-            console.log("Old Owner Created", oldOwner.username);
+            if (oldOwner.username === newOwner.username) return;
+
+            // Remove the old owner and new owner from the list
+            $(`#ns-list-user-${oldOwner.username}`).remove();
+            $(`#ns-list-user-${newOwner.username}`).remove();
+
+            // Recreate the list items for both old and new owners
             let $newOwner = createUserListItem(newOwner);
-            console.log("New Owner Created", newOwner.username);
+            let $oldOwner = createUserListItem(oldOwner);
 
-            $(`#ns-list-user-${oldOwner.username}`).remove(); // remove the owner from the list
-            $(`#ns-list-user-${newOwner.username}`).remove();    // remove the user from the list
+            // Add the old owner and new owner to the list
+            $nsUserList.prepend($oldOwner);
+            $nsUserList.prepend($newOwner);
 
-            $nsUserList.prepend($oldOwner);  // add the old owner to the list
-            $nsUserList.prepend($newOwner); // add the new owner to the list
+            // Update the owner reference
+            nsOwner = newOwner;
 
-            nsOwner = newOwner; // update the owner reference
-            nsUsers = nsUsers.filter(u => u.username !== newOwner.username); // remove the new owner from the list
-
+            // Remove the new owner from the nsUsers list
+            nsUsers = nsUsers.filter(u => u.username !== newOwner.username);
+            nsUsers.push(oldOwner);
         });
     } else {
         // Handle role change
-        console.log("Change role to", newRole, "for", user.username);
         let nsUser = nsUsers.find(u => u.username === user.username);    // get the user reference from nsUsers
-        $selectedSvg.prependTo(`#role-${newRole}`);                  // update the checkmark
+        $selectedSvg.prependTo(`#role-${newRole}`);                      // update the checkmark
         // When they change the role in dropdown, update the role in the list
         roleDropdown.hide();
         $(`#role-dropdown-${nsUser.username} > span`).text(capitalize(newRole));
@@ -167,14 +161,11 @@ function handleChangeRole(user, newRole = '') {
     }
 }
 
-
 function createUserListItem(user) {
-
-    console.log("createUserListItem", user.username);
+    if ($(`#ns-list-user-${user.username}`).length) return;
 
     let $listItem = $('<li/>', {
-        id: `ns-list-user-${user.username}`,
-        class: 'flex py-2 px-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700'
+        id: `ns-list-user-${user.username}`, class: 'flex py-2 px-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700'
     });
     let $innerDiv = $('<div/>', {
         class: 'flex items-center justify-between w-full'
@@ -199,17 +190,16 @@ function createUserListItem(user) {
 
     let $roleButton = $('<div/>', {
         id: `role-dropdown-${user.username}`,
-        class: 'text-gray-500 dark:text-gray-300 bg-transparent font-medium rounded text-xs px-2.5 py-2 text-center ' +
-            'inline-flex items-center focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-100' +
-            (user.role !== 'owner' ? ' dark:hover:bg-gray-800 hover:bg-gray-3000' : ''),
+        class: 'text-gray-500 dark:text-gray-300 bg-transparent font-medium rounded text-xs px-2.5 py-2 text-center ' + 'inline-flex items-center focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-100' + (user.role !== 'owner' ? ' dark:hover:bg-gray-800 hover:bg-gray-3000' : ''),
     });
 
     $roleButton.off('click');
 
     if (user.role !== 'owner') {
         // Add role change event listener to the role button
-
         $roleButton.on('click', () => {
+
+            if (selectedUser.username === user.username) return;
 
             let targetEl = document.getElementById(`role-dropdown`);
             let triggerEl = document.getElementById(`role-dropdown-${user.username}`);
@@ -251,7 +241,6 @@ function createUserListItem(user) {
     return $listItem;
 }
 
-
 function handleAddUser(user) {
     if (user.username === nsOwner.username) // If they are the owner, skip
         return;
@@ -275,19 +264,19 @@ function handleSearchUsers() {
 
 }
 
-
 function createNSListItem(name, owner, nsid) {
     const listItem = $('<li></li>')
         .addClass('flex p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600')
         .on('click', function () {
-            loadNamespace(nsid);
+            window.localStorage.setItem('nsid', nsid);
+            window.location.reload();
         });
 
     const textSmDiv = $('<div></div>')
         .addClass('text-sm');
 
     const mainText = $('<div></div>')
-        .text(name);
+        .text(name + (nsid === localStorage.getItem('nsid') ? ' (Current)' : ''));
 
     const subText = $('<div></div>')
         .addClass('text-xs font-normal text-gray-500 dark:text-gray-300')
@@ -299,7 +288,6 @@ function createNSListItem(name, owner, nsid) {
 
     return listItem;
 }
-
 
 function createSearchUserListItem(username, name, email, avatar, roundedT, roundedB) {
     return $('<li>', {
@@ -388,8 +376,18 @@ function Confirm(message, callback) {
 }
 
 function showShareSpinner(show = true) {
-    if (show)
-        $sharingSpinner.removeClass('hidden');
-    else
-        $sharingSpinner.addClass('hidden');
+    if (show) $sharingSpinner.removeClass('hidden'); else $sharingSpinner.addClass('hidden');
+}
+
+function loadAllNamespaces() {
+    $.ajax({
+        url: '/api/namespace', type: 'GET', success: (resp) => {
+            if (resp.status === 'success') {
+                $namespaceLlist.empty();
+                resp.namespaces.forEach((ns) => {
+                    $namespaceLlist.append(createNSListItem(ns.name, ns.owner.name, ns.nsid));
+                });
+            }
+        }
+    });
 }
