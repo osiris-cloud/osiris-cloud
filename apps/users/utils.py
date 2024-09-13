@@ -8,7 +8,7 @@ def validate_dict(d):
     if not isinstance(d, dict):
         return False
     for key, value in d.items():
-        if not isinstance(value, str):
+        if isinstance(value, dict):
             return False
     return True
 
@@ -137,7 +137,7 @@ def validate_user_update(user_data: dict) -> tuple[bool, dict]:
     Returns a tuple of (valid, message)
     """
     valid_cluster_roles = ['super_admin', 'admin', 'user', 'guest', 'blocked']
-    valid_resource_limits = ['cpu', 'ram', 'disk', 'public_ip', 'gpu']
+    valid_resource_limits = ['cpu', 'memory', 'disk', 'public_ip', 'gpu']
 
     if 'first_name' in user_data and not isinstance(user_data['first_name'], str):
         return False, error_message('Invalid first name type')
