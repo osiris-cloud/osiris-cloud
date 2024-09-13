@@ -39,14 +39,14 @@ Sample Output:
   ],
   "resource_used": {
     "cpu": 2,
-    "ram": 4,
+    "memory": 4,
     "disk": 30,
     "public_ip": 0,
     "gpu": 0
   },
   "resource_limit": {
     "cpu": 24,
-    "ram": 32,
+    "memory": 32,
     "disk": 512,
     "public_ip": 5,
     "gpu": 5
@@ -88,7 +88,7 @@ Request body parameters:
 + `resource_limit` (object, optional): This limits what the user can create. Setting value to `null` means no limit
   will be imposed. Values that can be set are:
     + `cpu` (integer, optional): The number of vCPU's.
-    + `ram` (integer, optional): Total system memory in GB.
+    + `memory` (integer, optional): Total system memory in GB.
     + `disk` (integer, optional): Total storage in GiB.
     + `public_ip` (integer, optional): Public IPs, if enabled.
     + `gpu` (integer, optional): vGPUs, if enabled.
@@ -130,14 +130,14 @@ Sample Output:
   ],
   "resource_used": {
     "cpu": 2,
-    "ram": 4,
+    "memory": 4,
     "disk": 30,
     "public_ip": 0,
     "gpu": 0
   },
   "resource_limit": {
     "cpu": null,
-    "ram": 32,
+    "memory": 32,
     "disk": 512,
     "public_ip": 5,
     "gpu": 5
