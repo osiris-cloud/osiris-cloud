@@ -17,7 +17,6 @@ def get_user_default_ns(user: User) -> Namespace:
     return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
 
 
-@csrf_exempt
 @api_view(['GET', 'POST', 'PATCH', 'DELETE'])
 def namespace(request, nsid=None):
     """
@@ -56,10 +55,11 @@ def namespace(request, nsid=None):
                 }))
 
             case 'POST':
-                if not request.body:
-                    return JsonResponse(error_message('No data provided'))
+                if request.data.get('data') is not None:
+                    ns_data = request.data.get('data')
+                else:
+                    ns_data = request.data
                 
-                ns_data = json_loads(request.body)
                 valid, resp = validate_ns_creation(ns_data)
 
                 if not valid:
@@ -160,11 +160,15 @@ def namespace(request, nsid=None):
                     ns_nsid = request.session.get('namespace')
                 else:
                     ns_nsid = nsid
-            
+
                 if not ns_nsid:
                     return JsonResponse(error_message('No namespace ID provided'))
                 
-                ns_data = json_loads(request.body)
+                if request.data.get('data') is not None:
+                    ns_data = request.data.get('data')
+                else:
+                    ns_data = request.data
+                
                 valid, resp = validate_ns_update(ns_data, ns_nsid)
 
                 if not valid:
@@ -287,7 +291,6 @@ def namespace(request, nsid=None):
         logging.error(str(e))
         return JsonResponse('Internal server error', status=500)
 
-@csrf_exempt
 @api_view(['GET', 'PATCH', 'DELETE'])
 def user(request, username=None):
     try:
@@ -324,7 +327,10 @@ def user(request, username=None):
                 if request.user != user_obj and request.user.role not in ['admin', 'super_admin']:
                     return JsonResponse(error_message('Permission denied'))
                 
-                user_data = json_loads(request.body)
+                if request.data.get('data') is not None:
+                    user_data = request.data.get('data')
+                else:
+                    user_data = request.data
                 
                 # Non-admins cannot update cluster_role or resource_limit
                 if request.user.role not in ['admin', 'super_admin']:
