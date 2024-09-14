@@ -39,6 +39,7 @@ class User(AbstractUser):
     def detailed_info(self):
         from ..k8s.models import Namespace, PVC  # Avoid circular import
         from ..vm.models import VM
+        from ..oauth.models import GithubUser
 
         # Retrieve all namespaces the user is associated with
         namespaces = Namespace.objects.filter(
@@ -80,6 +81,8 @@ class User(AbstractUser):
             total_disk=Sum('size')
         )
 
+        github_username = GithubUser.objects.filter(user=self).values_list('username', flat=True).first()
+
         return {
             'username': self.username,
             'first_name': self.first_name,
@@ -90,7 +93,7 @@ class User(AbstractUser):
             'last_login': self.last_login,
             'default_nsid': default_nsid,
             'cluster_role': self.role,
-            'github': None,  # for now
+            'github': github_username,
             'namespaces': [ns.nsid for ns in namespaces],
             'resource_used': {
                 'cpu': total_resources['cpu'] or 0,
