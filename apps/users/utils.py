@@ -198,11 +198,17 @@ def send_email_notification(to_email, subject, text):
 
     return response
 
-def notify_new_owner(owner_email, namespace_id, namespace_name, requester_username):
+def notify_new_owner(owner_email, namespace_id, namespace_name, requester_username, token):
     subject = "Namespace Ownership Transfer Initiated"
+    if env.debug:
+        link = f"http://localhost:8000/api/namespace/accept-transfer/{token}\n"
+    else:
+        link = f"https://osiriscloud.io/api/namespace/accept-transfer/{token}\n"
+
     text = (
         f"You have been assigned as the new owner of the namespace: {namespace_name} ({namespace_id}) by {requester_username}.\n"
-        "You can confirm this transfer through the Osiris Cloud Platform."
+        "You can confirm this transfer through the Osiris Cloud Platform by clicking the link below:\n"
+        f"{link}"
     )
     response = send_email_notification(owner_email, subject, text)
 

@@ -41,14 +41,18 @@ def initiate_ns_owner_transfer(requester, ns, ns_owner, ns_users):
                 initiated_by=requester
             ).delete()
 
+            # Generate unique token
+            token = random_str(64)
+
             PendingTransfer.objects.create(
+                token=token,
                 namespace=ns,
                 new_owner=new_owner_obj,
                 initiated_by=requester,
                 ns_users=ns_users
             )
 
-            notify_new_owner(new_owner_obj.email, ns.nsid, ns.name, requester.username)
+            notify_new_owner(new_owner_obj.email, ns.nsid, ns.name, requester.username, token)
 
     except Exception as e:
         logging.error(str(e))
@@ -56,24 +60,18 @@ def initiate_ns_owner_transfer(requester, ns, ns_owner, ns_users):
     
     return JsonResponse(success_message('Initiate namespace owner transfer'))
 
-
 @csrf_exempt
-@api_view(['POST'])
-def accept_ns_owner_transfer(request, nsid, requester_id):
-    if not nsid or not isinstance(nsid, str):
-        return JsonResponse(error_message('Invalid or missing nsid'))
-    if not requester_id or not isinstance(requester_id, str) or not requester_id.isdigit():
-        return JsonResponse(error_message('Invalid or missing requester_id'))
+@api_view(['GET', 'POST'])
+def accept_ns_owner_transfer(request, token):
+    if not token or not isinstance(token, str):
+        return JsonResponse(error_message('Invalid or missing token'))
     
-    ns = Namespace.objects.filter(nsid=nsid).first()
-
-    if not ns:
-        return JsonResponse(error_message('No namespace found or user does not have permission to access this namespace'))
-    
-    pending_transfer = PendingTransfer.objects.filter(namespace=ns, new_owner=request.user, initiated_by=requester_id).first()
+    pending_transfer = PendingTransfer.objects.filter(token=token).first()
 
     if not pending_transfer:
-        return JsonResponse(error_message('No pending transfer found'))
+        return JsonResponse(error_message('Invalid or expired token'))
+    
+    ns = pending_transfer.namespace
     
     try:
         with transaction.atomic():
