@@ -94,13 +94,9 @@ def accept_ns_owner_transfer(request, token):
             user_ram_limit = user_info['resource_limit']['memory']
             user_disk_limit = user_info['resource_limit']['disk']
 
-            print(user_cpu_used, user_ram_used, user_disk_used, user_cpu_limit, user_ram_limit, user_disk_limit)
-
             total_cpu_used = user_cpu_used + (total_resources['cpu'] or 0)
             total_ram_used = user_ram_used + (total_resources['ram'] or 0)
             total_disk_used = user_disk_used + (total_disk_usage['total_disk'] or 0)
-
-            print(total_cpu_used, total_ram_used, total_disk_used, user_cpu_limit, user_ram_limit, user_disk_limit)
 
             # null limit = unlimited
             if user_cpu_limit is not None and total_cpu_used > user_cpu_limit:

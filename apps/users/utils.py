@@ -183,9 +183,6 @@ def delete_namespace_resources(namespace_obj):
     return True
 
 def send_email_notification(to_email, subject, text):
-    print(MAILGUN_API_KEY)
-    print(MAILGUN_DOMAIN)
-    print(MAILGUN_SENDER_EMAIL)
     response = requests.post(
         f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
         auth=("api", MAILGUN_API_KEY),
