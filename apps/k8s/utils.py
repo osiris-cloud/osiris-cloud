@@ -350,7 +350,7 @@ def validate_dict(d):
     if not isinstance(d, dict):
         return False
     for key, value in d.items():
-        if not isinstance(value, str):
+        if isinstance(value, dict):
             return False
     return True
 
