@@ -1,14 +1,20 @@
 import string
 import re
+import requests
+import logging
 from core.utils import error_message, success_message
+from core.settings import env
 
 VALID_NAME_CHARLIST = list(string.ascii_lowercase + string.digits + '_' + '-')
+MAILGUN_API_KEY = env.mailgun_api_key
+MAILGUN_DOMAIN = env.mailgun_sender_domain
+MAILGUN_SENDER_EMAIL = env.mailgun_sender_email
 
 def validate_dict(d):
     if not isinstance(d, dict):
         return False
     for key, value in d.items():
-        if not isinstance(value, str):
+        if isinstance(value, dict):
             return False
     return True
 
@@ -137,7 +143,7 @@ def validate_user_update(user_data: dict) -> tuple[bool, dict]:
     Returns a tuple of (valid, message)
     """
     valid_cluster_roles = ['super_admin', 'admin', 'user', 'guest', 'blocked']
-    valid_resource_limits = ['cpu', 'ram', 'disk', 'public_ip', 'gpu']
+    valid_resource_limits = ['cpu', 'memory', 'disk', 'public_ip', 'gpu']
 
     if 'first_name' in user_data and not isinstance(user_data['first_name'], str):
         return False, error_message('Invalid first name type')
@@ -174,4 +180,37 @@ def delete_owner_resources(user_obj):
 
 def delete_namespace_resources(namespace_obj):
     # TODO: Handle actual resource deletion
+    return True
+
+def send_email_notification(to_email, subject, text):
+    response = requests.post(
+        f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
+        auth=("api", MAILGUN_API_KEY),
+        data={"from": MAILGUN_SENDER_EMAIL,
+              "to": to_email,
+              "subject": subject,
+              "text": text
+        }
+    )
+
+    return response
+
+def notify_new_owner(owner_email, namespace_id, namespace_name, requester_username, token):
+    subject = "Namespace Ownership Transfer Initiated"
+    if env.debug:
+        link = f"http://localhost:8000/api/namespace/accept-transfer/{token}\n"
+    else:
+        link = f"https://osiriscloud.io/api/namespace/accept-transfer/{token}\n"
+
+    text = (
+        f"You have been assigned as the new owner of the namespace: {namespace_name} ({namespace_id}) by {requester_username}.\n"
+        "You can confirm this transfer through the Osiris Cloud Platform by clicking the link below:\n"
+        f"{link}"
+    )
+    response = send_email_notification(owner_email, subject, text)
+
+    if response.status_code != 200:
+        logging.error(f"Failed to send email notification to {owner_email}")
+        raise ValueError("Failed to send email notification")
+
     return True
