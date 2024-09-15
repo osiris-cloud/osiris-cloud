@@ -39,6 +39,7 @@ class User(AbstractUser):
     def detailed_info(self):
         from ..k8s.models import Namespace, PVC  # Avoid circular import
         from ..vm.models import VM
+        from ..oauth.models import GithubUser
 
         # Retrieve all namespaces the user is associated with
         namespaces = Namespace.objects.filter(
@@ -80,6 +81,8 @@ class User(AbstractUser):
             total_disk=Sum('size')
         )
 
+        github_username = GithubUser.objects.filter(user=self).values_list('username', flat=True).first()
+
         return {
             'username': self.username,
             'first_name': self.first_name,
@@ -90,11 +93,11 @@ class User(AbstractUser):
             'last_login': self.last_login,
             'default_nsid': default_nsid,
             'cluster_role': self.role,
-            'github': None,  # for now
+            'github': github_username,
             'namespaces': [ns.nsid for ns in namespaces],
             'resource_used': {
                 'cpu': total_resources['cpu'] or 0,
-                'ram': total_resources['ram'] or 0,
+                'memory': total_resources['ram'] or 0,
                 'disk': total_disk_usage['total_disk'] or 0,
                 'public_ip': 0,  # for now
                 'gpu': 0  # for now
@@ -155,7 +158,7 @@ class Limit(models.Model):
     def info(self):
         return {
             'cpu': self.cpu,
-            'ram': self.memory,
+            'memory': self.memory,
             'disk': self.disk,
             'public_ip': self.public_ip,
             'gpu': self.gpu,
@@ -163,6 +166,17 @@ class Limit(models.Model):
 
     class Meta:
         db_table = 'user_limits'
+
+class PendingTransfer(models.Model):
+    token = models.CharField(max_length=64, unique=True, default=0)
+    namespace = models.ForeignKey('k8s.Namespace', on_delete=models.CASCADE)
+    new_owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pending_transfers')
+    initiated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='initiated_transfers')
+    created_at = models.DateTimeField(auto_now_add=True)
+    ns_users = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'ns_transfers'
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):

@@ -52,6 +52,9 @@ FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
 @dataclass
 class Env:
     debug = DEBUG
+    mailgun_api_key = os.getenv('MAILGUN_API_KEY')
+    mailgun_sender_domain = os.getenv('MAILGUN_SENDER_DOMAIN')
+    mailgun_sender_email = os.getenv('MAILGUN_SENDER_EMAIL')
     nyu_client_id = os.getenv('NYU_CLIENT_ID')
     nyu_client_secret = os.getenv('NYU_CLIENT_SECRET')
     nyu_openid_meta = os.getenv('NYU_META_URL')
