@@ -52,6 +52,7 @@ window.addEventListener('load', function () {
             $nsModal.addClass('show');
         }, 10);
         connectSearch();
+        $nsSubmitButton.prop('disabled', false);
     }
     nsModal._options.onHide = () => {
         $nsModal.removeClass('show');
@@ -171,17 +172,23 @@ $nsSubmitButton.on('click', () => {
         'default': $setAsDefault.is(':checked')
     };
 
+    if (!createNS) {
+        data['owner'] = {...nsOwner};
+    }
+
     showShareSpinner();
+
+    $nsSubmitButton.prop('disabled', true);
 
     $.ajax({
         url: '/api/namespace' + (createNS ? '' : '/' + window.namespace),
         type: createNS ? 'POST': 'PATCH',
-        contentType: 'application/json',
         data: {
             'csrfmiddlewaretoken': document.querySelector('input[name="csrf-token"]').value,
             'data': JSON.stringify(data),
         },
         success: (resp) => {
+            $nsSubmitButton.prop('disabled', false);
             if (resp.status === 'success') {
                 nsModal.hide();
                 Confirm('Namespace created. Do you want to switch to the new namespace?', (ok) => {
@@ -194,6 +201,9 @@ $nsSubmitButton.on('click', () => {
             } else {
                 Alert('An error occurred while creating the namespace. Please try again.');
             }
+        },
+        error: () => {
+            Alert('Something went wrong on our end. This has been logged and we are working on it.');
         }
     });
 });
