@@ -14,7 +14,6 @@ from ..users.models import User
 def get_user_default_ns(user: User) -> Namespace:
     return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
 
-@csrf_exempt
 @api_view(['GET', 'POST', 'PATCH', 'DELETE'])
 def secret(request, nsid=None, secret_name=None):
     try:
@@ -52,7 +51,11 @@ def secret(request, nsid=None, secret_name=None):
                     return JsonResponse(success_message('Get secrets', {'nsid': nsid, 'secrets': result}))
 
             case 'POST':
-                secret_data = json_loads(request.body)
+                if request.data.get('data') is not None:
+                    secret_data = request.data.get('data')
+                else:
+                    secret_data = request.data
+
                 valid, resp = validate_secret_creation(secret_data)
 
                 if not valid:
@@ -83,7 +86,11 @@ def secret(request, nsid=None, secret_name=None):
                 if not secret_name:
                     return JsonResponse(error_message('No secret name provided'))
                 
-                secret_data = json_loads(request.body)
+                if request.data.get('data') is not None:
+                    secret_data = request.data.get('data')
+                else:
+                    secret_data = request.data
+                    
                 valid, resp = validate_secret_update(secret_data)
 
                 if not valid:
