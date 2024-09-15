@@ -1,14 +1,22 @@
 let nsModal;
+let $nsModal = $('#namespace-modal');
+let nsModalClosable = true;
+
 let popupModal;
+let $popupModal = $('#popup-modal');
+
+let alertModal;
+let $alertModal = $('#alert-modal');
+
 let roleDropdown;
 
 let $createNS = $('#create-namespace');
 let $namespaceSettings = $('#namespace-settings');
 let $namespaceLlist = $('#namespace-list');
 
-
 let $nsModalTitle = $('#ns-modal-title');
 let $nsModalName = $('#ns-modal-name');
+let $setAsDefault = $('#set-as-default');
 let $nsUserList = $('#ns-user-list');
 
 let $sharingSpinner = $('#sharing-spinner');
@@ -17,6 +25,7 @@ let $userSearch = $('#user-search');
 let $userSearchDropdown = $('#user-search-dropdown');
 let $userSearchResults = $('#user-search-results');
 let userSearchSocket = null;
+let $nsSubmitButton = $('#ns-submit-button');
 
 let roleManager = $('#role-manager');
 let roleViewer = $('#role-viewer');
@@ -27,27 +36,61 @@ let nsUsers = [];
 let selectedUser = {};
 let nsOwner = {};
 let userSelf = {};
+let createNS = true;
 
 loadNamespace();
 loadAllNamespaces();
+getSelf((user) => {
+    userSelf = {
+        ...user, 'name': user.first_name + ' ' + user.last_name, 'role': 'owner'
+    }
+});
 window.addEventListener('load', function () {
     nsModal = FlowbiteInstances.getInstance('Modal', 'namespace-modal');
     nsModal._options.onShow = () => {
-        showShareSpinner();
+        setTimeout(() => {
+            $nsModal.addClass('show');
+        }, 10);
         connectSearch();
     }
     nsModal._options.onHide = () => {
+        $nsModal.removeClass('show');
         showShareSpinner(false);
         connectSearch(false);
         roleDropdown?.destroyAndRemoveInstance();
+        $nsModalName.val('');
+        $userSearch.val('');
+        $nsUserList.empty();
+        $setAsDefault.prop('checked', false);
         selectedUser = {};
         nsOwner = {};
         nsUsers = [];
     }
     nsModal._options.closable = false;
+
     popupModal = FlowbiteInstances.getInstance('Modal', 'popup-modal');
     popupModal._options.onShow = () => {
+        setTimeout(() => {
+            $popupModal.addClass('show');
+        }, 10);
+        nsModalClosable = false;
         roleDropdown?.hide();
+    }
+    popupModal._options.onHide = () => {
+        $popupModal.removeClass('show');
+        setTimeout(() => {
+            nsModalClosable = true;
+        }, 50);
+    }
+
+    alertModal = FlowbiteInstances.getInstance('Modal', 'alert-modal');
+    alertModal._options.onShow = function () {
+        setTimeout(() => {
+            $alertModal.addClass('show');
+        }, 10);
+    };
+    alertModal._options.onHide = function () {
+        $alertModal.removeClass('show');
     }
 });
 
@@ -56,7 +99,9 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
     if (!nsid && !currentNS) nsid = 'default';
     if (callback) showShareSpinner();
     $.ajax({
-        url: '/api/namespace/' + (nsid ? nsid : currentNS), type: 'GET', success: (resp) => {
+        url: '/api/namespace/' + (nsid ? nsid : currentNS),
+        type: 'GET',
+        success: (resp) => {
             if (resp.status === 'success') {
                 nsUsers = resp.users;
                 nsOwner = resp.owner;
@@ -74,23 +119,25 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
     });
 }
 
-
 $createNS.on('click', () => {
+    createNS = true;
     $nsModalTitle.text('Create Namespace');
-    $nsModalName.attr('value', '');
-    getSelf((user) => {
-
-    });
+    $nsSubmitButton.text('Create');
+    roleTransferOwner.addClass('hidden');
+    $nsUserList.append(createUserListItem(userSelf));
 });
 $namespaceSettings.on('click', () => {
+    createNS = false;
     $nsModalTitle.text('Edit Namespace');
     loadNamespace(window.namespace, false, (resp) => {
         $nsModalName.val(resp.name);
-        $nsUserList.empty();
+        $nsSubmitButton.text('Save');
+        roleTransferOwner.removeClass('hidden');
         $nsUserList.append(createUserListItem({...resp.owner, 'role': 'owner'}));
         resp.users.forEach((user) => {
             $nsUserList.append(createUserListItem(user));
         });
+        $setAsDefault.prop('checked', resp.default);
         showShareSpinner(false);
     });
 });
@@ -111,6 +158,44 @@ roleRemoveUser.on('click', () => {
     nsUsers = nsUsers.filter(u => u.username !== selectedUser.username);
     roleDropdown.hide();
     selectedUser = {};
+});
+$nsSubmitButton.on('click', () => {
+    let nsName = $nsModalName.val();
+    if (nsName.length === 0) {
+        Alert('Namespace name cannot be empty');
+        return;
+    }
+    let data = {
+        'name': nsName.trim(),
+        'users': nsUsers,
+        'default': $setAsDefault.is(':checked')
+    };
+
+    showShareSpinner();
+
+    $.ajax({
+        url: '/api/namespace' + (createNS ? '' : '/' + window.namespace),
+        type: createNS ? 'POST': 'PATCH',
+        contentType: 'application/json',
+        data: {
+            'csrfmiddlewaretoken': document.querySelector('input[name="csrf-token"]').value,
+            'data': JSON.stringify(data),
+        },
+        success: (resp) => {
+            if (resp.status === 'success') {
+                nsModal.hide();
+                Confirm('Namespace created. Do you want to switch to the new namespace?', (ok) => {
+                    if (ok) {
+                        window.localStorage.setItem('nsid', resp.nsid);
+                        window.location.reload();
+                    }
+                });
+                loadAllNamespaces();
+            } else {
+                Alert('An error occurred while creating the namespace. Please try again.');
+            }
+        }
+    });
 });
 
 
@@ -258,7 +343,7 @@ function handleSearchUsers() {
         if (userSearchSocket) {
             userSearchSocket.send(value);
         } else {
-            alert("Session expired, try refreshing page. If issue persists, contact support.");
+            Alert("Session expired, try refreshing page. If issue persists, contact support.");
         }
     }
 
@@ -312,7 +397,7 @@ function connectSearch(connect = true) {
             userSearchSocket = new WebSocket('/api/user-search');
             userSearchSocket.onopen = () => {
                 userSearchSocket.onmessage = handleSocketMessage;
-                $sharingSpinner.addClass('hidden');
+                showShareSpinner(false);
             };
             userSearchSocket.onclose = () => {
                 userSearchSocket = null;
@@ -346,11 +431,13 @@ function handleSocketMessage(event) {
 
 function getSelf(callback) {
     $.ajax({
-        url: '/api/user', type: 'GET', success: (resp) => {
+        url: '/api/user',
+        type: 'GET',
+        success: (resp) => {
             if (resp.status === 'success') {
                 callback(resp);
             } else {
-                alert('Session expired. Please try refreshing page. If issue persists, contact support.');
+                Alert('Session expired. Please try refreshing page. If issue persists, contact support.');
             }
         }
     });
@@ -360,18 +447,55 @@ function capitalize(string) {
     return string[0].toUpperCase() + string.slice(1);
 }
 
-function Confirm(message, callback) {
+function Confirm(message, callback, options = {'yes': 'Confirm', 'no': 'Cancel', 'icon': 'info'}) {
+    let confirm = $("#popup-confirm");
+    let deny = $("#popup-deny");
+
     $("#popup-message").text(message);
+
+    if (options.icon === 'info') {
+        $('#popup-icon-info').removeClass('hidden');
+        $('#popup-icon-check').addClass('hidden');
+    } else if (options.icon === 'check') {
+        $('#popup-icon-info').addClass('hidden');
+        $('#popup-icon-check').removeClass('hidden');
+    }
+
+    confirm.text(options.yes);
+    deny.text(options.no);
+
     popupModal.show();
 
-    $("#popup-confirm").click(() => {
+    confirm.unbind().click(() => {
         popupModal.hide();
         callback(true);
     });
 
-    $("#popup-deny").click(() => {
+    deny.unbind().click(() => {
         popupModal.hide();
         callback(false);
+    });
+}
+
+function Alert(message, callback = null, options = {'ok': 'OK', 'icon': 'info'}) {
+    let $ok = $("#alert-ok");
+    $ok.text(options.ok);
+
+    $("#alert-message").text(message);
+
+    if (options.icon === 'info') {
+        $('#alert-icon-info').removeClass('hidden');
+        $('#alert-icon-check').addClass('hidden');
+    } else if (options.icon === 'check') {
+        $('#alert-icon-info').addClass('hidden');
+        $('#alert-icon-check').removeClass('hidden');
+    }
+
+    alertModal.show();
+
+    $ok.unbind().click(() => {
+        alertModal.hide();
+        if (callback) callback();
     });
 }
 
@@ -381,7 +505,9 @@ function showShareSpinner(show = true) {
 
 function loadAllNamespaces() {
     $.ajax({
-        url: '/api/namespace', type: 'GET', success: (resp) => {
+        url: '/api/namespace',
+        type: 'GET',
+        success: (resp) => {
             if (resp.status === 'success') {
                 $namespaceLlist.empty();
                 resp.namespaces.forEach((ns) => {
@@ -391,3 +517,9 @@ function loadAllNamespaces() {
         }
     });
 }
+
+$(document).keydown((event) => {
+    if (event.key === "Escape" || event.key === "Esc") {
+        if (nsModalClosable) nsModal.hide();
+    }
+});

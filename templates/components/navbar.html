@@ -1,10 +1,26 @@
 {% load static %}
 
+<style>
+    .modal {
+        opacity: 0;
+        transform: scale(0.9);
+        transition: opacity 0.2s ease-out, transform 0.15s ease-out;
+    }
+
+    .modal.show {
+        opacity: 1;
+        transform: scale(1);
+    }
+</style>
+
 <!-- NS Modal -->
 {% include 'components/modals/namespace-modal.html' %}
 
 <!-- Popup Modal -->
 {% include 'components/modals/popup-modal.html' %}
+
+<!-- Alert Modal -->
+{% include 'components/modals/alert-modal.html' %}
 
 
 <nav class="fixed z-30 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
@@ -244,3 +260,5 @@
         </div>
     </div>
 </nav>
+
+<input type="hidden" name="csrf-token" value="{{ csrf_token }}">

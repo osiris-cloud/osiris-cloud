@@ -1,5 +1,5 @@
 <div id="namespace-modal" tabindex="-1"
-     class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
+     class="modal hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
      xmlns="http://www.w3.org/1999/html">
     <div class="relative p-4 w-full max-w-md max-h-full">
         <!-- Modal content -->
@@ -75,7 +75,7 @@
                                            focus:border-blue-600 dark:bg-gray-800 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                                        placeholder="Search users">
                             </div>
-
+                            
                         </div>
 
                         <!-- User Search Dropdown menu -->
@@ -85,7 +85,7 @@
                                 class="max-h-48 overflow-y-auto text-gray-700 dark:text-gray-200">
                             </ul>
                         </div>
-                        
+
                         <!-- Dropdown menu -->
                         {% include 'components/dropdowns/ns_role_dropdown.html' %}
                         <!-- End Dropdown menu -->
@@ -97,21 +97,20 @@
 
                     </div>
 
-                    <div class="flex justify-between">
+                    <div class="flex">
                         <div class="flex items-start">
                             <div class="flex items-center h-5">
-                                <input id="switch-after-creation" type="checkbox" checked value=""
+                                <input id="set-as-default" type="checkbox" value=""
                                        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
-                                       required
                                 />
                             </div>
-                            <label for="switch-after-creation"
+                            <label for="set-as-default"
                                    class="ml-2 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                                 Set as Default
                             </label>
                         </div>
                     </div>
-                    <button type="submit"
+                    <button type="submit" id="ns-submit-button"
                             class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                         Save
                     </button>
