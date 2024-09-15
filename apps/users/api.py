@@ -61,6 +61,7 @@ def initiate_ns_owner_transfer(requester, ns, ns_owner, ns_users):
     return JsonResponse(success_message('Initiate namespace owner transfer'))
 
 
+@csrf_exempt
 @api_view(['GET', 'POST'])
 def accept_ns_owner_transfer(request, token):
     if not token or not isinstance(token, str):
@@ -69,6 +70,10 @@ def accept_ns_owner_transfer(request, token):
     pending_transfer = PendingTransfer.objects.filter(token=token).first()
 
     if not pending_transfer:
+        return JsonResponse(error_message('Invalid or expired token'))
+    
+    # Check if user is the supposed new owner
+    if pending_transfer.new_owner != request.user:
         return JsonResponse(error_message('Invalid or expired token'))
     
     ns = pending_transfer.namespace
