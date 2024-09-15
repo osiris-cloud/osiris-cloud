@@ -51,10 +51,10 @@ def secret(request, nsid=None, secret_name=None):
                     return JsonResponse(success_message('Get secrets', {'nsid': nsid, 'secrets': result}))
 
             case 'POST':
-                if request.data.get('data') is not None:
-                    secret_data = request.data.get('data')
-                else:
-                    secret_data = request.data
+                if 'data' not in request.POST:
+                    return JsonResponse(error_message('No data provided'))
+                
+                secret_data = json_loads(request.POST['data'])
 
                 valid, resp = validate_secret_creation(secret_data)
 
@@ -86,10 +86,10 @@ def secret(request, nsid=None, secret_name=None):
                 if not secret_name:
                     return JsonResponse(error_message('No secret name provided'))
                 
-                if request.data.get('data') is not None:
-                    secret_data = request.data.get('data')
-                else:
-                    secret_data = request.data
+                if 'data' not in request.POST:
+                    return JsonResponse(error_message('No data provided'))
+                
+                secret_data = json_loads(request.POST['data'])
                     
                 valid, resp = validate_secret_update(secret_data)
 

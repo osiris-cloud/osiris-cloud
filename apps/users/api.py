@@ -60,7 +60,7 @@ def initiate_ns_owner_transfer(requester, ns, ns_owner, ns_users):
     
     return JsonResponse(success_message('Initiate namespace owner transfer'))
 
-@csrf_exempt
+
 @api_view(['GET', 'POST'])
 def accept_ns_owner_transfer(request, token):
     if not token or not isinstance(token, str):
@@ -195,10 +195,10 @@ def namespace(request, nsid=None):
                 }))
 
             case 'POST':
-                if request.data.get('data') is not None:
-                    ns_data = request.data.get('data')
-                else:
-                    ns_data = request.data
+                if 'data' not in request.POST:
+                    return JsonResponse(error_message('No data provided'))
+                
+                ns_data = json_loads(request.POST['data'])
                 
                 valid, resp = validate_ns_creation(ns_data)
 
@@ -304,10 +304,10 @@ def namespace(request, nsid=None):
                 if not ns_nsid:
                     return JsonResponse(error_message('No namespace ID provided'))
                 
-                if request.data.get('data') is not None:
-                    ns_data = request.data.get('data')
-                else:
-                    ns_data = request.data
+                if 'data' not in request.POST:
+                    return JsonResponse(error_message('No data provided'))
+                
+                ns_data = json_loads(request.POST['data'])
                 
                 valid, resp = validate_ns_update(ns_data, ns_nsid)
 
@@ -428,10 +428,10 @@ def user(request, username=None):
                 if request.user != user_obj and request.user.role not in ['admin', 'super_admin']:
                     return JsonResponse(error_message('Permission denied'))
                 
-                if request.data.get('data') is not None:
-                    user_data = request.data.get('data')
-                else:
-                    user_data = request.data
+                if 'data' not in request.POST:
+                    return JsonResponse(error_message('No data provided'))
+                
+                user_data = json_loads(request.POST['data'])
                 
                 # Non-admins cannot update cluster_role or resource_limit
                 if request.user.role not in ['admin', 'super_admin']:
