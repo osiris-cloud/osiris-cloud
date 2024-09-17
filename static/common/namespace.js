@@ -13,6 +13,7 @@ let roleDropdown;
 let $createNS = $('#create-namespace');
 let $namespaceSettings = $('#namespace-settings');
 let $namespaceLlist = $('#namespace-list');
+let $nsSearch = $('#ns-search');
 
 let $nsModalTitle = $('#ns-modal-title');
 let $nsModalName = $('#ns-modal-name');
@@ -36,7 +37,7 @@ let nsUsers = [];
 let selectedUser = {};
 let nsOwner = {};
 let userSelf = {};
-let createNS = true;
+let createNS = false;
 
 loadNamespace();
 loadAllNamespaces();
@@ -58,7 +59,8 @@ window.addEventListener('load', function () {
         $nsModal.removeClass('show');
         showShareSpinner(false);
         connectSearch(false);
-        roleDropdown?.destroyAndRemoveInstance();
+        if (roleDropdown)
+            roleDropdown.destroyAndRemoveInstance();
         $nsModalName.val('');
         $userSearch.val('');
         $nsUserList.empty();
@@ -102,21 +104,25 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
     $.ajax({
         url: '/api/namespace/' + (nsid ? nsid : currentNS),
         type: 'GET',
+        headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
+        contentType: 'application/json',
         success: (resp) => {
-            if (resp.status === 'success') {
-                nsUsers = resp.users;
-                nsOwner = resp.owner;
-                if (apply) {
-                    $('#dropdown-ns-button').text(resp.name);
-                    localStorage.setItem('nsid', resp.nsid);
-                    window.namespace = resp.nsid;
-                }
-                if (!callback) return;
-                callback(resp);
-            } else if (resp.status === 'error') {
-                loadNamespace('default', apply, callback);
+            nsUsers = resp.users;
+            nsOwner = resp.owner;
+            if (apply) {
+                $('#dropdown-ns-button').text(resp.name);
+                localStorage.setItem('nsid', resp.nsid);
+                window.namespace = resp.nsid;
             }
+            if (callback)
+                callback(resp);
         },
+        error: (resp) => {
+            Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error", () => {
+                if (resp.status === 404 || resp.status === 403)
+                    loadNamespace('default', apply, callback);
+            }, {'ok': 'Go to Default'});
+        }
     });
 }
 
@@ -139,6 +145,7 @@ $namespaceSettings.on('click', () => {
             $nsUserList.append(createUserListItem(user));
         });
         $setAsDefault.prop('checked', resp.default);
+        $setAsDefault.prop('disabled', resp.default);
         showShareSpinner(false);
     });
 });
@@ -161,13 +168,18 @@ roleRemoveUser.on('click', () => {
     selectedUser = {};
 });
 $nsSubmitButton.on('click', () => {
-    let nsName = $nsModalName.val();
+    let nsName = $nsModalName.val().trim();
     if (nsName.length === 0) {
         Alert('Namespace name cannot be empty');
         return;
     }
+    if (nsName.length > 32) {
+        Alert('Namespace name cannot exceed 32 characters');
+        return;
+    }
+
     let data = {
-        'name': nsName.trim(),
+        'name': nsName,
         'users': nsUsers,
         'default': $setAsDefault.is(':checked')
     };
@@ -182,28 +194,30 @@ $nsSubmitButton.on('click', () => {
 
     $.ajax({
         url: '/api/namespace' + (createNS ? '' : '/' + window.namespace),
-        type: createNS ? 'POST': 'PATCH',
-        data: {
-            'csrfmiddlewaretoken': document.querySelector('input[name="csrf-token"]').value,
-            'data': JSON.stringify(data),
-        },
+        type: createNS ? 'POST' : 'PATCH',
+        headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
+        contentType: 'application/json',
+        data: JSON.stringify(data),
         success: (resp) => {
             $nsSubmitButton.prop('disabled', false);
-            if (resp.status === 'success') {
-                nsModal.hide();
-                Confirm('Namespace created. Do you want to switch to the new namespace?', (ok) => {
+            nsModal.hide();
+            if (createNS)
+                Confirm('Namespace created. Do you want to switch it?', (ok) => {
                     if (ok) {
                         window.localStorage.setItem('nsid', resp.nsid);
                         window.location.reload();
                     }
-                });
-                loadAllNamespaces();
-            } else {
-                Alert('An error occurred while creating the namespace. Please try again.');
-            }
+                }, {'yes': 'Switch', 'no': 'Stay', 'icon': 'check'});
+            else
+                Alert('Namespace Updated', () => {
+                    nsUsers = resp.users;
+                    nsOwner = resp.owner;
+                    $('#dropdown-ns-button').text(resp.name);
+                }, {'icon': 'check'});
+            loadAllNamespaces();
         },
-        error: () => {
-            Alert('Something went wrong on our end. This has been logged and we are working on it.');
+        error: (resp) => {
+            Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error");
         }
     });
 });
@@ -404,7 +418,7 @@ function createSearchUserListItem(username, name, email, avatar, roundedT, round
 function connectSearch(connect = true) {
     if (connect && !userSearchSocket) {
         try {
-            userSearchSocket = new WebSocket('/api/user-search');
+            userSearchSocket = new WebSocket('/api/user/search');
             userSearchSocket.onopen = () => {
                 userSearchSocket.onmessage = handleSocketMessage;
                 showShareSpinner(false);
@@ -443,13 +457,14 @@ function getSelf(callback) {
     $.ajax({
         url: '/api/user',
         type: 'GET',
+        headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
+        contentType: 'application/json',
         success: (resp) => {
-            if (resp.status === 'success') {
-                callback(resp);
-            } else {
-                Alert('Session expired. Please try refreshing page. If issue persists, contact support.');
-            }
-        }
+            callback(resp);
+        },
+        error: (resp) => {
+            Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error");
+        },
     });
 }
 
@@ -457,7 +472,11 @@ function capitalize(string) {
     return string[0].toUpperCase() + string.slice(1);
 }
 
-function Confirm(message, callback, options = {'yes': 'Confirm', 'no': 'Cancel', 'icon': 'info'}) {
+function Confirm(message, callback, options = {}) {
+    if (!options.yes) options.yes = 'Confirm';
+    if (!options.no) options.no = 'Cancel';
+    if (!options.icon) options.icon = 'info';
+
     let confirm = $("#popup-confirm");
     let deny = $("#popup-deny");
 
@@ -487,7 +506,9 @@ function Confirm(message, callback, options = {'yes': 'Confirm', 'no': 'Cancel',
     });
 }
 
-function Alert(message, callback = null, options = {'ok': 'OK', 'icon': 'info'}) {
+function Alert(message, callback = null, options = {}) {
+    if (!options.ok) options.ok = 'OK';
+    if (!options.icon) options.icon = 'info';
     let $ok = $("#alert-ok");
     $ok.text(options.ok);
 
@@ -517,14 +538,22 @@ function loadAllNamespaces() {
     $.ajax({
         url: '/api/namespace',
         type: 'GET',
+        headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
+        contentType: 'application/json',
         success: (resp) => {
-            if (resp.status === 'success') {
-                $namespaceLlist.empty();
-                resp.namespaces.forEach((ns) => {
-                    $namespaceLlist.append(createNSListItem(ns.name, ns.owner.name, ns.nsid));
-                });
-            }
-        }
+            $namespaceLlist.empty();
+            let $nsArray = [];
+            resp.namespaces.forEach((ns) => {
+                if (ns.nsid === window.namespace)
+                    $nsArray.unshift(createNSListItem(ns.name, ns.owner.name, ns.nsid))
+                else
+                    $nsArray.push(createNSListItem(ns.name, ns.owner.name, ns.nsid));
+            });
+            $namespaceLlist.append($nsArray);
+        },
+        error: (resp) => {
+            Alert(resp.message || resp.detail || "Internal Server Error");
+        },
     });
 }
 
@@ -533,3 +562,21 @@ $(document).keydown((event) => {
         if (nsModalClosable) nsModal.hide();
     }
 });
+
+
+$nsSearch.on('input', function () {
+    nsListSearch();
+});
+
+function nsListSearch() {
+    let filter = $nsSearch.val().toUpperCase();
+    $('#namespace-list li').each(function () {
+        let name = $(this).find('.text-sm > div:first-child').text();
+        let owner = $(this).find('.text-sm > div:nth-child(2)').text();
+        let combinedText = (name + ' ' + owner).toUpperCase();
+        if (combinedText.indexOf(filter) > -1)
+            $(this).show();
+        else
+            $(this).hide();
+    });
+}
