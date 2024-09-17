@@ -76,3 +76,21 @@ def create_vms():
                 owner=owner,
                 namespace=namespace
             )
+
+
+def create_events():
+    from json import load as json_load
+    from apps.k8s.models import Namespace, Event
+
+    with open(r'./seed/events.json') as f:
+        events = json_load(f)
+
+    for event in events:
+        namespace = Namespace.objects.get(id=event['namespace_id'])
+        
+        Event.objects.create(
+            namespace=namespace,
+            message=event['message'],
+            related_link=event['related_link'],
+            read=event['read']
+        )
