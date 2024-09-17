@@ -4,6 +4,7 @@ from encrypted_model_fields.fields import EncryptedTextField
 from ..users.models import User
 from core.utils import random_str
 from json import loads as json_loads
+import uuid
 
 
 class Namespace(models.Model):
@@ -95,3 +96,24 @@ class PVC(models.Model):
     class Meta:
         db_table = 'pvcs'
         ordering = ['-created_at']
+
+
+class Event(models.Model):
+    event_id = models.UUIDField(auto_created=True, default=uuid.uuid4, unique=True)
+    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='events')
+    message = models.TextField()
+    related_link = models.CharField(max_length=256, blank=True, null=True)
+    time = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)
+
+    def info(self):
+        return {
+            'event_id': self.event_id,
+            'message': self.message,
+            'related_link': self.related_link,
+            'time': self.time,
+            'read': self.read,
+        }
+
+    class Meta:
+        db_table = 'ns_events'
