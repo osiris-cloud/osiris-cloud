@@ -35,7 +35,12 @@ secret_urlpatterns = [
     re_path(r'^/secret/(?P<nsid>[^/]+)/(?P<secret_name>[^/]+)$', k8s_api.secret)  # Matches /secret/<nsid>/<secret_name>
 ]
 
-urlpatterns = vm_urlpatterns + user_urlpatterns + secret_urlpatterns
+event_urlpatterns = [
+    re_path(r'^/event$', k8s_api.event),  # Matches /event
+    re_path(r'^/event/(?P<event_id>[^/]+)$', k8s_api.event)  # Matches /event/<event_id>
+]
+
+urlpatterns = vm_urlpatterns + user_urlpatterns + secret_urlpatterns + event_urlpatterns
 
 websocket_urlpatterns = [
     re_path(r'^api/vnc/(?P<vmid>[^/]+)$', vm_consumers.VNCProxyConsumer.as_asgi()),
