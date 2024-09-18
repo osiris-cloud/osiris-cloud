@@ -12,7 +12,9 @@ let roleDropdown;
 
 let $createNS = $('#create-namespace');
 let $namespaceSettings = $('#namespace-settings');
+let $nsDelete = $('#namespace-delete');
 let $namespaceLlist = $('#namespace-list');
+let $nsListDropdown = $('#dropdown-ns-menu');
 let $nsSearch = $('#ns-search');
 
 let $nsModalTitle = $('#ns-modal-title');
@@ -38,6 +40,7 @@ let selectedUser = {};
 let nsOwner = {};
 let userSelf = {};
 let createNS = false;
+let currentDefault = false;
 
 loadNamespace();
 loadAllNamespaces();
@@ -53,6 +56,7 @@ window.addEventListener('load', function () {
             $nsModal.addClass('show');
         }, 10);
         connectSearch();
+        $nsListDropdown.addClass('hidden');
         $nsSubmitButton.prop('disabled', false);
     }
     nsModal._options.onHide = () => {
@@ -78,6 +82,7 @@ window.addEventListener('load', function () {
         }, 10);
         nsModalClosable = false;
         roleDropdown?.hide();
+        $nsListDropdown.addClass('hidden');
     }
     popupModal._options.onHide = () => {
         $popupModal.removeClass('show');
@@ -91,6 +96,7 @@ window.addEventListener('load', function () {
         setTimeout(() => {
             $alertModal.addClass('show');
         }, 10);
+        $nsListDropdown.addClass('hidden');
     };
     alertModal._options.onHide = function () {
         $alertModal.removeClass('show');
@@ -109,6 +115,7 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
         success: (resp) => {
             nsUsers = resp.users;
             nsOwner = resp.owner;
+            currentDefault = resp.default;
             if (apply) {
                 $('#dropdown-ns-button').text(resp.name);
                 localStorage.setItem('nsid', resp.nsid);
@@ -221,7 +228,32 @@ $nsSubmitButton.on('click', () => {
         }
     });
 });
-
+$nsDelete.on('click', () => {
+    if (currentDefault) {
+        Alert('Cannot delete the default namespace. Set another namespace as default and try again.');
+        return;
+    }
+    Confirm(`Are you sure you want to delete ${$('#dropdown-ns-button').text()}? All contained resources will be deleted.`, (ok) => {
+        if (!ok) return;
+        showShareSpinner();
+        $.ajax({
+            url: '/api/namespace/' + window.namespace,
+            type: 'DELETE',
+            headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
+            contentType: 'application/json',
+            success: (resp) => {
+                window.localStorage.removeItem('nsid');
+                Alert('Namespace Deleted', () => {
+                    loadNamespace('default', true);
+                }, {'icon': 'check'});
+                loadAllNamespaces();
+            },
+            error: (resp) => {
+                Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error");
+            }
+        });
+    });
+});
 
 function handleChangeRole(user, newRole = '') {
     selectedUser = {...user};
@@ -562,7 +594,6 @@ $(document).keydown((event) => {
         if (nsModalClosable) nsModal.hide();
     }
 });
-
 
 $nsSearch.on('input', function () {
     nsListSearch();
