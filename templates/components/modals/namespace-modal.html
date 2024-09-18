@@ -29,7 +29,7 @@
                             <input type="text" id="ns-modal-name" value=""
                                    class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg 
                                    border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-500 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                   placeholder="My Project"
+                                   placeholder="My Project" maxlength="32" minlength="1" required
                             />
 
                             <label for="ns-modal-name"
@@ -97,7 +97,7 @@
 
                     </div>
 
-                    <div class="flex">
+                    <div class="flex" id="set-as-default-con">
                         <div class="flex items-start">
                             <div class="flex items-center h-5">
                                 <input id="set-as-default" type="checkbox" value=""

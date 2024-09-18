@@ -233,7 +233,6 @@ def namespace(request, nsid=None):
                 return JsonResponse(success_message('Create namespace', ns_info), status=201)
 
             case 'PATCH':
-                print(ns_data)
                 valid, err = validate_ns_update(ns_data, nsid)
                 if not valid:
                     return JsonResponse(err, status=400)
@@ -333,7 +332,6 @@ def namespace(request, nsid=None):
         return JsonResponse(error_message('Invalid JSON data'), status=400)
 
     except Exception as e:
-        print(e)
         logging.exception(e)
         return JsonResponse(error_message('Internal server error'), status=500)
 

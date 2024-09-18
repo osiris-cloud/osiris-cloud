@@ -42,13 +42,14 @@ let userSelf = {};
 let createNS = false;
 let currentDefault = false;
 
-loadNamespace();
-loadAllNamespaces();
 getSelf((user) => {
     userSelf = {
         ...user, 'name': user.first_name + ' ' + user.last_name, 'role': 'owner'
     }
 });
+loadNamespace();
+loadAllNamespaces();
+
 window.addEventListener('load', function () {
     nsModal = FlowbiteInstances.getInstance('Modal', 'namespace-modal');
     nsModal._options.onShow = () => {
@@ -120,6 +121,10 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
                 $('#dropdown-ns-button').text(resp.name);
                 localStorage.setItem('nsid', resp.nsid);
                 window.namespace = resp.nsid;
+                resp.users.forEach((user) => {
+                    if (user.username === userSelf.username && user.role === 'viewer')
+                        $namespaceSettings.addClass('hidden');
+                });
             }
             if (callback)
                 callback(resp);
@@ -140,7 +145,7 @@ $createNS.on('click', () => {
     roleTransferOwner.addClass('hidden');
     $nsUserList.append(createUserListItem(userSelf));
 });
-$namespaceSettings.on('click', () => {
+$namespaceSettings.on('click', false, () => {
     createNS = false;
     $nsModalTitle.text('Edit Namespace');
     loadNamespace(window.namespace, false, (resp) => {
@@ -151,8 +156,13 @@ $namespaceSettings.on('click', () => {
         resp.users.forEach((user) => {
             $nsUserList.append(createUserListItem(user));
         });
-        $setAsDefault.prop('checked', resp.default);
-        $setAsDefault.prop('disabled', resp.default);
+        if (nsOwner.username !== userSelf.username) {
+            $('#set-as-default-container').addClass('hidden');
+            $nsDelete.addClass('hidden');
+        } else {
+            $setAsDefault.prop('checked', resp.default);
+            $setAsDefault.prop('disabled', resp.default);
+        }
         showShareSpinner(false);
     });
 });
@@ -178,10 +188,6 @@ $nsSubmitButton.on('click', () => {
     let nsName = $nsModalName.val().trim();
     if (nsName.length === 0) {
         Alert('Namespace name cannot be empty');
-        return;
-    }
-    if (nsName.length > 32) {
-        Alert('Namespace name cannot exceed 32 characters');
         return;
     }
 
@@ -222,9 +228,12 @@ $nsSubmitButton.on('click', () => {
                     $('#dropdown-ns-button').text(resp.name);
                 }, {'icon': 'check'});
             loadAllNamespaces();
+            showShareSpinner(false);
         },
         error: (resp) => {
             Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error");
+            $nsSubmitButton.prop('disabled', false);
+            showShareSpinner(false);
         }
     });
 });
@@ -235,7 +244,6 @@ $nsDelete.on('click', () => {
     }
     Confirm(`Are you sure you want to delete ${$('#dropdown-ns-button').text()}? All contained resources will be deleted.`, (ok) => {
         if (!ok) return;
-        showShareSpinner();
         $.ajax({
             url: '/api/namespace/' + window.namespace,
             type: 'DELETE',
@@ -244,9 +252,8 @@ $nsDelete.on('click', () => {
             success: (resp) => {
                 window.localStorage.removeItem('nsid');
                 Alert('Namespace Deleted', () => {
-                    loadNamespace('default', true);
+                    window.location.reload();
                 }, {'icon': 'check'});
-                loadAllNamespaces();
             },
             error: (resp) => {
                 Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error");
