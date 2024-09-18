@@ -5,33 +5,35 @@ from django.http import JsonResponse
 from django.db import transaction, IntegrityError
 from django.db.models import Sum
 from json import loads as json_loads
+from json.decoder import JSONDecodeError
 
 from core.utils import success_message, error_message, random_str
 from .models import User, Limit, PendingTransfer
 from ..k8s.models import PVC, Namespace, NamespaceRoles
 from ..vm.models import VM
 from ..oauth.models import NYUUser
-from ..users.utils import delete_namespace_resources, sanitize_nsid, validate_ns_creation, validate_ns_update, validate_user_update, delete_owner_resources, notify_new_owner
+from ..users.utils import schedule_ns_deletion, sanitize_nsid, validate_ns_creation, validate_ns_update, \
+    validate_user_update, delete_owner_resources, notify_new_owner
 
 
 def get_user_default_ns(user: User) -> Namespace:
     return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
+
 
 def initiate_ns_owner_transfer(requester, ns, ns_owner, ns_users):
     if ns_users:
         for user in ns_users:
             if user['username'] == ns_owner['username']:
                 raise ValueError('New owner cannot be assigned additional roles')
-            
+
     new_owner_obj = User.objects.filter(username=ns_owner.get('username')).first()
 
     if not new_owner_obj:
         raise ValueError('New owner\'s username not found')
-    
+
     if new_owner_obj == ns.owner:
         raise ValueError('New owner is already the namespace owner')
-    
-    
+
     try:
         with transaction.atomic():
             # remove PendingTransfer entries for matching namespace, new owner and requester
@@ -57,22 +59,23 @@ def initiate_ns_owner_transfer(requester, ns, ns_owner, ns_users):
     except Exception as e:
         logging.error(str(e))
         return JsonResponse(error_message('Failed to initiate namespace owner transfer'))
-    
+
     return JsonResponse(success_message('Initiate namespace owner transfer'))
+
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def accept_ns_owner_transfer(request, token):
     if not token or not isinstance(token, str):
         return JsonResponse(error_message('Invalid or missing token'))
-    
+
     pending_transfer = PendingTransfer.objects.filter(token=token).first()
 
     if not pending_transfer:
         return JsonResponse(error_message('Invalid or expired token'))
-    
+
     ns = pending_transfer.namespace
-    
+
     try:
         with transaction.atomic():
             # Compare NS allocated resources with new owner's limit
@@ -105,11 +108,10 @@ def accept_ns_owner_transfer(request, token):
                 raise ValueError('Total RAM usage exceeds the user\'s limit')
             if user_disk_limit is not None and total_disk_used > user_disk_limit:
                 raise ValueError('Total disk usage exceeds the user\'s limit')
-            
 
             # Remove the current owner role
             NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
-            
+
             # Check if the new owner is already part of the namespace, if so, delete the user's role
             existing_role = NamespaceRoles.objects.filter(namespace=ns, user=request.user).first()
             if existing_role:
@@ -121,7 +123,7 @@ def accept_ns_owner_transfer(request, token):
                     user=request.user,
                     role='owner'
                 )
-            
+
             ns.default = False
             ns.save()
 
@@ -129,7 +131,7 @@ def accept_ns_owner_transfer(request, token):
             if ns_users:
                 # Remove all current manager and viewer roles
                 NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
-                
+
                 for user in ns_users:
                     user_obj = User.objects.filter(username=user['username']).first()
                     if not user_obj:
@@ -157,28 +159,29 @@ def accept_ns_owner_transfer(request, token):
 
     return JsonResponse(success_message('Accept namespace ownership transfer'))
 
+
 @api_view(['GET', 'POST', 'PATCH', 'DELETE'])
 def namespace(request, nsid=None):
     """
     Get properties of all namespaces the user is part of
     """
-    ns_filter = {}
-    if nsid:
-        if nsid == 'default':
-            if request.session.get('namespace') is None:
-                request.session['namespace'] = get_user_default_ns(request.user).nsid
-            ns_filter['nsid'] = request.session.get('namespace')
-        else:
-            ns_filter['nsid'] = nsid
+    if nsid == 'default':
+        if not (nsid := request.session.get('default_ns')):
+            nsid = request.session['default_ns'] = get_user_default_ns(request.user).nsid
+
+    if (request.method in ['PATCH, DELETE']) and nsid is None:
+        return JsonResponse(error_message('Namespace id is required'), status=400)
 
     try:
+        ns_data = request.data
         match request.method:
             case 'GET':
                 # Get all namespaces the user is part of
+                ns_filter = {'nsid': nsid} if nsid else {}
                 namespaces = request.user.namespaces.filter(**ns_filter)
 
                 if not namespaces.exists():
-                    return JsonResponse(error_message('No namespace found'))
+                    return JsonResponse(error_message('Namespace not found or no permission to access'), status=404)
 
                 result = []
 
@@ -188,209 +191,152 @@ def namespace(request, nsid=None):
                     result.append(ns_info)
 
                 if nsid:
-                    return JsonResponse(success_message('Get namespace', result[0]))
+                    return JsonResponse(success_message('Get namespace', result[0]), status=200)
 
                 return JsonResponse(success_message('Get namespaces', {
                     'namespaces': result,
-                }))
+                }), status=200)
 
             case 'POST':
-                if request.data.get('data') is not None:
-                    ns_data = request.data.get('data')
-                else:
-                    ns_data = request.data
-                
-                valid, resp = validate_ns_creation(ns_data)
-
+                valid, err = validate_ns_creation(ns_data)
                 if not valid:
-                    return JsonResponse(resp)
+                    return JsonResponse(err)
 
-                ns_name = ns_data.get('name')
-                ns_nsid = sanitize_nsid(ns_name)
+                new_ns_name = ns_data.get('name')
+                if not new_ns_name:
+                    return JsonResponse(error_message('Namespace name is required'), status=400)
 
-                if ns_nsid:
-                    ns_nsid = ns_nsid + '-' + random_str(4)
-                else:
-                    ns_nsid = random_str(4) + '-' + random_str(4)
+                ns_nsid = (sanitize_nsid(new_ns_name) or request.user.username) + '-' + random_str(4)
+                new_ns_default = ns_data.get('default', False)
 
-                ns_default = ns_data.get('default', False)
-                
-                try:
-                    with transaction.atomic():
-                        # If the new namespace is set as default, update other namespaces owned by the user
-                        if ns_default:
-                            Namespace.objects.filter(users=request.user, default=True).update(default=False)
+                with transaction.atomic():
+                    # If the new namespace is set as default, update other namespaces owned by the user
+                    if new_ns_default:
+                        Namespace.objects.filter(users=request.user, default=True).update(default=False)
+                        request.session['default_ns'] = nsid
 
-                        # List of usernames with their role to add to the namespace.
-                        ns_users = ns_data.get('users', [])
-
-                        # Create namespace
-                        ns = Namespace.objects.create(
-                            nsid=ns_nsid,
-                            name=ns_name,
-                            default=ns_default
-                        )
-                            
-                        # Add creator as owner
-                        NamespaceRoles.objects.create(
-                            namespace=ns,
-                            user=request.user,
-                            role='owner'
-                        )
-                        
-                        # Add users to namespace.
-                        for user in ns_users:
-                            user_obj = User.objects.filter(username=user['username']).first()
-                            
-                            if not user_obj:
-                                raise ValueError(f'User {user["username"]} not found')
-                                                        
-                            if user_obj == request.user:
-                                raise ValueError('Owner cannot be assigned additional roles')
-                                                        
-                            role = user['role']
-                            
-                            NamespaceRoles.objects.create(
-                                namespace=ns,
-                                user=user_obj,
-                                role=role
-                            )
-
-                except ValueError as e:
-                    return JsonResponse(error_message(str(e)))
-                except Exception as e:
-                    logging.error(str(e))
-                    return JsonResponse(error_message('Failed to create namespace'))
+                    # List of usernames with their role to add to the namespace.
+                    new_ns_users = ns_data.get('users', [])
+                    ns = Namespace.objects.create(nsid=ns_nsid, name=new_ns_name,
+                                                  default=new_ns_default)  # Create namespace
+                    NamespaceRoles.objects.create(namespace=ns, user=request.user, role='owner')  # Add creator as owner
+                    for user in new_ns_users:  # Add users to namespace
+                        user_obj = User.objects.filter(username=user['username']).first()
+                        if not user_obj:
+                            return JsonResponse(error_message(f'User {user["username"]} not found'), status=400)
+                        if user_obj == request.user:
+                            return JsonResponse(error_message('Owner cannot be assigned additional roles'), status=400)
+                        NamespaceRoles.objects.create(namespace=ns, user=user_obj, role=user['role'])
 
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()
-                return JsonResponse(success_message('Create namespace', ns_info))
-            
-            case 'DELETE':
-                if nsid == 'default':
-                    ns_nsid = request.session.get('namespace')
-                else:
-                    ns_nsid = nsid
-
-                if not ns_nsid:
-                    return JsonResponse(error_message('No namespace ID provided'))
-                
-                ns = Namespace.objects.filter(nsid=ns_nsid).first()
-
-                if not ns or ns.owner != request.user:
-                    return JsonResponse(error_message('Namespace not found or user does not have permission to delete this namespace'))
-                
-                # If the namespace is set as default, user has to set another namespace as default before deleting
-                if ns.default:
-                    return JsonResponse(error_message('Cannot delete default namespace'))
-
-                if delete_namespace_resources(ns):
-                    try:
-                        ns.delete()
-                    except Exception as e:
-                        logging.error(str(e))
-                        return JsonResponse(error_message('Failed to delete namespace'))
-                else:
-                    return JsonResponse(error_message('Failed to delete namespace resources'))
-
-                return JsonResponse(success_message('Delete namespace', {'nsid': ns_nsid}))
+                return JsonResponse(success_message('Create namespace', ns_info), status=201)
 
             case 'PATCH':
-                if nsid == 'default':
-                    ns_nsid = request.session.get('namespace')
-                else:
-                    ns_nsid = nsid
-
-                if not ns_nsid:
-                    return JsonResponse(error_message('No namespace ID provided'))
-                
-                if request.data.get('data') is not None:
-                    ns_data = request.data.get('data')
-                else:
-                    ns_data = request.data
-                
-                valid, resp = validate_ns_update(ns_data, ns_nsid)
-
+                print(ns_data)
+                valid, err = validate_ns_update(ns_data, nsid)
                 if not valid:
-                    return JsonResponse(resp)
-                
-                ns_name = ns_data.get('name')
-                ns_default = ns_data.get('default', False)
-                ns_owner = ns_data.get('owner')
-                ns_users = ns_data.get('users', [])
+                    return JsonResponse(err, status=400)
 
-                if not ns_nsid:
-                    return JsonResponse(error_message('No namespace ID provided'))
-                
-                ns = Namespace.objects.filter(nsid=ns_nsid).first()
+                new_ns_name = ns_data.get('name')
+                new_ns_default = ns_data.get('default', False)
+                new_ns_owner_uname = ns_data.get('owner', {}).get('username')
+                new_ns_users = ns_data.get('users', [])
+
+                ns = Namespace.objects.filter(nsid=nsid).first()
 
                 if not ns:
-                    return JsonResponse(error_message('No namespace found or user does not have permission to update this namespace'))
-                
-                if ns.get_role(request.user) not in ['owner', 'manager']:
-                    return JsonResponse(error_message('No namespace found or user does not have permission to update this namespace'))
+                    return JsonResponse(error_message(f'Namespace {nsid} not found'), status=404)
 
-                if ns_default and ns_owner:
-                    return JsonResponse(error_message('Cannot specify owner and set namespace as default at the same time'))
-                
-                # Check if the namespace is the requester's default namespace
-                if ns.owner == request.user and ns.default and ns_owner:
-                    return JsonResponse(error_message('You must set another namespace as your default before transferring ownership'))
-                
-                try:
-                    with transaction.atomic():
-                        if ns_default and not ns_owner:
-                            if ns.owner != request.user:
-                                raise ValueError('Only the owner can set the namespace as default')
-                            
-                            # If the namespace is set as default, update other namespaces owned by the user
-                            Namespace.objects.filter(users=request.user, default=True).update(default=False)
-                            ns.default = ns_default
-                            request.session['namespace'] = ns_nsid
+                request_user_role = ns.get_role(request.user)
 
-                        # Update namespace owner
-                        if ns_owner:
-                            return(initiate_ns_owner_transfer(request.user, ns, ns_owner, ns_users))
+                if request_user_role not in ['owner', 'manager']:
+                    return JsonResponse(error_message('Permission denied: You need to be either owner or manager'),
+                                        status=403)
 
-                        if not ns_owner and ns_users:
-                            # Remove all current manager and viewer roles
-                            NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
-                            for user in ns_users:
-                                user_obj = User.objects.filter(username=user['username']).first()
-                                if not user_obj:
-                                    raise ValueError(f'User {user["username"]} not found')
-                                
-                                # Ensure the owner cannot assign themselves additional roles
-                                if user_obj == ns.owner:
-                                    raise ValueError('Owner cannot be assigned additional roles')
+                # request oser is owner POV
+                if request_user_role == 'owner':
+                    # transfer ownership criteria -> current owner needs to have another namespace set as default
+                    if ns.default and (new_ns_owner_uname != request.user.username):
+                        return JsonResponse(
+                            error_message('You must set another namespace as default before transferring ownership'),
+                            status=400
+                        )
 
-                                role = user['role']
-                                
-                                NamespaceRoles.objects.create(
-                                    namespace=ns,
-                                    user=user_obj,
-                                    role=role
-                                )
+                # request oser is manager POV
+                elif request_user_role == 'manager':
+                    # set default criteria -> only owner can set namespace as default
+                    if new_ns_default:
+                        return JsonResponse(error_message('Only the owner can set namespace as default'),
+                                            status=403)
+                    if new_ns_owner_uname != ns.owner.username:
+                        return JsonResponse(error_message('Permission denied: You need to be the owner'),
+                                            status=403)
 
-                        if ns_name:
-                            ns.name = ns_name
+                if new_ns_name:
+                    ns.name = new_ns_name
 
-                        # push changes to the database
-                        ns.save()
-                
-                except ValueError as e:
-                    return JsonResponse(error_message(str(e)))
-                except Exception as e:
-                    logging.error(str(e))
-                    return JsonResponse(error_message('Failed to update namespace'))
+                if new_ns_default:
+                    # If the context namespace is set to default, unset 'default' on prev default namespace
+                    Namespace.objects.filter(users=request.user, default=True).update(default=False)
+                    ns.default = True
+                    request.session['default_ns'] = nsid
+
+                # Update namespace owner
+                if new_ns_owner_uname != ns.owner.username:
+                    initiate_ns_owner_transfer(request.user, ns, new_ns_owner_uname, new_ns_users)
+
+                if new_ns_users:
+                    # Remove all current manager and viewer roles
+                    NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
+                    for user in new_ns_users:
+                        user_obj = User.objects.filter(username=user['username']).first()
+                        if not user_obj:
+                            return JsonResponse(error_message(f'User {user["username"]} not found'), status=400)
+
+                        # Ensure the owner cannot assign themselves additional roles
+                        if user_obj == ns.owner:
+                            return JsonResponse(error_message('Owner cannot be assigned additional roles'),
+                                                status=400)
+
+                        NamespaceRoles.objects.create(
+                            namespace=ns,
+                            user=user_obj,
+                            role=user['role']
+                        )
+
+                ns.save()
 
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()
                 return JsonResponse(success_message('Update namespace', ns_info))
 
+            case 'DELETE':
+                ns = Namespace.objects.filter(nsid=nsid).first()
+
+                if not ns:
+                    return JsonResponse(error_message(f'Namespace {nsid} not found'), status=404)
+
+                if ns.owner != request.user:
+                    return JsonResponse(
+                        error_message('Permission denied: Only the owner can delete the namespace'), status=403)
+
+                # If the namespace is set as default, user has to set another namespace as default before deleting
+                if ns.default:
+                    return JsonResponse(error_message('Cannot delete default namespace'), status=400)
+
+                schedule_ns_deletion(ns)
+
+                return JsonResponse(success_message('Delete namespace', {'nsid': nsid}), status=200)
+
+    except JSONDecodeError as e:
+        return JsonResponse(error_message('Invalid JSON data'), status=400)
+
     except Exception as e:
-        logging.error(str(e))
-        return JsonResponse('Internal server error', status=500)
+        print(e)
+        logging.exception(e)
+        return JsonResponse(error_message('Internal server error'), status=500)
+
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 def user(request, username=None):
@@ -401,7 +347,7 @@ def user(request, username=None):
                     user_obj = User.objects.filter(username=username).first()
                     if not user_obj:
                         return JsonResponse(error_message('User not found'))
-                    
+
                     # Check if requester is the user themselves or a admin or super_admin
                     if request.user != user_obj and request.user.role not in ['admin', 'super_admin']:
                         return JsonResponse(error_message('Permission denied'))
@@ -415,24 +361,24 @@ def user(request, username=None):
                     else:
                         # Normal user: return their own detailed info
                         return JsonResponse(success_message('Get user', request.user.detailed_info()))
-            
+
             case 'PATCH':
                 if not username:
                     return JsonResponse(error_message('No username provided'))
-                
+
                 user_obj = User.objects.filter(username=username).first()
                 if not user_obj:
                     return JsonResponse(error_message('User not found'))
-                
+
                 # Non-admins can only update their own info
                 if request.user != user_obj and request.user.role not in ['admin', 'super_admin']:
                     return JsonResponse(error_message('Permission denied'))
-                
+
                 if request.data.get('data') is not None:
                     user_data = request.data.get('data')
                 else:
                     user_data = request.data
-                
+
                 # Non-admins cannot update cluster_role or resource_limit
                 if request.user.role not in ['admin', 'super_admin']:
                     if 'cluster_role' in user_data or 'resource_limit' in user_data:
@@ -442,7 +388,7 @@ def user(request, username=None):
 
                 if not valid:
                     return JsonResponse(resp)
-                
+
                 try:
                     with transaction.atomic():
                         # Update user fields
@@ -473,25 +419,26 @@ def user(request, username=None):
                     return JsonResponse(error_message('Failed to update user'))
 
                 return JsonResponse(success_message('Update user', user_obj.detailed_info()))
-            
+
             case 'DELETE':
                 if not username:
                     return JsonResponse(error_message('No username provided'))
-                
+
                 if request.user.role not in ['admin', 'super_admin']:
                     return JsonResponse(error_message('Permission denied'))
-                
+
                 user_obj = User.objects.filter(username=username).first()
                 if not user_obj:
                     return JsonResponse(error_message('User not found'))
-                
+
                 # Nuke all resources of namespaces owned by the user
                 if delete_owner_resources(user_obj):
                     # Update DB tables
                     try:
                         with transaction.atomic():
                             # Get namespace ids user owns from NamespaceRoles
-                            namespace_ids = NamespaceRoles.objects.filter(user=user_obj, role='owner').values_list('namespace_id', flat=True)
+                            namespace_ids = NamespaceRoles.objects.filter(user=user_obj, role='owner').values_list(
+                                'namespace_id', flat=True)
 
                             for namespace_id in namespace_ids:
                                 Namespace.objects.filter(id=namespace_id).delete()
@@ -504,7 +451,10 @@ def user(request, username=None):
                 else:
                     return JsonResponse(error_message('Failed to delete user resources'))
 
+    except JSONDecodeError as e:
+        logging.error(e)
+        return JsonResponse('Invalid JSON data', status=400)
+
     except Exception as e:
         logging.error(str(e))
         return JsonResponse('Internal server error', status=500)
-    

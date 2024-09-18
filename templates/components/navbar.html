@@ -1,13 +1,31 @@
 {% load static %}
 
+<style>
+    .modal {
+        opacity: 0;
+        transform: scale(0.9);
+        transition: opacity 0.2s ease-out, transform 0.15s ease-out;
+    }
+
+    .show {
+        opacity: 1;
+        transform: scale(1);
+    }
+</style>
+
 <!-- NS Modal -->
 {% include 'components/modals/namespace-modal.html' %}
+
+<!-- Popup Modal -->
+{% include 'components/modals/popup-modal.html' %}
+
+<!-- Alert Modal -->
+{% include 'components/modals/alert-modal.html' %}
 
 
 <nav class="fixed z-30 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
     <div class="px-3 py-3 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
-
             <div class="flex items-center justify-start">
                 <button id="toggleSidebarMobile" aria-expanded="true" aria-controls="sidebar"
                         class="p-2 text-gray-600 rounded cursor-pointer lg:hidden hover:text-gray-900 hover:bg-gray-100 focus:bg-gray-100 dark:focus:bg-gray-700 focus:ring-2 focus:ring-gray-100 dark:focus:ring-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
@@ -38,7 +56,7 @@
                     <div id="dropdown-ns" data-dropdown-toggle="dropdown-ns-menu" data-dropdown-placement="bottom"
                          class="text-black hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 font-medium rounded-lg 
                             text-sm px-5 py-2.5 text-center inline-flex items-center dark:hover:bg-gray-700 dark:text-white cursor-pointer">
-                        <button id="dropdown-ns-button" 
+                        <button id="dropdown-ns-button"
                                 class="text-black font-medium text-sm text-center inline-flex items-center dark:text-white"
                                 type="button"
                         >
@@ -59,16 +77,20 @@
                     <div id="dropdown-ns-menu" class="z-10 hidden bg-white rounded-lg shadow dark:bg-gray-700">
                         <div>
                             <div>
-                                <div id="CreateNamespace" data-modal-target="NamespaceModal"
-                                     data-modal-toggle="NamespaceModal" class="flex items-center p-3 text-sm font-medium text-blue-600 border-t border-gray-200 rounded-b-lg bg-gray-50 
-                                cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-lime-500">
+                                <div id="create-namespace"
+                                     data-modal-target="namespace-modal"
+                                     data-modal-toggle="namespace-modal"
+                                     class="flex items-center p-3 text-sm font-medium text-blue-600 border-t border-b border-gray-200 bg-gray-50
+                                     cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-lime-500"
+                                >
                                     <svg class="w-6 h-6 text-gray-800 dark:text-white mr-2"
                                          xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                          fill="currentColor"
                                          viewBox="0 0 24 24">
                                         <path fill-rule="evenodd"
                                               d="M5 4a2 2 0 0 0-2 2v1h10.968l-1.9-2.28A2 2 0 0 0 10.532 4H5ZM3 19V9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Zm9-8.5a1 1 0 0 1 1 1V13h1.5a1 1 0 1 1 0 2H13v1.5a1 1 0 1 1-2 0V15H9.5a1 1 0 1 1 0-2H11v-1.5a1 1 0 0 1 1-1Z"
-                                              clip-rule="evenodd"></path>
+                                              clip-rule="evenodd">
+                                        </path>
                                     </svg>
                                     Create Namespace
                                 </div>
@@ -93,32 +115,50 @@
                                 </div>
                             </div>
 
-                            <ul class="max-h-52 px-3 pb-3 overflow-y-auto text-sm text-gray-700 dark:text-gray-200 cursor-default">
-                                <li class="flex p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
-                                    onclick="">
+                            <ul id="namespace-list"
+                                class="max-h-40 px-3 pb-3 overflow-y-auto text-sm text-gray-700 dark:text-gray-200 cursor-default">
+                                <li class="flex p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <div class="text-sm">
-                                        <div>Personal</div>
+                                        <div>Loading</div>
                                         <div class="text-xs font-normal text-gray-500 dark:text-gray-300">
-                                            Your personal namespace
+                                            Loading..
                                         </div>
                                     </div>
                                 </li>
                             </ul>
 
-
-                            <div>
-                                <div class="flex items-center p-3 text-sm font-medium text-blue-600 border-t border-gray-200 rounded-b-lg bg-gray-50 
+                            <div id="namespace-settings"
+                                 data-modal-target="namespace-modal"
+                                 data-modal-toggle="namespace-modal"
+                                 class="flex items-center p-3 text-sm font-medium text-blue-600 border-t border-gray-200 rounded-b-lg bg-gray-50
                                 cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-lime-500">
-                                    <svg class="w-6 h-6 text-gray-800 dark:text-white mr-2"
-                                         xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                         fill="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path d="M10.83 5a3.001 3.001 0 0 0-5.66 0H4a1 1 0 1 0 0 2h1.17a3.001 3.001 0 0 0 5.66 0H20a1 1 0 1 0 0-2h-9.17ZM4 11h9.17a3.001 3.001 0 0 1 5.66 0H20a1 1 0 1 1 0 2h-1.17a3.001 3.001 0 0 1-5.66 0H4a1 1 0 1 1 0-2Zm1.17 6H4a1 1 0 1 0 0 2h1.17a3.001 3.001 0 0 0 5.66 0H20a1 1 0 1 0 0-2h-9.17a3.001 3.001 0 0 0-5.66 0Z">
-                                        </path>
-                                    </svg>
-                                    Namespace Settings
-                                </div>
+                                <svg class="w-6 h-6 text-gray-800 dark:text-white mr-2"
+                                     xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                     fill="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd"
+                                          d="M10.83 5a3.001 3.001 0 0 0-5.66 0H4a1 1 0 1 0 0 2h1.17a3.001 3.001 0 0 0 5.66 0H20a1 1 0 1 0 0-2h-9.17ZM4 11h9.17a3.001 3.001 0 0 1 5.66 0H20a1 1 0 1 1 0 2h-1.17a3.001 3.001 0 0 1-5.66 0H4a1 1 0 1 1 0-2Zm1.17 6H4a1 1 0 1 0 0 2h1.17a3.001 3.001 0 0 0 5.66 0H20a1 1 0 1 0 0-2h-9.17a3.001 3.001 0 0 0-5.66 0Z"
+                                          clip-rule="evenodd"
+                                    >
+                                    </path>
+                                </svg>
+                                Namespace Settings
                             </div>
+
+                            <div id="namespace-delete"
+                                 class="flex items-center p-3 text-sm font-medium text-blue-600 border-t border-gray-200 rounded-b-lg bg-gray-50
+                                cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-lime-500">
+                                <svg class="w-6 h-6 text-gray-800 dark:text-white mr-2"
+                                     xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd"
+                                          d="M8.586 2.586A2 2 0 0 1 10 2h4a2 2 0 0 1 2 2v2h3a1 1 0 1 1 0 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a1 1 0 0 1 0-2h3V4a2 2 0 0 1 .586-1.414ZM10 6h4V4h-4v2Zm1 4a1 1 0 1 0-2 0v8a1 1 0 1 0 2 0v-8Zm4 0a1 1 0 1 0-2 0v8a1 1 0 1 0 2 0v-8Z"
+                                          clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                Delete Namespace
+                            </div>
+
                         </div>
 
                     </div>
@@ -240,3 +280,5 @@
         </div>
     </div>
 </nav>
+
+<input type="hidden" name="csrf-token" value="{{ csrf_token }}">

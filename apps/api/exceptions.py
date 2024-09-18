@@ -8,17 +8,22 @@ def exceptions(exc, context):
     if response is None:
         return response
 
-    detail = {}
-
     match response.data['detail'].code:
         case 'not_authenticated':
             detail = {
-                'detail': 'Request is unauthenticated. Go to /api/token/ in an existing session to get a token'
+                'message': 'Request is unauthenticated'
             }
-
         case 'authentication_failed':
             detail = {
-                'detail': 'Authentication failed. Auth header should be in the format -> Authorization: "Token <token>"'
+                'message': 'Authentication failed'
+            }
+        case 'permission_denied':
+            detail = {
+                'message': 'CSRF check failed'
+            }
+        case _:
+            detail = {
+                'message': response.data['detail'].code
             }
 
     response.data = {

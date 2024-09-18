@@ -39,5 +39,5 @@ urlpatterns = vm_urlpatterns + user_urlpatterns + secret_urlpatterns
 
 websocket_urlpatterns = [
     re_path(r'^api/vnc/(?P<vmid>[^/]+)$', vm_consumers.VNCProxyConsumer.as_asgi()),
-    re_path(r'^api/user-search$', user_consumers.UserSearchConsumer.as_asgi()),
+    re_path(r'^api/user/search$', user_consumers.UserSearchConsumer.as_asgi()),
 ]
