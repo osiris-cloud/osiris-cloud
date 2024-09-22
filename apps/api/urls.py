@@ -24,7 +24,6 @@ vm_urlpatterns = [
 user_urlpatterns = [
     re_path(r'^/namespace$', user_api.namespace),  # Matches /namespace
     re_path(r'^/namespace/(?P<nsid>[^/]+)$', user_api.namespace),  # Matches /namespace/<nsid>
-    re_path(r'^/namespace/accept-transfer/(?P<token>[^/]+)$', user_api.accept_ns_owner_transfer),  # Matches /namespace/<nsid>/accept-transfer/<requester_id>
     re_path(r'^/user$', user_api.user),  # Matches /user
     re_path(r'^/user/(?P<username>[^/]+)$', user_api.user)  # Matches /user/<username>
 ]
