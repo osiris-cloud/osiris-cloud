@@ -197,6 +197,8 @@ def namespace(request, nsid=None):
                             user=new_owner_obj,
                             role='owner'
                         )
+                    
+                    notify_new_owner(new_owner_obj.email, ns.nsid, ns.name, request.user.username)
 
                 if new_ns_users is not None:
                     # Remove all current manager and viewer roles
