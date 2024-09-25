@@ -1,0 +1,20 @@
+[
+    {
+        "namespace_id": 1,
+        "message": "Breathe",
+        "related_link": "bla bla bla",
+        "read": false
+    },
+    {
+        "namespace_id": 1,
+        "message": "Eclipse",
+        "related_link": "gu gu gu gu",
+        "read": false
+    },
+    {
+        "namespace_id": 2,
+        "message": "Money",
+        "related_link": "gi gi gi gi",
+        "read": false
+    }
+]

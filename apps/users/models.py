@@ -117,25 +117,6 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ('role', 'last_login')
 
 
-class Event(models.Model):
-    namespace = models.ForeignKey('k8s.Namespace', on_delete=models.CASCADE, related_name='events')
-    message = models.TextField()
-    related_link = models.CharField(max_length=256, blank=True, null=True)
-    time = models.DateTimeField(auto_now_add=True)
-    read = models.BooleanField(default=False)
-
-    def info(self):
-        return {
-            'message': self.message,
-            'related_link': self.related_link,
-            'time': self.time,
-            'read': self.read,
-        }
-
-    class Meta:
-        db_table = 'ns_events'
-
-
 class Group(models.Model):
     gid = models.CharField(max_length=64, unique=True, primary_key=True)
     name = models.CharField(max_length=128)
