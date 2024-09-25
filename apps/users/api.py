@@ -226,7 +226,7 @@ def namespace(request, nsid=None):
                 return JsonResponse(success_message('Update namespace', ns_info))
 
             case 'DELETE':
-                ns = Namespace.objects.filter(nsid=nsid).first()
+                ns = Namespace.objects.filter(nsid=nsid, locked=False).first()
 
                 if not ns:
                     return JsonResponse(error_message(f'Namespace {nsid} not found'), status=404)
