@@ -148,16 +148,6 @@ class Limit(models.Model):
     class Meta:
         db_table = 'user_limits'
 
-class PendingTransfer(models.Model):
-    token = models.CharField(max_length=64, unique=True, default=0)
-    namespace = models.ForeignKey('k8s.Namespace', on_delete=models.CASCADE)
-    new_owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pending_transfers')
-    initiated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='initiated_transfers')
-    created_at = models.DateTimeField(auto_now_add=True)
-    ns_users = models.JSONField(null=True, blank=True)
-
-    class Meta:
-        db_table = 'ns_transfers'
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):

@@ -8,7 +8,7 @@ from json import loads as json_loads
 from json.decoder import JSONDecodeError
 
 from core.utils import success_message, error_message, random_str
-from .models import User, Limit, PendingTransfer
+from .models import User, Limit
 from ..k8s.models import PVC, Namespace, NamespaceRoles
 from ..vm.models import VM
 from ..oauth.models import NYUUser
@@ -18,146 +18,6 @@ from ..users.utils import schedule_ns_deletion, sanitize_nsid, validate_ns_creat
 
 def get_user_default_ns(user: User) -> Namespace:
     return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
-
-
-def initiate_ns_owner_transfer(requester, ns, ns_owner, ns_users):
-    if ns_users:
-        for user in ns_users:
-            if user['username'] == ns_owner['username']:
-                raise ValueError('New owner cannot be assigned additional roles')
-
-    new_owner_obj = User.objects.filter(username=ns_owner.get('username')).first()
-
-    if not new_owner_obj:
-        raise ValueError('New owner\'s username not found')
-
-    if new_owner_obj == ns.owner:
-        raise ValueError('New owner is already the namespace owner')
-
-    try:
-        with transaction.atomic():
-            # remove PendingTransfer entries for matching namespace, new owner and requester
-            PendingTransfer.objects.filter(
-                namespace=ns,
-                new_owner=new_owner_obj,
-                initiated_by=requester
-            ).delete()
-
-            # Generate unique token
-            token = random_str(64)
-
-            PendingTransfer.objects.create(
-                token=token,
-                namespace=ns,
-                new_owner=new_owner_obj,
-                initiated_by=requester,
-                ns_users=ns_users
-            )
-
-            notify_new_owner(new_owner_obj.email, ns.nsid, ns.name, requester.username, token)
-
-    except Exception as e:
-        logging.error(str(e))
-        return JsonResponse(error_message('Failed to initiate namespace owner transfer'))
-
-    return JsonResponse(success_message('Initiate namespace owner transfer'))
-
-
-@csrf_exempt
-@api_view(['GET', 'POST'])
-def accept_ns_owner_transfer(request, token):
-    if not token or not isinstance(token, str):
-        return JsonResponse(error_message('Invalid or missing token'))
-
-    pending_transfer = PendingTransfer.objects.filter(token=token).first()
-
-    if not pending_transfer:
-        return JsonResponse(error_message('Invalid or expired token'))
-
-    ns = pending_transfer.namespace
-
-    try:
-        with transaction.atomic():
-            # Compare NS allocated resources with new owner's limit
-            total_resources = VM.objects.filter(namespace=ns).aggregate(
-                cpu=Sum('cpu'),
-                ram=Sum('memory')
-            )
-
-            total_disk_usage = PVC.objects.filter(namespace=ns).aggregate(
-                total_disk=Sum('size')
-            )
-
-            user_info = request.user.detailed_info()
-
-            user_cpu_used = user_info['resource_used']['cpu']
-            user_ram_used = user_info['resource_used']['memory']
-            user_disk_used = user_info['resource_used']['disk']
-            user_cpu_limit = user_info['resource_limit']['cpu']
-            user_ram_limit = user_info['resource_limit']['memory']
-            user_disk_limit = user_info['resource_limit']['disk']
-
-            total_cpu_used = user_cpu_used + (total_resources['cpu'] or 0)
-            total_ram_used = user_ram_used + (total_resources['ram'] or 0)
-            total_disk_used = user_disk_used + (total_disk_usage['total_disk'] or 0)
-
-            # null limit = unlimited
-            if user_cpu_limit is not None and total_cpu_used > user_cpu_limit:
-                raise ValueError('Total CPU usage exceeds the user\'s limit')
-            if user_ram_limit is not None and total_ram_used > user_ram_limit:
-                raise ValueError('Total RAM usage exceeds the user\'s limit')
-            if user_disk_limit is not None and total_disk_used > user_disk_limit:
-                raise ValueError('Total disk usage exceeds the user\'s limit')
-
-            # Remove the current owner role
-            NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
-
-            # Check if the new owner is already part of the namespace, if so, delete the user's role
-            existing_role = NamespaceRoles.objects.filter(namespace=ns, user=request.user).first()
-            if existing_role:
-                existing_role.role = 'owner'
-                existing_role.save()
-            else:
-                NamespaceRoles.objects.create(
-                    namespace=ns,
-                    user=request.user,
-                    role='owner'
-                )
-
-            ns.default = False
-            ns.save()
-
-            ns_users = pending_transfer.ns_users
-            if ns_users:
-                # Remove all current manager and viewer roles
-                NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
-
-                for user in ns_users:
-                    user_obj = User.objects.filter(username=user['username']).first()
-                    if not user_obj:
-                        raise ValueError(f'User {user["username"]} not found')
-
-                    role = user['role']
-
-                    NamespaceRoles.objects.create(
-                        namespace=ns,
-                        user=user_obj,
-                        role=role
-                    )
-
-            # Delete the pending transfer record
-            pending_transfer.delete()
-
-            # Delete all other pending transfers with the same namespace
-            PendingTransfer.objects.filter(namespace=ns).delete()
-
-    except ValueError as e:
-        return JsonResponse(error_message(str(e)))
-    except Exception as e:
-        logging.error(str(e))
-        return JsonResponse(error_message('Failed to accept namespace ownership transfer'))
-
-    return JsonResponse(success_message('Accept namespace ownership transfer'))
 
 
 @api_view(['GET', 'POST', 'PATCH', 'DELETE'])
@@ -253,7 +113,7 @@ def namespace(request, nsid=None):
                     return JsonResponse(error_message('Permission denied: You need to be either owner or manager'),
                                         status=403)
 
-                # request oser is owner POV
+                # request user is owner POV
                 if request_user_role == 'owner':
                     # transfer ownership criteria -> current owner needs to have another namespace set as default
                     if ns.default and (new_ns_owner_uname != request.user.username):
@@ -262,7 +122,7 @@ def namespace(request, nsid=None):
                             status=400
                         )
 
-                # request oser is manager POV
+                # request user is manager POV
                 elif request_user_role == 'manager':
                     # set default criteria -> only owner can set namespace as default
                     if new_ns_default:
@@ -274,7 +134,7 @@ def namespace(request, nsid=None):
 
                 if new_ns_name:
                     ns.name = new_ns_name
-
+                
                 if new_ns_default:
                     # If the context namespace is set to default, unset 'default' on prev default namespace
                     Namespace.objects.filter(users=request.user, default=True).update(default=False)
@@ -283,9 +143,64 @@ def namespace(request, nsid=None):
 
                 # Update namespace owner
                 if new_ns_owner_uname != ns.owner.username:
-                    initiate_ns_owner_transfer(request.user, ns, new_ns_owner_uname, new_ns_users)
+                    new_owner_obj = User.objects.filter(username=new_ns_owner_uname).first()
+                    if not new_owner_obj:
+                        return JsonResponse(error_message('New owner\'s username not found'),
+                                            status=400)
 
-                if new_ns_users:
+                    if new_owner_obj == ns.owner:
+                        return JsonResponse(error_message('New owner is already the namespace owner'),
+                                            status=400)
+                    
+                    # Compare NS allocated resources with new owner's limit
+                    total_resources = VM.objects.filter(namespace=ns).aggregate(
+                        cpu=Sum('cpu'),
+                        ram=Sum('memory')
+                    )
+
+                    total_disk_usage = PVC.objects.filter(namespace=ns).aggregate(
+                        total_disk=Sum('size')
+                    )
+
+                    user_info = new_owner_obj.detailed_info()
+
+                    user_cpu_used = user_info['resource_used']['cpu']
+                    user_ram_used = user_info['resource_used']['memory']
+                    user_disk_used = user_info['resource_used']['disk']
+                    user_cpu_limit = user_info['resource_limit']['cpu']
+                    user_ram_limit = user_info['resource_limit']['memory']
+                    user_disk_limit = user_info['resource_limit']['disk']
+
+                    total_cpu_used = user_cpu_used + (total_resources['cpu'] or 0)
+                    total_ram_used = user_ram_used + (total_resources['ram'] or 0)
+                    total_disk_used = user_disk_used + (total_disk_usage['total_disk'] or 0)
+
+                    # null limit = unlimited
+                    if user_cpu_limit is not None and total_cpu_used > user_cpu_limit:
+                        return JsonResponse(error_message('Total CPU usage exceeds new owner\'s limit'), status=400)
+                    if user_ram_limit is not None and total_ram_used > user_ram_limit:
+                        raise JsonResponse(error_message('Total RAM usage exceeds new owner\'s limit'), status=400)
+                    if user_disk_limit is not None and total_disk_used > user_disk_limit:
+                        raise JsonResponse(error_message('Total disk usage exceeds new owner\'s limit'), status=400)
+                    
+                    # Remove the current owner role
+                    NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
+
+                    # Check if the new owner is already part of the namespace, if so, update the user's role
+                    existing_role = NamespaceRoles.objects.filter(namespace=ns, user=new_owner_obj).first()
+                    if existing_role:
+                        existing_role.role = 'owner'
+                        existing_role.save()
+                    else:
+                        NamespaceRoles.objects.create(
+                            namespace=ns,
+                            user=new_owner_obj,
+                            role='owner'
+                        )
+                    
+                    notify_new_owner(new_owner_obj.email, ns.nsid, ns.name, request.user.username)
+
+                if new_ns_users is not None:
                     # Remove all current manager and viewer roles
                     NamespaceRoles.objects.filter(namespace=ns, role__in=['manager', 'viewer']).delete()
                     for user in new_ns_users:
