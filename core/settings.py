@@ -100,8 +100,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_celery_results",
-    'rest_framework',
-    'rest_framework.authtoken',
+    "rest_framework",
+    "rest_framework.authtoken",
     "algoliasearch_django",
     "main",
     "apps.api",
@@ -113,9 +113,10 @@ INSTALLED_APPS = [
     "apps.vm",
 
     "django_seed",
-    'drf_spectacular',
-    'django_api_gen',
-    'encrypted_model_fields',
+    "drf_spectacular",
+    "django_api_gen",
+    "encrypted_model_fields",
+    "oidc_provider",
 ]
 
 MIDDLEWARE = [

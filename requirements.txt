@@ -44,3 +44,4 @@ django-encrypted-model-fields
 django-seed
 
 requests==2.32.3
+django-oidc-provider
