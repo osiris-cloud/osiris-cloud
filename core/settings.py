@@ -73,6 +73,10 @@ class Env:
     k8s_ws_url = ''
     k8s_token = ''
 
+    firewall_url = os.getenv('FIREWALL_URL')
+
+    registry_domain = os.getenv('REGISTRY_DOMAIN', 'registry.osiriscloud.io')
+
     def __post_init__(self):
         kubeconfig_path = os.path.join(BASE_DIR, 'kubeconfig.yaml')
         if os.path.exists(kubeconfig_path):
@@ -111,6 +115,7 @@ INSTALLED_APPS = [
     "apps.oauth",
     "apps.users",
     "apps.vm",
+    "apps.container_registry",
 
     "django_seed",
     'drf_spectacular',

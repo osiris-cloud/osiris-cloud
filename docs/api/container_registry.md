@@ -49,7 +49,7 @@ Sample Output:
 
 ### Create Registry [/container-registry/{nsid}]
 
-Method: `POST`
+Method: `PUT`
 
 Accepts: `application/json`
 
@@ -63,6 +63,7 @@ Request body parameters:
 
 - `name` (string, required): Name of the container registry.
 - `slug` (string, required): unique identifier for the container registry. This will be used to generate the URL.
+- `password` (string, required): Password for the container registry.
 - `public` (bool, optional): If true, the registry will be public. In public mode, users can pull without
   authentication. Default is false.
 
@@ -71,7 +72,8 @@ Sample Input:
 ```json
 {
   "name": "CSAW Prod",
-  "slug": "csaw"
+  "slug": "csaw",
+  "password": "password"
 }
 ```
 
@@ -157,3 +159,24 @@ Sample Output:
   "crid": "92680506-381a-4958-9f2e-a441b9379437"
 }
 ```
+
+### Additional Functions
+
+### Check  [/container-registry/{nsid}]
+
+Method: `POST`
+
+Accepts: `application/json`
+
+Returns: `application/json`
+
+Parameters:
+
+- `nsid` (string, required): The id of the namespace in which the registry belongs.
+
+Request body parameters:
+
+- `name` (string, required): Name of the container registry.
+- `slug` (string, required): unique identifier for the container registry. This will be used to generate the URL.
+- `public` (bool, optional): If true, the registry will be public. In public mode, users can pull without
+  authentication. Default is false.

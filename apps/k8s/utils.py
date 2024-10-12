@@ -252,7 +252,8 @@ def fill_vm_template(*, ns: str, name: str, memory: int, disk: int, distro: str,
 
     vm_template['spec']['template']['spec']['domain']['devices']['interfaces'] = \
         [
-            get_interface_spec(n_provider='masquerade' if network_name == 'private' else 'bridge', mac_address=mac_address)
+            get_interface_spec(n_provider='masquerade' if network_name == 'private' else 'bridge',
+                               mac_address=mac_address)
         ]
 
     vm_template['spec']['template']['spec']['domain']['memory']['guest'] = f"{memory}G"
@@ -345,6 +346,7 @@ def create_vm(spec: dict, user: User):
     with open("vm_template.yaml", 'w') as f:
         yaml.dump(vm_template, f)
 
+
 # api data validation
 def validate_dict(d):
     if not isinstance(d, dict):
@@ -354,6 +356,7 @@ def validate_dict(d):
             return False
     return True
 
+
 def validate_secret_creation(secret_data: dict) -> tuple[bool, dict]:
     """
     Validate the data for creating a secret
@@ -362,22 +365,23 @@ def validate_secret_creation(secret_data: dict) -> tuple[bool, dict]:
 
     if secret_data is None:
         return False, error_message('Missing data')
-    
+
     # Validate name
     secret_name = secret_data.get('name')
     if not secret_name:
         return False, error_message('Missing secret name')
     if not isinstance(secret_name, str) or secret_name.strip() == '':
         return False, error_message('Invalid or missing secret name')
-    
+
     # Validate values
     secret_values = secret_data.get('values')
     if not secret_values:
         return False, error_message('Missing secret values')
     if not validate_dict(secret_values):
         return False, error_message('Invalid secret values type')
-    
+
     return True, success_message({})
+
 
 def validate_secret_update(secret_data: dict) -> tuple[bool, dict]:
     """
@@ -386,12 +390,12 @@ def validate_secret_update(secret_data: dict) -> tuple[bool, dict]:
 
     if secret_data is None:
         return False, error_message('Missing data')
-    
+
     # Validate values
     secret_values = secret_data.get('values')
     if not secret_values:
         return False, error_message('Missing secret values')
     if not validate_dict(secret_values):
         return False, error_message('Invalid secret values type')
-    
+
     return True, success_message({})

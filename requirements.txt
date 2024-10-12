@@ -44,3 +44,6 @@ django-encrypted-model-fields
 django-seed
 
 requests==2.32.3
+httpx==0.27.0
+httpx==0.27.0
+regex
