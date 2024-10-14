@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 
@@ -25,15 +24,6 @@ def observability(request):
 
 def privacy(request):
     return render(request, "pages/privacy.html")
-
-
-@login_required
-def dashboard(request):
-    context = {
-        'segment': ['dashboard'],
-        'ver': '0.1',
-    }
-    return render(request, "dashboard/app.html", context)
 
 
 def logout_view(request):
