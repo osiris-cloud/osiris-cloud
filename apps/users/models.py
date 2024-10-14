@@ -43,7 +43,8 @@ class User(AbstractUser):
 
         # Retrieve all namespaces the user is associated with
         namespaces = Namespace.objects.filter(
-            namespaceroles__user=self
+            namespaceroles__user=self,
+            locked=False
         ).annotate(
             is_default_owner=Case(
                 When(Q(namespaceroles__role='owner') & Q(default=True), then=Value(True)),

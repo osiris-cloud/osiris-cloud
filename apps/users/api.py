@@ -37,7 +37,7 @@ def namespace(request, nsid=None):
         match request.method:
             case 'GET':
                 # Get all namespaces the user is part of
-                ns_filter = {'nsid': nsid} if nsid else {}
+                ns_filter = {'nsid': nsid, 'locked': False} if nsid else {'locked': False}
                 namespaces = request.user.namespaces.filter(**ns_filter)
 
                 if not namespaces.exists():
@@ -102,7 +102,7 @@ def namespace(request, nsid=None):
                 new_ns_owner_uname = ns_data.get('owner', {}).get('username')
                 new_ns_users = ns_data.get('users', [])
 
-                ns = Namespace.objects.filter(nsid=nsid).first()
+                ns = Namespace.objects.filter(nsid=nsid, locked=False).first()
 
                 if not ns:
                     return JsonResponse(error_message(f'Namespace {nsid} not found'), status=404)
@@ -226,7 +226,7 @@ def namespace(request, nsid=None):
                 return JsonResponse(success_message('Update namespace', ns_info))
 
             case 'DELETE':
-                ns = Namespace.objects.filter(nsid=nsid).first()
+                ns = Namespace.objects.filter(nsid=nsid, locked=False).first()
 
                 if not ns:
                     return JsonResponse(error_message(f'Namespace {nsid} not found'), status=404)
@@ -238,6 +238,10 @@ def namespace(request, nsid=None):
                 # If the namespace is set as default, user has to set another namespace as default before deleting
                 if ns.default:
                     return JsonResponse(error_message('Cannot delete default namespace'), status=400)
+
+                # Set namespace to locked
+                ns.locked = True
+                ns.save()
 
                 schedule_ns_deletion(ns)
 

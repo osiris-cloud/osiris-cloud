@@ -24,7 +24,7 @@ def secret(request, nsid=None, secret_name=None):
             ns = get_user_default_ns(request.user)
             nsid = ns.nsid
         else:
-            ns = Namespace.objects.filter(nsid=nsid).first()
+            ns = Namespace.objects.filter(nsid=nsid, locked=False).first()
 
         if not ns:
             return JsonResponse(error_message('Namespace not found or user does not have sufficient permission to access secrets'))
@@ -63,8 +63,6 @@ def secret(request, nsid=None, secret_name=None):
                 
                 new_secret_name = secret_data.get('name')
                 secret_values = secret_data.get('values')
-
-                ns = Namespace.objects.filter(nsid=nsid).first()
 
                 if ns.get_role(request.user) not in ['owner', 'manager']:
                     return JsonResponse(error_message('Namespace not found or user does not have sufficient permission to access secrets'))
@@ -144,7 +142,7 @@ def event(request, event_id=None):
         match request.method:
             case 'GET':
                 # Get all events for all namespaces user is part of 
-                namespaces = Namespace.objects.filter(namespaceroles__user=request.user)
+                namespaces = Namespace.objects.filter(namespaceroles__user=request.user, locked=False)
                 # Get all events for those namespaces
                 events = Event.objects.filter(namespace__in=namespaces)
                 result = []

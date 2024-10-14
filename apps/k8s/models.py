@@ -14,6 +14,7 @@ class Namespace(models.Model):
     users = models.ManyToManyField(User, through='NamespaceRoles', related_name='namespaces')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    locked = models.BooleanField(default=False)
 
     @property
     def owner(self):
