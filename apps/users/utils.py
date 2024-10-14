@@ -5,12 +5,17 @@ import logging
 from core.utils import error_message, success_message
 from core.settings import env
 
-from ..k8s.models import NamespaceRoles, Namespace, User
+from apps.users.models import User
+from apps.k8s.models import NamespaceRoles, Namespace
 
 VALID_NAME_CHARLIST = list(string.ascii_lowercase + string.digits + '_' + '-')
 MAILGUN_API_KEY = env.mailgun_api_key
 MAILGUN_DOMAIN = env.mailgun_sender_domain
 MAILGUN_SENDER_EMAIL = env.mailgun_sender_email
+
+
+def get_default_ns(user: User) -> Namespace:
+    return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
 
 
 def validate_dict(d):
@@ -219,7 +224,3 @@ def notify_new_owner(owner_email, namespace_id, namespace_name, requester_userna
         return False
 
     return True
-
-
-def get_user_default_ns(user: User) -> Namespace:
-    return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace

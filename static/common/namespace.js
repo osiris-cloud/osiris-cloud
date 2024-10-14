@@ -41,12 +41,27 @@ let nsOwner = {};
 let userSelf = {};
 let createNS = false;
 let currentDefault = false;
+let currentRole = '';
 
 getSelf((user) => {
     userSelf = {
         ...user, 'name': user.first_name + ' ' + user.last_name, 'role': 'owner'
     }
 });
+
+function parseURL() {
+    // URL SCHEME: <protocol>/<host>/<app>/<nsid>/<option>/<resource-id>
+    const parts = window.location.href.split('/');
+    return {
+        protocol: parts[0],
+        host: parts[2],
+        app: parts[3],
+        nsid: parts[4],
+        option: parts[5],
+        resource_id: parts[6],
+    };
+}
+
 loadNamespace();
 loadAllNamespaces();
 
@@ -105,11 +120,11 @@ window.addEventListener('load', function () {
 });
 
 function loadNamespace(nsid = '', apply = true, callback = null) {
-    let currentNS = window.localStorage.getItem('nsid');
-    if (!nsid && !currentNS) nsid = 'default';
+    let url = parseURL();
+    if (nsid === '') nsid = url.nsid;
     if (callback) showShareSpinner();
     $.ajax({
-        url: '/api/namespace/' + (nsid ? nsid : currentNS),
+        url: '/api/namespace/' + (nsid ? nsid : 'default'),
         type: 'GET',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
@@ -119,9 +134,10 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
             currentDefault = resp.default;
             if (apply) {
                 $('#dropdown-ns-button').text(resp.name);
-                localStorage.setItem('nsid', resp.nsid);
                 window.namespace = resp.nsid;
                 resp.users.forEach((user) => {
+                    if (user.username === userSelf.username)
+                        currentRole = user.role;
                     if (user.username === userSelf.username && user.role === 'viewer')
                         $namespaceSettings.addClass('hidden');
                 });
@@ -130,7 +146,7 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
                 callback(resp);
         },
         error: (resp) => {
-            Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error", () => {
+            Alert(resp.responseJSON.message || "Internal Server Error", () => {
                 if (resp.status === 404 || resp.status === 403)
                     loadNamespace('default', apply, callback);
             }, {'ok': 'Go to Default'});
@@ -217,8 +233,8 @@ $nsSubmitButton.on('click', () => {
             if (createNS)
                 Confirm('Namespace created. Do you want to switch it?', (ok) => {
                     if (ok) {
-                        window.localStorage.setItem('nsid', resp.nsid);
-                        window.location.reload();
+                        url = parseURL();
+                        window.location.href = `${url.host}/${url.app}/${resp.nsid}`;
                     }
                 }, {'yes': 'Switch', 'no': 'Stay', 'icon': 'check'});
             else
@@ -250,7 +266,6 @@ $nsDelete.on('click', () => {
             headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
             contentType: 'application/json',
             success: (resp) => {
-                window.localStorage.removeItem('nsid');
                 Alert('Namespace Deleted', () => {
                     window.location.reload();
                 }, {'icon': 'check'});
@@ -416,15 +431,15 @@ function createNSListItem(name, owner, nsid) {
     const listItem = $('<li></li>')
         .addClass('flex p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600')
         .on('click', function () {
-            window.localStorage.setItem('nsid', nsid);
-            window.location.reload();
+            let url = parseURL();
+            window.location.href = `/${url.app}/${nsid}`;
         });
 
     const textSmDiv = $('<div></div>')
         .addClass('text-sm');
 
     const mainText = $('<div></div>')
-        .text(name + (nsid === localStorage.getItem('nsid') ? ' (Current)' : ''));
+        .text(name + (nsid === window.namespace ? ' (Current)' : ''));
 
     const subText = $('<div></div>')
         .addClass('text-xs font-normal text-gray-500 dark:text-gray-300')

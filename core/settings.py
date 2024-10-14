@@ -95,6 +95,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io', 'localhost']
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://osiriscloud.io', 'https://staging.osiriscloud.io']
 
+with open('version.txt', 'r') as f:
+    VER = f.read().strip()
+
 INSTALLED_APPS = [
     "daphne",
     "django.contrib.admin",
@@ -167,6 +170,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "main.context_processor.version",
             ],
         },
     },

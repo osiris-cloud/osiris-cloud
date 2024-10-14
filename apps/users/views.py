@@ -15,7 +15,7 @@ from django.shortcuts import render
 
 @login_required
 def profile(request):
-    return render(request, 'dashboard/profile.html', context={
+    return render(request, 'apps/dashboard/profile.html', context={
         'github': request.user.github.first().username if request.user.github.first() else None,
         'segment': ['profile'],
     })
