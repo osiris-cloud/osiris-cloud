@@ -52,7 +52,8 @@ migrations: venv
 .PHONY: app
 app: venv
 	@echo "### Creating app"
-	mkdir apps/$(filter-out $@, $(MAKECMDGOALS)); ./venv/bin/python3 manage.py startapp $(filter-out $@, $(MAKECMDGOALS)) apps/$(filter-out $@, $(MAKECMDGOALS))
+	APP_NAME=$(filter-out $@, $(MAKECMDGOALS));
+	mkdir apps/$APP_NAME; ./venv/bin/python3 manage.py startapp $APP_NAME apps/$APP_NAME
 %:
 	@true
 

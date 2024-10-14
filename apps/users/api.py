@@ -73,7 +73,7 @@ def namespace(request, nsid=None):
                     # If the new namespace is set as default, update other namespaces owned by the user
                     if new_ns_default:
                         Namespace.objects.filter(users=request.user, default=True).update(default=False)
-                        request.session['default_ns'] = nsid
+                        request.session['default_nsid'] = nsid
 
                     # List of usernames with their role to add to the namespace.
                     new_ns_users = ns_data.get('users', [])
@@ -139,7 +139,7 @@ def namespace(request, nsid=None):
                     # If the context namespace is set to default, unset 'default' on prev default namespace
                     Namespace.objects.filter(users=request.user, default=True).update(default=False)
                     ns.default = True
-                    request.session['default_ns'] = nsid
+                    request.session['default_nsid'] = nsid
 
                 # Update namespace owner
                 if new_ns_owner_uname != ns.owner.username:
