@@ -160,9 +160,9 @@ Sample Output:
 }
 ```
 
-### Additional Functions
+## Additional Functions
 
-### Check  [/container-registry/{nsid}]
+### Name check [/container-registry/name-check]
 
 Method: `POST`
 
@@ -170,13 +170,10 @@ Accepts: `application/json`
 
 Returns: `application/json`
 
-Parameters:
-
-- `nsid` (string, required): The id of the namespace in which the registry belongs.
-
 Request body parameters:
 
-- `name` (string, required): Name of the container registry.
 - `slug` (string, required): unique identifier for the container registry. This will be used to generate the URL.
-- `public` (bool, optional): If true, the registry will be public. In public mode, users can pull without
-  authentication. Default is false.
+
+Response body parameters:
+- `available` (bool, required): If true, the slug is available. If false, the slug is already taken.
+

@@ -4,6 +4,8 @@ const $registrySlugPreview = $('#registry-slug-preview');
 const $registryPassword = $('#registry-password');
 const $registryCreate = $('#registry-create');
 
+const currentURL = parseURL();
+
 $registryCreate.on('click', function () {
     let name = $registryName.val().trim();
     let slug = $registrySlugPreview.val().trim();
@@ -22,7 +24,7 @@ $registryCreate.on('click', function () {
     }
 
     $.ajax({
-        url: '/api/container-registry',
+        url: `/api/container-registry/${currentURL.nsid}`,
         method: 'PUT',
         data: JSON.stringify({
             name: name,
@@ -32,11 +34,11 @@ $registryCreate.on('click', function () {
         success: (data) => {
             Confirm('Registry created', (ok) => {
                     if (ok) {
-                        window.location = '/container-registry/' + data.crid;
+                        window.location.href = `/container-registry/${currentURL.nsid}/${data.crid}`;
                     } else {
-                        window.location = '/container-registry';
+                        window.location.href = `/container-registry/${currentURL.nsid}`;
                     }
-                }, {ok: 'View registry', cancel: 'Close', icon: 'check'}
+                }, {ok: 'View Registry', cancel: 'List Registries', icon: 'check'}
             );
         }
     });

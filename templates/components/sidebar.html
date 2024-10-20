@@ -5,7 +5,7 @@
             <div class="flex-1 px-3 space-y-1 bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                 <ul class="pb-2 space-y-2">
                     <li>
-                        <a href="/dashboard"
+                        <div onclick="window.location.href = '/dashboard/' + window.namespace"
                            class="flex items-center p-2 text-base text-gray-900 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'dashboard' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
                             <svg class="w-6 h-6 text-gray-800 dark:text-white"
                                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
@@ -15,10 +15,10 @@
                                       d="m4 12 8-8 8 8M6 10.5V19a1 1 0 0 0 1 1h3v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h3a1 1 0 0 0 1-1v-8.5"></path>
                             </svg>
                             <span class="ml-3" sidebar-toggle-item>Dashboard</span>
-                        </a>
+                        </div>
                     </li>
                     <li>
-                        <a href="/vm"
+                        <div onclick="window.location.href = '/vm/' + window.namespace"
                            class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'vm' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
 
                             <svg class="w-6 h-6 text-gray-800 dark:text-white"
@@ -29,11 +29,11 @@
                                       d="M12 15v5m-3 0h6M4 11h16M5 15h14a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1Z"></path>
                             </svg>
                             <span class="ml-3" sidebar-toggle-item>Virtual Machines</span>
-                        </a>
+                        </div>
                     </li>
 
                     <li>
-                        <a href="/container-apps"
+                        <div onclick="window.location.href = '/container-apps/' + window.namespace"
                            class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'container-app' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
                             <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true"
                                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
@@ -43,11 +43,11 @@
                                       d="M15 17h3a3 3 0 0 0 0-6h-.025a5.56 5.56 0 0 0 .025-.5A5.5 5.5 0 0 0 7.207 9.021C7.137 9.017 7.071 9 7 9a4 4 0 1 0 0 8h2.167M12 19v-9m0 0-2 2m2-2 2 2"></path>
                             </svg>
                             <span class="ml-3" sidebar-toggle-item>Container Apps</span>
-                        </a>
+                        </div>
                     </li>
 
                     <li>
-                        <a href="/container-registry"
+                       <div onclick="window.location.href = '/container-registry/' + window.namespace"
                            class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'container_registry' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
                             <svg class="w-6 h-6 text-gray-800 dark:text-white" xmlns="http://www.w3.org/2000/svg"
                                  fill="#000000" viewBox="0 0 32 32">
@@ -56,7 +56,7 @@
                                       d="M12.75 22a.75.75 0 1 1-1.5 0 .75.75 0 1 1 1.5 0zm15.064-4.74h.215c1.345 0 2.603-.719 3.281-1.875a.36.36 0 0 0 0-.364 3.77 3.77 0 0 0-2.857-1.848c-.111-1.225-.83-2.331-1.932-2.939-.107-.061-.239-.061-.349 0-1.2.665-1.946 1.919-1.946 3.273 0 .768.241 1.514.679 2.138H22.36V12a.36.36 0 0 0-.36-.36h-3.64V4a.36.36 0 0 0-.36-.36h-4a.36.36 0 0 0-.36.36v3.64H10a.36.36 0 0 0-.36.36v3.64H6a.36.36 0 0 0-.36.36v3.642H1h0a.36.36 0 0 0-.254.105c-.068.067-.105.159-.105.254v.898c0 2.826 1.148 5.394 3.011 7.277a.37.37 0 0 0 .139.138c1.929 1.882 4.586 3.046 7.516 3.046 8.837 0 15.814-5.913 16.507-10.1zm-17.767 6.387a.36.36 0 0 0 .243-.447c-.056-.19-.256-.301-.448-.242-1.425.423-3.499.67-5.71.682-1.716-1.751-2.772-4.127-2.772-6.74v-.539l24.34.003h0a.36.36 0 0 0 .336-.23c.054-.139.017-.296-.094-.396a3.02 3.02 0 0 1-.995-2.231c0-1.026.531-1.981 1.4-2.54.869.558 1.4 1.513 1.4 2.54v.004a.36.36 0 0 0 .353.36 3.06 3.06 0 0 1 2.474 1.333c-.57.83-1.526 1.337-2.545 1.337h-.531a.36.36 0 0 0-.358.329c-.337 3.844-7.287 9.771-15.834 9.771a10.02 10.02 0 0 1-6.404-2.294c1.987-.06 3.825-.308 5.145-.7zM18.36 12.36h3.279v3.28H18.36v-3.28zm-4 0h3.28v3.28h-3.28v-3.28zm-4 0h3.28v3.28h-3.28v-3.28zm-4 0h3.28v3.28H6.36v-3.28zm8-4h3.28v3.28h-3.28V8.36zm-4 0h3.28v3.28h-3.28V8.36zm4-4h3.28v3.28h-3.28V4.36z"></path>
                             </svg>
                             <span class="ml-3" sidebar-toggle-item>Container Registry</span>
-                        </a>
+                        </div>
                     </li>
 
 {#                    <li>#}
@@ -73,7 +73,7 @@
 {#                    </li>#}
 
                     <li>
-                        <a href="/db"
+                        <div onclick="window.location.href = '/db/' + window.namespace"
                            class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'db' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
                             <svg class="w-6 h-6 text-gray-800 dark:text-white"
                                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
@@ -84,7 +84,7 @@
                             </svg>
 
                             <span class="ml-3" sidebar-toggle-item>Databases</span>
-                        </a>
+                        </div>
                     </li>
 
 {#                    <li>#}
@@ -144,7 +144,7 @@
 {#                                   class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 {% if 'marketplace' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">Marketplace</a>#}
 {#                            </li>#}
 {#                        </ul>#}
-                    </li>
+{#                    </li>#}
                 </ul>
             
             </div>
