@@ -45,9 +45,7 @@ container_registry_urlpatterns = [
     re_path(r'^/container-registry$', registry_api.container_registry),  # Matches /container_registry
     re_path(r'^/container-registry/name-check$', registry_api.name_check),  # Matches /container_registry/name-check
     re_path(r'^/container-registry/(?P<nsid>[^/]+)$', registry_api.container_registry),
-    # Matches /container_registry/<crid>
     re_path(r'^/container-registry/(?P<nsid>[^/]+)/(?P<crid>[^/]+)$', registry_api.container_registry),
-    # Matches /container_registry/<nsid>/<crid>
     re_path(r'^/container-registry/(?P<nsid>[^/]+)/(?P<crid>[^/]+)/(?P<action>[^/]+)$', registry_api.container_registry)
 ]
 
