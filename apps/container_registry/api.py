@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import uuid
 from json import JSONDecodeError
@@ -6,17 +5,16 @@ from json import JSONDecodeError
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from django.core.exceptions import ValidationError
-from rest_framework.response import Response
 
-from core.utils import success_message, error_message
-from core.utils import serialize_obj
 from .models import ContainerRegistry
 from ..k8s.models import Namespace
 
-from ..users.utils import get_user_default_ns
+from core.utils import success_message, error_message
+from core.utils import serialize_obj
 from .utils import validate_registry_spec
+from ..users.utils import get_default_ns
 
-from .tasks import create_registry
+from .tasks import create_registry, patch_registry, delete_registry
 
 
 @api_view(['POST'])
@@ -25,8 +23,7 @@ def name_check(request):
     Check if registry name is available
     """
     try:
-        cr_data = request.data
-        slug = cr_data.get('slug', '').strip()
+        slug = request.data.get('slug', '').strip()
         if not slug:
             return JsonResponse(error_message('Slug is required'), status=400)
 
@@ -54,7 +51,7 @@ def container_registry(request, nsid=None, crid=None, action=None):
 
     if nsid == 'default':
         if not (nsid := request.session.get('default_ns')):
-            nsid = request.session['default_ns'] = get_user_default_ns(request.user).nsid
+            nsid = request.session['default_ns'] = get_default_ns(request.user).nsid
 
     if (request.method in ['PATCH, DELETE']) and crid is None:
         return JsonResponse(error_message('crid is required'), status=400)
@@ -79,7 +76,7 @@ def container_registry(request, nsid=None, crid=None, action=None):
                         return JsonResponse(error_message('Registry not found'), status=404)
                     return JsonResponse(success_message('Get registry', result[0]), status=200)
 
-                return JsonResponse(success_message('Get registry', {'namespaces': result}), status=200)
+                return JsonResponse(success_message('Get registry', {'registries': result}), status=200)
 
             case 'POST':
                 cr = ContainerRegistry.objects.filter(namespace=ns, crid=crid).first()
@@ -105,6 +102,31 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 create_registry.delay(serialize_obj(cr))
 
                 return JsonResponse(success_message('Create registry', cr.info()), status=201)
+
+            case 'PATCH':
+                cr = ContainerRegistry.objects.filter(namespace=ns, crid=crid).first()
+                if cr is None:
+                    return JsonResponse(error_message('Registry not found'), status=404)
+
+                valid, err = validate_registry_spec(cr_data)
+                if not valid:
+                    return JsonResponse(err, status=400)
+
+                cr.name = cr_data['name']
+                cr.password = cr_data['password']
+
+                patch_registry.delay(serialize_obj(cr))
+
+                return JsonResponse(success_message('Update registry', cr.info()), status=200)
+
+            case 'DELETE':
+                cr = ContainerRegistry.objects.filter(namespace=ns, crid=crid).first()
+                if cr is None:
+                    return JsonResponse(error_message('Registry not found'), status=404)
+
+                delete_registry.delay(serialize_obj(cr))
+
+                return JsonResponse(success_message('Delete registry', {'crid': crid}), status=200)
 
     except JSONDecodeError:
         return JsonResponse(error_message('Invalid JSON data'), status=400)
