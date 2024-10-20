@@ -110,21 +110,27 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     "algoliasearch_django",
-    "main",
-    "apps.api",
-    "apps.dns_manager",
-    "apps.ip_manager",
-    "apps.k8s",
-    "apps.oauth",
-    "apps.users",
-    "apps.vm",
-    "apps.container_registry",
-
     "django_seed",
     'drf_spectacular',
     'django_api_gen',
     'encrypted_model_fields',
+    "main",
+    "apps.api",
+    "apps.ip_manager",
+    "apps.k8s",
+    "apps.oauth",
+    "apps.users",
 ]
+
+# Client facing apps
+OC_APPS = [
+    "apps.dashboard",
+    "apps.dns_manager",
+    "apps.vm",
+    "apps.container_registry",
+]
+
+INSTALLED_APPS += OC_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
