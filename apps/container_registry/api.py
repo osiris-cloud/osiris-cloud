@@ -41,7 +41,7 @@ def name_check(request):
         return JsonResponse(error_message('Internal server error'), status=500)
 
 
-@api_view(['GET', 'POST', 'PATCH', 'DELETE'])
+@api_view(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
 def container_registry(request, nsid=None, crid=None, action=None):
     """
     API endpoint for Container Registry
@@ -90,14 +90,15 @@ def container_registry(request, nsid=None, crid=None, action=None):
                     result = cr.stat()
                     return JsonResponse(success_message('Get registry stat', {'stat': result}), status=200)
 
-            case 'PUT':
-                # Create a new registry
+            case 'PUT':  # Create a new registry
                 valid, err = validate_registry_spec(cr_data)
                 if not valid:
                     return JsonResponse(err, status=400)
 
                 cr = ContainerRegistry(crid=str(uuid.uuid4()), namespace=ns, name=cr_data['name'], slug=cr_data['slug'],
                                        username='osiris', password=cr_data['password'])
+
+                cr.save()
 
                 create_registry.delay(serialize_obj(cr))
 

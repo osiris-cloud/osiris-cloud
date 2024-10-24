@@ -49,18 +49,6 @@ getSelf((user) => {
     }
 });
 
-function parseURL() {
-    // URL SCHEME: <protocol>/<host>/<app>/<nsid>/<resource-id>/<option>
-    const parts = window.location.href.split('/');
-    return {
-        host: window.location.origin,
-        app: parts[3],
-        nsid: parts[4],
-        resource_id: (parts.length < 5) ? parts[5] : parts[6],
-        option: (parts.length > 5) ? parts[5] : parts[6],
-    };
-}
-
 loadNamespace();
 loadAllNamespaces();
 

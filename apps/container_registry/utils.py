@@ -19,8 +19,8 @@ def validate_registry_spec(spec: dict) -> tuple[bool, dict | None]:
     if not match(r'^[a-z0-9]+(-[a-z0-9]+)*$', slug):
         return False, error_message('Invalid slug')
 
-    if not len(spec.get('password', '')) < 8:
-        return False, error_message('Password condition not met (at least 8 characters)')
+    if len(spec.get('password', '')) < 8:
+        return False, error_message('Password must be at least 8 characters')
 
     return True, None
 

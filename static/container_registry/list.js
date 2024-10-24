@@ -1,6 +1,6 @@
 $registryTable = $('#registry-table');
+$registryTableContainer = $('#registry-table-container');
 
-const currentURL = parseURL();
 
 function createTableEntry(registry) {
     let newRow = $('<tr/>', {
@@ -18,7 +18,7 @@ function createTableEntry(registry) {
     ).append(
         $('<td/>', {
             class: 'px-6 py-4 dark:text-gray-50',
-            text: registry.created_at,
+            text: normalizeTime(registry.created_at),
         })
     ).append(
         $('<td/>', {
@@ -31,15 +31,17 @@ function createTableEntry(registry) {
 
 $.ajax({
     url: `/api/container-registry/${currentURL.nsid}`,
+    method: 'GET',
+    headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
     success: (data) => {
         if (data.registries.length === 0) {
             showNoResource();
-            return;
+        } else {
+            data.registries.forEach((registry) => {
+                $registryTable.append(createTableEntry(registry));
+            });
+            $registryTableContainer.removeClass('hidden');
         }
-        data.forEach((registry) => {
-            $registryTable.append(createTableEntry(registry));
-        });
-        $('registry-table-container').removeClass('hidden');
     },
     error: (resp) => {
         Alert(resp.responseJSON.message || "Internal Server Error");
