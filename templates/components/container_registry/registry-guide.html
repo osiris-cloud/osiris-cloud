@@ -1,0 +1,182 @@
+<div id="registry-guide-drawer"
+     class="dark:text-white fixed top-0 right-0 z-40 h-screen max-w-[40em] p-6 overflow-y-auto transition-transform translate-x-full bg-white dark:bg-gray-800"
+     tabindex="-1"
+>
+    <!-- LOGIN -->
+    <h5
+            class="inline-flex items-center mb-4 mt-2 text-base font-semibold text-gray-500 dark:text-white">
+        <svg class="w-4 h-4 me-2.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+             viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z">
+            </path>
+        </svg>
+        LOGGING IN TO YOUR REGISTRY
+    </h5>
+
+    <button type="button" data-drawer-hide="registry-guide-drawer"
+            class="mt-2 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute
+             top-2.5 end-2.5 inline-flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6">
+            </path>
+        </svg>
+    </button>
+
+    <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+        To log in to the registry, use the following command. Password is hidden in the block below, however the
+        copy button will copy the command with the credentials filled in.
+    </p>
+
+    <div class="inline-flex items-center">
+        <code class="p-2 mr-4 text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-400 rounded">
+            docker login -u
+            <span class="text-green-400">{{ cr.username }}</span>
+            -p
+            <span class="text-green-400">&lt;psw&gt;</span>
+            <span class="text-green-400">{{ cr.url }}</span>
+        </code>
+
+        <button class="text-gray-900 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 
+        dark:hover:bg-gray-700 rounded py-2 px-2.5 inline-flex items-center justify-center
+        bg-white border-gray-200 border"
+                onclick="copyToClip('docker login -u {{ cr.username }} -p {{ cr.password }} {{ cr.url }}')"
+        >
+            <span class="inline-flex items-center">
+                <svg class="w-3 h-3 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                     viewBox="0 0 18 20">
+                    <path d="M16 1h-3.278A1.992 1.992 0 0 0 11 0H7a1.993 1.993 0 0 0-1.722 1H2a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm-3 14H5a1 1 0 0 1 0-2h8a1 1 0 0 1 0 2Zm0-4H5a1 1 0 0 1 0-2h8a1 1 0 1 1 0 2Zm0-5H5a1 1 0 0 1 0-2h2V2h4v2h2a1 1 0 1 1 0 2Z">
+                    </path>
+                </svg>
+                <span class="text-xs font-semibold">Copy</span>
+            </span>
+        </button>
+    </div>
+
+    <!-- END LOGIN -->
+
+    <br>
+
+    <!-- BUILD -->
+    <h5
+            class="inline-flex items-center mb-4 mt-8 text-base font-semibold text-gray-500 dark:text-white">
+        <svg class="w-4 h-4 me-2.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+             viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z">
+            </path>
+        </svg>
+        BUILDING YOUR IMAGE
+    </h5>
+
+    <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+        Building packs your application and its dependencies into a reusable template called an image. Replace
+        <span class="text-green-400">&lt;my-image&gt;</span>
+        with the name of your image. Optionally, you can specify a tag. If you don't specify one, Docker will use
+        <code>latest</code>.
+        <br>
+        <br>
+        Assuming you have a <code>Dockerfile</code> in the current directory, you can build the image using the
+        following command.
+    </p>
+
+    <div class="inline-flex items-center">
+        <code class="p-2 mr-4 text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-400 rounded">
+            docker build -t
+            <span class="text-green-400">&lt;my-image&gt;</span>
+            .
+        </code>
+
+        <button class="text-gray-900 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 
+        dark:hover:bg-gray-700 rounded py-2 px-2.5 inline-flex items-center justify-center
+        bg-white border-gray-200 border"
+                onclick="copyToClip('docker build -t <my-image> .')"
+        >
+            <span class="inline-flex items-center">
+                <svg class="w-3 h-3 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                     viewBox="0 0 18 20">
+                    <path d="M16 1h-3.278A1.992 1.992 0 0 0 11 0H7a1.993 1.993 0 0 0-1.722 1H2a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm-3 14H5a1 1 0 0 1 0-2h8a1 1 0 0 1 0 2Zm0-4H5a1 1 0 0 1 0-2h8a1 1 0 1 1 0 2Zm0-5H5a1 1 0 0 1 0-2h2V2h4v2h2a1 1 0 1 1 0 2Z">
+                    </path>
+                </svg>
+                <span class="text-xs font-semibold">Copy</span>
+            </span>
+        </button>
+    </div>
+
+    <!-- END BUILD -->
+
+    <br>
+
+    <!-- PUSH -->
+    <h5
+            class="inline-flex items-center mb-4 mt-8 text-base font-semibold text-gray-500 dark:text-white">
+        <svg class="w-4 h-4 me-2.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+             viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z">
+            </path>
+        </svg>
+        PUSHING YOUR IMAGE
+    </h5>
+
+    <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+        To push an image to the registry, first tag the local image to point to osiris cloud. Replace
+        <span class="text-green-400">&lt;my-image&gt;</span>
+        with the name of your image. If you push a new image using an existing tag, the old image will be replaced.
+    </p>
+
+    <div class="inline-flex items-center">
+        <code class="p-2 mr-4 text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-400 rounded">
+            docker tag
+            <span class="text-green-400">&lt;my-image&gt;</span>
+            {{ cr.url }}/<span class="text-green-400">&lt;my-image&gt;</span>
+        </code>
+
+        <button class="text-gray-900 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 
+        dark:hover:bg-gray-700 rounded py-2 px-2.5 inline-flex items-center justify-center
+        bg-white border-gray-200 border"
+                onclick="copyToClip('docker tag -u <my-image> {{ cr.url }}/<my-image>')"
+        >
+            <span class="inline-flex items-center">
+                <svg class="w-3 h-3 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                     viewBox="0 0 18 20">
+                    <path d="M16 1h-3.278A1.992 1.992 0 0 0 11 0H7a1.993 1.993 0 0 0-1.722 1H2a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm-3 14H5a1 1 0 0 1 0-2h8a1 1 0 0 1 0 2Zm0-4H5a1 1 0 0 1 0-2h8a1 1 0 1 1 0 2Zm0-5H5a1 1 0 0 1 0-2h2V2h4v2h2a1 1 0 1 1 0 2Z">
+                    </path>
+                </svg>
+                <span class="text-xs font-semibold">Copy</span>
+            </span>
+        </button>
+    </div>
+
+    <br>
+
+    <p class="mb-6 mt-6 text-sm text-gray-500 dark:text-gray-400">
+        After you tag, use the push command to upload the image.
+        Replace 
+        <span class="text-green-400">&lt;my-image&gt;</span>
+        with the name of your image.
+    </p>
+
+    <div class="inline-flex items-center">
+        <code class="p-2 mr-4 text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-400 rounded">
+            docker push
+            {{ cr.url }}/<span class="text-green-400">&lt;my-image&gt;</span>
+        </code>
+
+        <button class="text-gray-900 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 
+        dark:hover:bg-gray-700 rounded py-2 px-2.5 inline-flex items-center justify-center
+        bg-white border-gray-200 border"
+                onclick="copyToClip('docker push {{ cr.url }}/<my-image>')"
+        >
+            <span class="inline-flex items-center">
+                <svg class="w-3 h-3 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                     viewBox="0 0 18 20">
+                    <path d="M16 1h-3.278A1.992 1.992 0 0 0 11 0H7a1.993 1.993 0 0 0-1.722 1H2a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm-3 14H5a1 1 0 0 1 0-2h8a1 1 0 0 1 0 2Zm0-4H5a1 1 0 0 1 0-2h8a1 1 0 1 1 0 2Zm0-5H5a1 1 0 0 1 0-2h2V2h4v2h2a1 1 0 1 1 0 2Z">
+                    </path>
+                </svg>
+                <span class="text-xs font-semibold">Copy</span>
+            </span>
+        </button>
+    </div>
+
+    <!-- END PUSH -->
+
+</div>
