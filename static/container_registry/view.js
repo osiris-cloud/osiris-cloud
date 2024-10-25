@@ -1,23 +1,17 @@
-function copyToClip(value) {
-    navigator.clipboard.writeText(value);
-}
+function copyToClip(value, defaultIconId, successIconId, tooltipId) {
+    navigator.clipboard.writeText(value.trim());
 
-function changeIcon(e) {
-    showSuccess(e);
-    setTimeout(resetToDefault, 2000);
-}
-function showSuccess(e) {
-    e.currentTarget.classList.add('hidden');
-    $successIcon.classList.remove('hidden');
-    $defaultTooltipMessage.classList.add('hidden');
-    $successTooltipMessage.classList.remove('hidden');
+    $(`#${defaultIconId}`).addClass('hidden');
+    $(`#${successIconId}`).removeClass('hidden');
 
-}
+    setTimeout(() => {
+        $(`#${tooltipId}`).addClass('hidden');
+    }, 100);
 
-const resetToDefault = () => {
-    $defaultIcon.classList.remove('hidden');
-    $successIcon.classList.add('hidden');
-    $defaultTooltipMessage.classList.remove('hidden');
-    $successTooltipMessage.classList.add('hidden');
+    setTimeout(() => {
+        $(`#${defaultIconId}`).removeClass('hidden');
+        $(`#${successIconId}`).addClass('hidden');
+        $(`#${tooltipId}`).removeClass('hidden');
+    }, 1000);
 }
 

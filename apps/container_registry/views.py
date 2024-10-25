@@ -49,5 +49,6 @@ def container_registry_view(request, nsid, crid):
     context = {
         'segment': ['container_registry', 'view'],
         'crid': crid,
+        'cr': cr,
     }
     return render(request, "apps/container-registry.html", context)
