@@ -14,7 +14,7 @@ const currentURL = parseURL();
 
 function CancelURL() {
     let url = parseURL();
-    return `${url.host}/${url.app}/${url.nsid}`
+    return `${url.host}/${url.app}/${url.nsid}` + (url.resource_id ? `/${url.resource_id}` : '');
 }
 
 function showLoader(show = true) {

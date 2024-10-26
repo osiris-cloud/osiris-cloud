@@ -70,7 +70,7 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 # Get all registries in the namespace
                 cr_filter = {'crid': crid} if crid else {}
                 registries = ContainerRegistry.objects.filter(namespace=ns, **cr_filter)
-                result = [cr.info() for cr in registries].reverse()
+                result = [cr.info() for cr in reversed(registries)]
                 if crid:
                     if not result:
                         return JsonResponse(error_message('Registry not found'), status=404)
