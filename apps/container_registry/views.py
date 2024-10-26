@@ -37,6 +37,9 @@ def container_registry_edit(request, nsid, crid):
     if not cr:
         return render(request, "404_app.html", status=404)
 
+    if request.ns_role == 'viewer':
+        return render(request, "403_app.html", status=403)
+
     context = {
         'segment': ['container_registry', 'edit'],
         'crid': crid,
