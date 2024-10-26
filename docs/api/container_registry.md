@@ -208,6 +208,25 @@ Sample Output:
 }
 ```
 
+### Get Credentials [/container-registry/{nsid}/{crid}/creds]
+
+Method: `POST`
+
+Returns: `application/json`
+
+Sample Output:
+
+```json
+{
+  "status": "success",
+  "creds": {
+    "username": "osiris",
+    "password": "b4ozaBZeLbf1G8l1QYTKf1oEEvm68b7w"
+  },
+  "message": "Get login"
+}
+```
+
 ### Delete Image [/container-registry/{nsid}/{crid}/delete]
 
 Method: `DELETE`
