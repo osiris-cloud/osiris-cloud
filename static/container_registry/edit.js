@@ -46,3 +46,4 @@ $('#generate-password').on('click', () => {
         .sort(() => 128 - window.crypto.getRandomValues(new Uint8Array(1))[0]).join('');
     $registryPassword.val(psw.slice(0, 32));
 });
+

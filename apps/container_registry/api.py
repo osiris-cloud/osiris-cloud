@@ -91,6 +91,9 @@ def container_registry(request, nsid=None, crid=None, action=None):
                     return JsonResponse(success_message('Get registry stat', {'stats': result}), status=200)
 
                 elif action == 'delete':
+                    if role == 'viewer':
+                        return JsonResponse(error_message('Permission denied'), status=403)
+
                     repo = cr_data.get('image')
                     tag = cr_data.get('tag')
                     if (not repo) or (not tag):
@@ -106,6 +109,9 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 return JsonResponse(error_message('Invalid action'), status=400)
 
             case 'PUT':  # Create a new registry
+                if role == 'viewer':
+                    return JsonResponse(error_message('Permission denied'), status=403)
+
                 valid, err = validate_registry_spec(cr_data)
                 if not valid:
                     return JsonResponse(err, status=400)
@@ -120,6 +126,9 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 return JsonResponse(success_message('Create registry', cr.info()), status=201)
 
             case 'PATCH':
+                if role == 'viewer':
+                    return JsonResponse(error_message('Permission denied'), status=403)
+
                 cr = ContainerRegistry.objects.filter(namespace=ns, crid=crid).first()
                 if cr is None:
                     return JsonResponse(error_message('Registry not found'), status=404)
@@ -140,6 +149,9 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 return JsonResponse(success_message('Update registry', cr.info()), status=200)
 
             case 'DELETE':
+                if role == 'viewer':
+                    return JsonResponse(error_message('Permission denied'), status=403)
+
                 cr = ContainerRegistry.objects.filter(namespace=ns, crid=crid).first()
                 if cr is None:
                     return JsonResponse(error_message('Registry not found'), status=404)

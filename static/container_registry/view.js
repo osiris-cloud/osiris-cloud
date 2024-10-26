@@ -1,5 +1,6 @@
 const $imageTable = $('#registry-image-table');
 const $imageTableContainer = $('#registry-image-table-container');
+const $deleteRegistry = $('#delete-registry');
 
 function copyToClip(value, defaultIconId, successIconId, tooltipId) {
     navigator.clipboard.writeText(value.trim());
@@ -75,6 +76,7 @@ function loadRegistryInfo() {
 showLoader();
 
 loadRegistryInfo();
+
 //setInterval(loadRegistryInfo, 5000);
 
 
@@ -98,3 +100,22 @@ function deleteImage(repo, tag) {
         });
     });
 }
+
+$deleteRegistry.click(() => {
+    Confirm("Are you sure you want to delete this registry?", (ok) => {
+        if (!ok) return;
+        $.ajax({
+            url: `/api/container-registry/${currentURL.nsid}/${currentURL.resource_id}`,
+            method: 'DELETE',
+            headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
+            success: (data) => {
+                Alert(`Registry deleted`, () => {
+                    window.location.href = `/container-registry/${currentURL.nsid}`;
+                }, {'icon': 'check'});
+            },
+            error: (resp) => {
+                Alert(resp.responseJSON.message || "Internal Server Error");
+            },
+        });
+    });
+});
