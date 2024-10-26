@@ -33,7 +33,8 @@ Sample Output:
       "created_at": "19:47:02, Thu 15 Aug 2024",
       "updated_at": "19:47:02, Thu 15 Aug 2024",
       "url": "csaw.registry.osiriscloud.io",
-      "public": false
+      "public": false,
+      "state": "active"
     },
     {
       "name": "CSAW Test",
@@ -41,7 +42,8 @@ Sample Output:
       "created_at": "19:17:09, Thu 15 Aug 2024",
       "updated_at": "19:17:09, Thu 15 Aug 2024",
       "url": "csaw-test.registry.osiriscloud.io",
-      "public": false
+      "public": false,
+      "state": "active"
     }
   ]
 }
@@ -87,7 +89,8 @@ Sample Output:
   "created_at": "19:17:09, Thu 15 Aug 2024",
   "updated_at": "19:17:09, Thu 15 Aug 2024",
   "url": "csaw-test.registry.osiriscloud.io",
-  "public": false
+  "public": false,
+  "state": "creating"
 }
 ```
 
@@ -129,7 +132,8 @@ Sample Output:
   "created_at": "19:17:09, Thu 15 Aug 2024",
   "updated_at": "19:20:05, Thu 15 Aug 2024",
   "url": "csaw-test.registry.osiriscloud.io",
-  "public": true
+  "public": true,
+  "state": "active"
 }
 ```
 
@@ -166,8 +170,6 @@ Sample Output:
 
 Method: `POST`
 
-Accepts: `application/json`
-
 Returns: `application/json`
 
 Request body parameters:
@@ -175,5 +177,55 @@ Request body parameters:
 - `slug` (string, required): unique identifier for the container registry. This will be used to generate the URL.
 
 Response body parameters:
-- `available` (bool, required): If true, the slug is available. If false, the slug is already taken.
 
+- `available` (bool, required): If `true`, the slug is available.
+
+### Stat [/container-registry/{nsid}/{crid}/stat]
+
+Method: `POST`
+
+Returns: `application/json`
+
+Sample Output:
+
+```json
+{
+  "status": "success",
+  "stats": [
+    {
+      "repo": "ubuntu",
+      "tags": [
+        {
+          "name": "latest",
+          "size": 30613777,
+          "digest": "sha256:61b2756d6fa9d6242fafd5b29f674404779be561db2d0bd932aa3640ae67b9e1"
+        }
+      ],
+      "size": 30613777
+    }
+  ],
+  "message": "Get registry stat"
+}
+```
+
+### Delete Image [/container-registry/{nsid}/{crid}/delete]
+
+Method: `DELETE`
+
+Accepts: `application/json`
+
+Returns: `application/json`
+
+Request body parameters:
+
+- `image` (string, required): Repository name for the container registry.
+- `tag` (string, required): Tag name for the container registry.
+
+Sample Output:
+
+```json
+{
+  "status": "success",
+  "message": "Delete registry image"
+}
+```

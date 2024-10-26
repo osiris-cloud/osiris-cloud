@@ -70,7 +70,7 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 # Get all registries in the namespace
                 cr_filter = {'crid': crid} if crid else {}
                 registries = ContainerRegistry.objects.filter(namespace=ns, **cr_filter)
-                result = [cr.info() for cr in registries]
+                result = [cr.info() for cr in registries].reverse()
                 if crid:
                     if not result:
                         return JsonResponse(error_message('Registry not found'), status=404)
@@ -83,12 +83,27 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 if cr is None:
                     return JsonResponse(error_message('Registry not found'), status=404)
 
-                if action == 'get-login':
+                if action == 'creds':
                     return JsonResponse(success_message('Get login', {'creds': cr.get_login()}), status=200)
 
                 elif action == 'stat':
                     result = cr.stat()
-                    return JsonResponse(success_message('Get registry stat', {'stat': result}), status=200)
+                    return JsonResponse(success_message('Get registry stat', {'stats': result}), status=200)
+
+                elif action == 'delete':
+                    repo = cr_data.get('image')
+                    tag = cr_data.get('tag')
+                    if (not repo) or (not tag):
+                        return JsonResponse(error_message('Image and tag is required'), status=400)
+                    result = cr.delete_image(repo, tag)
+                    return JsonResponse(
+                        success_message('Delete registry image')
+                        if result
+                        else error_message('Failed to delete image')
+                        , status=200 if result else 404
+                    )
+
+                return JsonResponse(error_message('Invalid action'), status=400)
 
             case 'PUT':  # Create a new registry
                 valid, err = validate_registry_spec(cr_data)

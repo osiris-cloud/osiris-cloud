@@ -1,5 +1,6 @@
 from core.utils import error_message
 from regex import match
+from httpx import AsyncClient
 
 
 def validate_registry_spec(spec: dict) -> tuple[bool, dict | None]:
@@ -25,7 +26,7 @@ def validate_registry_spec(spec: dict) -> tuple[bool, dict | None]:
     return True, None
 
 
-async def get_repositories(client, url, next_url=None, repos=None, page_size=100) -> list[str]:
+async def get_repositories(client: AsyncClient, url: str, next_url=None, repos=None, page_size=100) -> list[str]:
     if repos is None:
         repos = []
 
@@ -33,8 +34,10 @@ async def get_repositories(client, url, next_url=None, repos=None, page_size=100
     if next_url:
         url = next_url
 
-    resp = await client.get(url)
-    resp.raise_for_status()
+    try:
+        resp = await client.get(url)
+    except Exception as e:
+        return repos
 
     data = resp.json()
     repos.extend(data.get("repositories", []))
@@ -51,8 +54,8 @@ async def get_repositories(client, url, next_url=None, repos=None, page_size=100
     return repos
 
 
-async def get_tags(client, url, repos) -> list[str]:
-    url = f"{url}/v2/{repos}/tags/list"
+async def get_tags(client: AsyncClient, url: str, repo: str) -> list[str]:
+    url = f"{url}/v2/{repo}/tags/list"
     response = await client.get(url)
     if response.status_code == 200:
         data = response.json()
@@ -60,11 +63,16 @@ async def get_tags(client, url, repos) -> list[str]:
     elif response.status_code == 404:
         # Repository exists but has no tags
         return []
-    else:
-        response.raise_for_status()
 
 
-async def get_size(client, url, repo, tag):
+async def get_manifest(client: AsyncClient, url: str, repo: str, tag: str) -> dict:
     url = f"{url}/v2/{repo}/manifests/{tag}"
     resp = await client.get(url)
-    return resp.json().get('config', {}).get('size', 0)
+    manifest = resp.json()
+    manifest['reference'] = resp.headers.get('Docker-Content-Digest', '')
+    return manifest
+
+
+def get_blob_digests(manifest: dict) -> list[str]:
+    layers = manifest.get('layers', [])
+    return [layer.get('digest', '') for layer in layers] + [manifest.get('config', {}).get('digest', '')]

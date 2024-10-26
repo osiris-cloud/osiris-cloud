@@ -1,24 +1,27 @@
 {% include 'components/no-resource.html' %}
 
-<div id="registry-table-container" class="relative overflow-x-auto shadow-md sm:rounded-lg hidden">
+<div id="registry-image-table-container" class="mt-6 relative overflow-x-auto sm:rounded-lg hidden">
     <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
         <tr>
             <th scope="col" class="px-6 py-3">
-                Name
+                Image Name
             </th>
             <th scope="col" class="px-6 py-3">
-                State
+                Tag
             </th>
             <th scope="col" class="px-6 py-3">
-                Created at
+                Size (Compressed)
             </th>
             <th scope="col" class="px-6 py-3">
-                URL
+                Digest (SHA256)
+            </th>
+            <th scope="col" class="px-6 py-3">
+                Action
             </th>
         </tr>
         </thead>
-        <tbody id="registry-table">
+        <tbody id="registry-image-table">
         </tbody>
     </table>
 </div>
