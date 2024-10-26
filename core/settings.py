@@ -73,6 +73,10 @@ class Env:
     k8s_ws_url = ''
     k8s_token = ''
 
+    firewall_url = os.getenv('FIREWALL_URL')
+
+    registry_domain = os.getenv('REGISTRY_DOMAIN', 'registry.osiriscloud.io')
+
     def __post_init__(self):
         kubeconfig_path = os.path.join(BASE_DIR, 'kubeconfig.yaml')
         if os.path.exists(kubeconfig_path):
@@ -106,20 +110,27 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     "algoliasearch_django",
-    "main",
-    "apps.api",
-    "apps.dns_manager",
-    "apps.ip_manager",
-    "apps.k8s",
-    "apps.oauth",
-    "apps.users",
-    "apps.vm",
-
     "django_seed",
     'drf_spectacular',
     'django_api_gen',
     'encrypted_model_fields',
+    "main",
+    "apps.api",
+    "apps.ip_manager",
+    "apps.k8s",
+    "apps.oauth",
+    "apps.users",
 ]
+
+# Client facing apps
+OC_APPS = [
+    "apps.dashboard",
+    "apps.dns_manager",
+    "apps.vm",
+    "apps.container_registry",
+]
+
+INSTALLED_APPS += OC_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

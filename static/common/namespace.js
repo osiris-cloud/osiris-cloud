@@ -49,19 +49,6 @@ getSelf((user) => {
     }
 });
 
-function parseURL() {
-    // URL SCHEME: <protocol>/<host>/<app>/<nsid>/<option>/<resource-id>
-    const parts = window.location.href.split('/');
-    return {
-        protocol: parts[0],
-        host: parts[2],
-        app: parts[3],
-        nsid: parts[4],
-        option: parts[5],
-        resource_id: parts[6],
-    };
-}
-
 loadNamespace();
 loadAllNamespaces();
 
@@ -233,7 +220,7 @@ $nsSubmitButton.on('click', () => {
             if (createNS)
                 Confirm('Namespace created. Do you want to switch it?', (ok) => {
                     if (ok) {
-                        url = parseURL();
+                        let url = parseURL();
                         window.location.href = `${url.host}/${url.app}/${resp.nsid}`;
                     }
                 }, {'yes': 'Switch', 'no': 'Stay', 'icon': 'check'});
@@ -271,7 +258,7 @@ $nsDelete.on('click', () => {
                 }, {'icon': 'check'});
             },
             error: (resp) => {
-                Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error");
+                Alert(resp.responseJSON.message || "Internal Server Error");
             }
         });
     });
@@ -517,7 +504,7 @@ function getSelf(callback) {
             callback(resp);
         },
         error: (resp) => {
-            Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error");
+            Alert(resp.responseJSON.message || "Internal Server Error");
         },
     });
 }

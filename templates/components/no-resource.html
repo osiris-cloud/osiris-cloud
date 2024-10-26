@@ -1,0 +1,19 @@
+{% load static %}
+<div id="loader" class="flex items-center justify-center mt-40 text-primary-600 hidden">
+    <div class="lds-grid">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</div>
+
+<div id="no-resource" class="flex flex-col items-center justify-center pt-28 text-primary-600 hidden">
+    <img src="{% static '/images/no-resource.svg' %}" alt="No resource" class="h-28">
+    <div class="text-lg font-medium text-gray-500 mt-2">Nothing to show</div>
+</div>

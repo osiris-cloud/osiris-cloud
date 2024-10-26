@@ -1,0 +1,130 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if 'list' in segment %}
+        Container Registry
+    {% elif 'create' in segment %}
+        Create Registry
+    {% elif 'edit' in segment %}
+        Edit Registry | {{ cr.name }}
+    {% elif 'view' in segment %}
+        Registry | {{ cr.name }}
+    {% endif %}
+{% endblock title %}
+
+{% block content %}
+    <main class="grow">
+        <div class="p-4 mt-4 mx-4 md:items-center md:p-6 xl:pl-6 xl:pr-6 xl:pt-6 dark:text-white">
+            <div class="items-center justify-between block sm:flex md:divide-x md:divide-gray-100 dark:divide-gray-700">
+                <h2 class="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
+                    {% if 'list' in segment %}
+                        Container Registry
+                    {% elif 'create' in segment %}
+                        Create Registry
+                    {% elif 'edit' in segment %}
+                        Edit Registry: {{ cr.name }}
+                    {% elif 'view' in segment %}
+                        Registry: {{ cr.name }}
+                    {% endif %}
+                </h2>
+
+                <div class="flex border-none items-center">
+                    {% if 'view' in segment %}
+                        <div class="h-10 text-white hover:text-primary-700 focus:ring-4 font-medium text-sm dark:hover:text-primary-700 flex items-center cursor-pointer mr-6"
+                             data-drawer-target="registry-guide-drawer"
+                             data-drawer-show="registry-guide-drawer"
+                             data-drawer-placement="right"
+                        >
+                            <svg class="w-6 h-6 text-gray-800 dark:text-white hover:text-primary-700 mr-1"
+                                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path fill-rule="evenodd"
+                                      d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.008-3.018a1.502 1.502 0 0 1 2.522 1.159v.024a1.44 1.44 0 0 1-1.493 1.418 1 1 0 0 0-1.037.999V14a1 1 0 1 0 2 0v-.539a3.44 3.44 0 0 0 2.529-3.256 3.502 3.502 0 0 0-7-.255 1 1 0 0 0 2 .076c.014-.398.187-.774.48-1.044Zm.982 7.026a1 1 0 1 0 0 2H12a1 1 0 1 0 0-2h-.01Z"
+                                      clip-rule="evenodd">
+                                </path>
+                            </svg>
+                            <span>Quickstart Guide</span>
+                        </div>
+                    {% endif %}
+
+                    {% if request.ns_role != 'viewer' %}
+                        <button id="create-container-registry" type="button"
+                                class="
+                        {% if 'list' in segment %}
+                        text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 h-10
+                        focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 
+                        dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-primary-800
+                        {% else %}
+                        text-gray-900 bg-white border border-gray-300 focus:outline-none h-10
+                        hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm 
+                        px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 
+                        dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700
+                        {% endif %}"
+                                onclick="window.location.href=
+                                        {% if 'list' in segment %}
+                                            window.location.href + '/create'
+                                        {% elif 'view' in segment %}
+                                            window.location.href + '/edit'
+                                        {% else %}
+                                            CancelURL()
+                                        {% endif %}
+                                        "
+                        >
+                            {% if 'list' in segment %}
+                                New Registry
+                            {% elif 'view' in segment %}
+                                Edit
+                            {% else %}
+                                Cancel
+                            {% endif %}
+                        </button>
+
+                        {% if 'view' in segment %}
+                            <button type="button" id="delete-registry"
+                                    class="text-red-700 hover:text-white border border-gray-300 hover:bg-red-800 focus:ring-4 
+                                focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center
+                                dark:border-gray-600 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 
+                                dark:focus:ring-red-900 dark:bg-gray-800 h-10 ml-2"
+                            >
+                                Delete
+                            </button>
+                        {% endif %}
+
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="pl-4 pr-4 mx-4 md:items-center md:pl-6 md:pr-6 xl:pl-6 xl:pr-6 dark:text-white">
+            {% if 'list' in segment %}
+                <p class="mb-10">
+                    Container registry lets you distribute Docker images across services like Container Apps and
+                    Kubernetes.
+                </p>
+                {% include 'components/container_registry/table.html' %}
+            {% elif 'create' in segment %}
+                <p class="mb-10">Store your Docker images in a private repository and easily access them anywhere.
+                    Osiris Registry is compatible with OCI artifacts.
+                </p>
+                {% include 'components/container_registry/create.html' %}
+            {% elif 'view' in segment %}
+                {% include 'components/container_registry/view.html' %}
+            {% elif 'edit' in segment %}
+                {% include 'components/container_registry/edit.html' %}
+            {% endif %}
+        </div>
+    </main>
+{% endblock content %}
+
+{% block bottom_import %}
+    {% if 'create' in segment %}
+        <script src="{% static 'container_registry/create.js' %}"></script>
+    {% elif 'list' in segment %}
+        <script src="{% static 'container_registry/list.js' %}"></script>
+    {% elif 'view' in segment %}
+        <script src="{% static 'container_registry/view.js' %}"></script>
+    {% elif 'edit' in segment %}
+        <script src="{% static 'container_registry/edit.js' %}"></script>
+    {% endif %}
+{% endblock bottom_import %}

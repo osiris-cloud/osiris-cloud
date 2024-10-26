@@ -1,10 +1,10 @@
 from django.db import models
 from django.db.models import Q
 from encrypted_model_fields.fields import EncryptedTextField
-from ..users.models import User
-from core.utils import random_str
 from json import loads as json_loads
 import uuid
+
+from ..users.models import User
 
 
 class Namespace(models.Model):
@@ -23,7 +23,10 @@ class Namespace(models.Model):
     def get_users(self):
         return self.users.all()
 
-    def get_role(self, user):
+    def get_role(self, user) -> str | None:
+        """
+        Returns -> 'owner', 'manager', 'viewer' or None
+        """
         try:
             return self.namespaceroles_set.filter(user=user).first().role
         except:

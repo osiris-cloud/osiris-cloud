@@ -1,0 +1,63 @@
+<style>
+    .grid-con {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        grid-column-gap: 20px;
+        grid-row-gap: 35px;
+        justify-items: stretch;
+        align-items: stretch;
+        overflow: hidden;
+    }
+
+    .grid-item {
+        display: grid;
+        min-width: 200px;
+        grid-template-columns: 16em 20em;
+        grid-template-rows: 30px;
+        grid-column-gap: 20px;
+    }
+</style>
+
+
+<div class="px-4 pt-6 pb-1.5 rounded-lg bg-gray-50 bg-white dark:bg-gray-800">
+    <div class="grid-con mt-0.5">
+        <div class="grid-item">
+            <label for="registry-name"
+                   class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">Registry Name</label>
+            <input type="text" id="registry-name"
+                   class="h-8 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                   placeholder="Enter a name" required maxlength="64" minlength="1" value="{{ cr.name }}"
+            />
+        </div>
+
+        <div class="grid-item mb-1.5">
+            <label for="registry-slug"
+                   class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">Registry URL</label>
+            <div>
+                <input type="text" id="registry-slug" readonly value="{{ cr.url }}"
+                       class="h-8 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                />
+            </div>
+        </div>
+
+        <div class="grid-item">
+            <label for="registry-password"
+                   class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+                Login Password
+            </label>
+            <input type="text" id="registry-password" value="{{ cr.password }}"
+                   class="h-8 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                   placeholder="•••••••••••••" required
+            />
+            <span id="generate-password" style="left: 670px;"
+                  class="pt-1.5 absolute text-primary-400 text-sm cursor-pointer hover:text-primary-500">[ Generate ]</span>
+        </div>
+        <div></div>
+    </div>
+</div>
+
+<button type="button" id="registry-edit"
+        class="mt-4 text-white bg-primary-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+    Save
+</button>

@@ -17,6 +17,7 @@ urlpatterns = [
 
     path("dashboard", include("apps.dashboard.urls")),
     path("vm", include("apps.vm.urls")),
+    path("container-registry", include("apps.container_registry.urls")),
 ]
 
 if DEBUG:
