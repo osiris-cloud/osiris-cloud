@@ -7,7 +7,7 @@ def validate_registry_spec(spec: dict) -> tuple[bool, dict | None]:
     """
     Validate registry spec
     """
-    if len(name := spec.get('name', '')) < 1 or len(name) > 100:
+    if len(name := spec.get('name', '')) < 1 or len(name) > 64:
         return False, error_message('Name should be between 1 and 64 characters')
 
     slug = spec.get('slug')
@@ -22,6 +22,21 @@ def validate_registry_spec(spec: dict) -> tuple[bool, dict | None]:
 
     if len(spec.get('password', '')) < 8:
         return False, error_message('Password must be at least 8 characters')
+
+    return True, None
+
+
+def validate_registry_update_spec(spec: dict) -> tuple[bool, dict | None]:
+    """
+    Validate registry update spec
+    """
+    if name := spec.get('name', ''):
+        if len(name) < 1 or len(name) > 64:
+            return False, error_message('Name should be between 1 and 64 characters')
+
+    if psw := spec.get('password', ''):
+        if len(psw) < 8:
+            return False, error_message('Password must be at least 8 characters')
 
     return True, None
 

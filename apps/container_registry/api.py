@@ -11,7 +11,7 @@ from ..k8s.models import Namespace
 
 from core.utils import success_message, error_message
 from core.utils import serialize_obj
-from .utils import validate_registry_spec
+from .utils import validate_registry_spec, validate_registry_update_spec
 from ..users.utils import get_default_ns
 
 from .tasks import create_registry, patch_registry, delete_registry
@@ -124,12 +124,16 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 if cr is None:
                     return JsonResponse(error_message('Registry not found'), status=404)
 
-                valid, err = validate_registry_spec(cr_data)
+                valid, err = validate_registry_update_spec(cr_data)
                 if not valid:
                     return JsonResponse(err, status=400)
 
-                cr.name = cr_data['name']
-                cr.password = cr_data['password']
+                if name := cr_data.get('name'):
+                    cr.name = name
+                if password := cr_data.get('password'):
+                    cr.password = password
+
+                cr.save()
 
                 patch_registry.delay(serialize_obj(cr))
 

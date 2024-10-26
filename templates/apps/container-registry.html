@@ -7,9 +7,9 @@
     {% elif 'create' in segment %}
         Create Registry
     {% elif 'edit' in segment %}
-        Edit Registry
+        Edit Registry | {{ cr.name }}
     {% elif 'view' in segment %}
-        View Registry
+        Registry | {{ cr.name }}
     {% endif %}
 {% endblock title %}
 
@@ -23,7 +23,7 @@
                     {% elif 'create' in segment %}
                         Create Registry
                     {% elif 'edit' in segment %}
-                        Edit Registry
+                        Edit Registry: {{ cr.name }}
                     {% elif 'view' in segment %}
                         Registry: {{ cr.name }}
                     {% endif %}
@@ -98,6 +98,8 @@
                 {% include 'components/container_registry/create.html' %}
             {% elif 'view' in segment %}
                 {% include 'components/container_registry/view.html' %}
+            {% elif 'edit' in segment %}
+                {% include 'components/container_registry/edit.html' %}
             {% endif %}
         </div>
     </main>
@@ -110,5 +112,7 @@
         <script src="{% static 'container_registry/list.js' %}"></script>
     {% elif 'view' in segment %}
         <script src="{% static 'container_registry/view.js' %}"></script>
+    {% elif 'edit' in segment %}
+        <script src="{% static 'container_registry/edit.js' %}"></script>
     {% endif %}
 {% endblock bottom_import %}
