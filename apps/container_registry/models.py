@@ -104,13 +104,11 @@ class ContainerRegistry(models.Model):
                 try:
                     manifest = await get_manifest(client, self.http_url, repo, tag)
                     digests = get_blob_digests(manifest)
-                    print("digests--", digests)
 
                     blob_tasks = [delete_blob(client, digest) for digest in digests]
                     await asyncio.gather(*blob_tasks)
 
                     response = await client.delete(f"{self.http_url}/v2/{repo}/manifests/{manifest.get('reference')}")
-                    print(response)
 
                     return response.status_code == 202
                 except Exception as e:
