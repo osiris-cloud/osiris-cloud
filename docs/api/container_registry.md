@@ -229,7 +229,7 @@ Sample Output:
 
 ### Delete Image [/container-registry/{nsid}/{crid}/delete]
 
-Method: `DELETE`
+Method: `POST`
 
 Accepts: `application/json`
 
