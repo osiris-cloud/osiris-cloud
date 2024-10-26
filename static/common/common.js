@@ -13,8 +13,8 @@ function parseURL() {
 const currentURL = parseURL();
 
 function CancelURL() {
-    let url = parseURL();
-    return `${url.host}/${url.app}/${url.nsid}` + (url.resource_id ? `/${url.resource_id}` : '');
+    return `${currentURL.host}/${currentURL.app}/${currentURL.nsid}`
+        + (currentURL.resource_id ? `/${currentURL.resource_id}` : '');
 }
 
 function showLoader(show = true) {
