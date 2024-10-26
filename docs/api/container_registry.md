@@ -33,7 +33,6 @@ Sample Output:
       "created_at": "19:47:02, Thu 15 Aug 2024",
       "updated_at": "19:47:02, Thu 15 Aug 2024",
       "url": "csaw.registry.osiriscloud.io",
-      "public": false,
       "state": "active"
     },
     {
@@ -42,7 +41,6 @@ Sample Output:
       "created_at": "19:17:09, Thu 15 Aug 2024",
       "updated_at": "19:17:09, Thu 15 Aug 2024",
       "url": "csaw-test.registry.osiriscloud.io",
-      "public": false,
       "state": "active"
     }
   ]
@@ -66,8 +64,6 @@ Request body parameters:
 - `name` (string, required): Name of the container registry.
 - `slug` (string, required): unique identifier for the container registry. This will be used to generate the URL.
 - `password` (string, required): Password for the container registry.
-- `public` (bool, optional): If true, the registry will be public. In public mode, users can pull without
-  authentication. Default is false.
 
 Sample Input:
 
@@ -89,7 +85,6 @@ Sample Output:
   "created_at": "19:17:09, Thu 15 Aug 2024",
   "updated_at": "19:17:09, Thu 15 Aug 2024",
   "url": "csaw-test.registry.osiriscloud.io",
-  "public": false,
   "state": "creating"
 }
 ```
@@ -109,16 +104,15 @@ Parameters:
 
 Request body parameters:
 
-- `name` (object, required): Each secret as key-value pairs.
-- `public` (bool, optional): If true, the registry will be public. In public mode, users can pull without
-  authentication. Default is false.
+- `name` (object, optional): Name of the container registry.
+- `password` (string, optional): Password for the container registry.
 
 Sample Input:
 
 ```json
 {
-  "name": "CSAW Test",
-  "public": true
+  "name": "CSAW",
+  "password": "password"
 }
 ```
 
@@ -132,7 +126,6 @@ Sample Output:
   "created_at": "19:17:09, Thu 15 Aug 2024",
   "updated_at": "19:20:05, Thu 15 Aug 2024",
   "url": "csaw-test.registry.osiriscloud.io",
-  "public": true,
   "state": "active"
 }
 ```
