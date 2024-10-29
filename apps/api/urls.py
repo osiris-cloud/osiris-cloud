@@ -11,48 +11,53 @@ from ..users import consumers as user_consumers
 from ..k8s import api as k8s_api
 
 from ..container_registry import api as registry_api
+from ..secret_store import api as secret_store_api
 
-vm_urlpatterns = [
+root_urlpatterns = [
     path('', routes.root),
     path('/token', routes.get_token),
+]
 
-    re_path(r'^/vm$', vm_api.virtual_machines),  # Matches /vm
-    re_path(r'^/vm/(?P<vmid>[^/]+)$', vm_api.virtual_machines),  # Matches /vm/<vmid>
+vm_urlpatterns = [
+    re_path(r'^/vm$', vm_api.virtual_machines),
+    re_path(r'^/vm/(?P<vmid>[^/]+)$', vm_api.virtual_machines),
 
-    re_path(r'^/vnc$', vm_api.vnc),  # Matches /vnc
-    re_path(r'^/vnc/(?P<vmid>[^/]+)$', vm_api.vnc),  # Matches /vnc/<vmid>
+    re_path(r'^/vnc$', vm_api.vnc),
+    re_path(r'^/vnc/(?P<vmid>[^/]+)$', vm_api.vnc),
 ]
 
 user_urlpatterns = [
-    re_path(r'^/namespace$', user_api.namespace),  # Matches /namespace
-    re_path(r'^/namespace/(?P<nsid>[^/]+)$', user_api.namespace),  # Matches /namespace/<nsid>
-    re_path(r'^/user$', user_api.user),  # Matches /user
-    re_path(r'^/user/(?P<username>[^/]+)$', user_api.user)  # Matches /user/<username>
+    re_path(r'^/namespace$', user_api.namespace),
+    re_path(r'^/namespace/(?P<nsid>[^/]+)$', user_api.namespace),
+    re_path(r'^/user$', user_api.user),
+    re_path(r'^/user/(?P<username>[^/]+)$', user_api.user)
 ]
 
-secret_urlpatterns = [
-    re_path(r'^/secret$', k8s_api.secret),  # Matches /secret
-    re_path(r'^/secret/(?P<nsid>[^/]+)$', k8s_api.secret),  # Matches /secret/<secretid>
-    re_path(r'^/secret/(?P<nsid>[^/]+)/(?P<secret_name>[^/]+)$', k8s_api.secret)  # Matches /secret/<nsid>/<secret_name>
+secret_store_urlpatterns = [
+    re_path(r'^/secret-store$', secret_store_api.secret_store),
+    re_path(r'^/secret-store/(?P<nsid>[^/]+)$', secret_store_api.secret_store),
+    re_path(r'^/secret-store/(?P<nsid>[^/]+)/(?P<secretid>[^/]+)$', secret_store_api.secret_store),
+    re_path(r'^/secret-store/(?P<nsid>[^/]+)/(?P<secretid>[^/]+)/(?P<action>[^/]+)$', secret_store_api.secret_store)
 ]
 
 event_urlpatterns = [
-    re_path(r'^/event$', k8s_api.event),  # Matches /event
-    re_path(r'^/event/(?P<event_id>[^/]+)$', k8s_api.event)  # Matches /event/<event_id>
+    re_path(r'^/event$', k8s_api.event),
+    re_path(r'^/event/(?P<event_id>[^/]+)$', k8s_api.event)
 ]
 
 container_registry_urlpatterns = [
-    re_path(r'^/container-registry$', registry_api.container_registry),  # Matches /container_registry
-    re_path(r'^/container-registry/name-check$', registry_api.name_check),  # Matches /container_registry/name-check
+    re_path(r'^/container-registry$', registry_api.container_registry),
+    re_path(r'^/container-registry/name-check$', registry_api.name_check),
     re_path(r'^/container-registry/(?P<nsid>[^/]+)$', registry_api.container_registry),
     re_path(r'^/container-registry/(?P<nsid>[^/]+)/(?P<crid>[^/]+)$', registry_api.container_registry),
     re_path(r'^/container-registry/(?P<nsid>[^/]+)/(?P<crid>[^/]+)/(?P<action>[^/]+)$', registry_api.container_registry)
 ]
 
 urlpatterns = (
+        root_urlpatterns +
         vm_urlpatterns +
         user_urlpatterns +
-        secret_urlpatterns +
+        secret_store_urlpatterns +
         event_urlpatterns +
         container_registry_urlpatterns
 )
