@@ -17,7 +17,7 @@ Sample Request:
 curl "https://osiriscloud.io/api/namespace/default" -H "Authorization : Token <token>"
 ```
 
-Sample Output:
+Sample Response:
 
 ```json
 {
@@ -26,8 +26,8 @@ Sample Output:
   "nsid": "fb123-ghn5",
   "name": "Default",
   "default": true,
-  "created_at": "17:57:22, Wed 14 Aug 2024",
-  "updated_at": "17:57:22, Wed 14 Aug 2024",
+  "created_at": "2024-10-20T18:26:11.556Z",
+  "updated_at": "2024-10-20T18:26:11.556Z",
   "owner": {
     "username": "fb123",
     "name": "Foo Bar",
@@ -55,7 +55,7 @@ Request body parameters:
 
 Available roles are `manager` and `viewer`. `nsid` will be generated automatically and is immutable.
 
-Sample Input:
+Sample Request:
 
 ```json
 {
@@ -74,7 +74,7 @@ Sample Input:
 }
 ```
 
-Sample Output:
+Sample Response:
 
 ```json
 {
@@ -83,8 +83,8 @@ Sample Output:
   "nsid": "my-namespace-a5jt",
   "name": "My Namespace",
   "default": false,
-  "created_at": "18:26:15, Wed 14 Aug 2024",
-  "updated_at": "18:26:15, Wed 14 Aug 2024",
+  "created_at": "2024-10-20T18:26:11.556Z",
+  "updated_at": "2024-10-20T18:26:11.556Z",
   "owner": {
     "username": "fb123",
     "name": "Foo Bar",
@@ -133,7 +133,7 @@ to `true`, the request will fail as the new owner is not the same as the user ma
 requester's default namespace, they would have to set another namespace as their default before transferring
 ownership as the system expects every user to have a default namespace they own.
 
-Sample Input:
+Sample Request:
 
 ```json
 {
@@ -155,7 +155,7 @@ Sample Input:
 }
 ```
 
-Sample Output:
+Sample Response:
 
 ```json
 {
@@ -164,8 +164,8 @@ Sample Output:
   "nsid": "my-namespace-a5jt",
   "name": "My Namespace for Real",
   "default": false,
-  "created_at": "18:26:15, Wed 14 Aug 2024",
-  "updated_at": "19:10:17, Wed 14 Aug 2024",
+  "created_at": "2024-10-20T18:26:11.556Z",
+  "updated_at": "2024-10-20T18:26:11.556Z",
   "owner": {
     "username": "aa456",
     "name": "Alice Algorithm",
@@ -203,7 +203,7 @@ Sample Request:
 curl -X DELETE "https://osiriscloud.io/api/namespace/my-namespace-a5jt" -H "Authorization: Token <token>"
 ```
 
-Sample Output:
+Sample Response:
 
 ```json
 {

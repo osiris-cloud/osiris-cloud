@@ -1,8 +1,6 @@
 from django.db import models
 from django.db.models import Q
-from encrypted_model_fields.fields import EncryptedTextField
-from json import loads as json_loads
-import uuid
+import uuid_utils as uuid
 
 from ..users.models import User
 
@@ -56,8 +54,8 @@ class Namespace(models.Model):
 
 NS_ROLES = (
     ('owner', 'Owner: Full control'),
-    ('manager', 'Manager: Read/Write'),
-    ('viewer', 'Guest: Read only'),
+    ('manager', 'Manager: Read and write'),
+    ('viewer', 'Viewer: Read only'),
 )
 
 
@@ -68,25 +66,6 @@ class NamespaceRoles(models.Model):
 
     class Meta:
         db_table = 'namespace_roles'
-
-
-class Secret(models.Model):
-    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='secrets')
-    name = models.CharField(max_length=100)
-    data = EncryptedTextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def info(self):
-        return {
-            'name': self.name,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at,
-            'values': json_loads(self.data) if isinstance(self.data, str) else self.data
-        }
-    
-    class Meta:
-        db_table = 'ns_secrets'
 
 
 class PVC(models.Model):
