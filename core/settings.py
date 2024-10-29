@@ -128,6 +128,7 @@ OC_APPS = [
     "apps.dns_manager",
     "apps.vm",
     "apps.container_registry",
+    "apps.secret_store",
 ]
 
 INSTALLED_APPS += OC_APPS

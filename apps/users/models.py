@@ -106,7 +106,6 @@ class User(AbstractUser):
             'resource_limit': self.get_limit().info()
         }
 
-
     class Meta:
         db_table = 'users'
 
@@ -128,6 +127,7 @@ class Group(models.Model):
 
     class Meta:
         db_table = 'groups'
+
 
 class Limit(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='limit')
