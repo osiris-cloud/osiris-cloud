@@ -37,14 +37,16 @@ Sample Response:
       "name": "My App 1",
       "type": "opaque",
       "created_at": "2024-10-28T18:05:38.496Z",
-      "updated_at": "2024-10-28T18:05:38.496Z"
+      "updated_at": "2024-10-28T18:05:38.496Z",
+      "state": "active"
     },
     {
       "secretid": "0192d47c-4ef6-75f2-82a6-b5a697525509",
       "name": "My App 2",
       "type": "opaque",
       "created_at": "2024-10-28T18:05:58.799Z",
-      "updated_at": "2024-10-28T18:05:58.799Z"
+      "updated_at": "2024-10-28T18:05:58.799Z",
+      "state": "active"
     }
   ]
 }
@@ -90,7 +92,8 @@ Sample Response:
 {
   "status": "success",
   "message": "Create secret",
-  "secretid": "0192d4d4-cebe-7aa1-8785-d20d6d9f026b"
+  "secretid": "0192d4d4-cebe-7aa1-8785-d20d6d9f026b",
+  "state": "creating"
 }
 ```
 
