@@ -15,3 +15,10 @@ class LBEndpoint(models.Model):
         db_table = 'endpoints'
         ordering = ['-created_at']
 
+
+class Settings(models.Model):
+    key = models.CharField(max_length=100, unique=True)
+    value = models.TextField()
+
+    class Meta:
+        db_table = 'settings'

@@ -6,7 +6,6 @@ from rest_framework.decorators import api_view
 
 from json import dumps as json_dumps
 from json import JSONDecodeError
-from uuid_utils import uuid7
 
 from .models import Secret
 from ..k8s.models import Namespace
@@ -19,7 +18,7 @@ from .tasks import create_secret, update_secret, delete_secret
 
 
 @api_view(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
-def secret_store(request, nsid=None, secretid=None):
+def secret_store(request, nsid=None, secretid=None, action=None):
     """
     API endpoint for Secret Store
     """
@@ -42,9 +41,6 @@ def secret_store(request, nsid=None, secretid=None):
         if role is None:
             return JsonResponse(error_message('Namespace not found or no permission to access'), status=404)
 
-        if secretid:
-            secretid = uuid7(secretid)
-
         secret_data = request.data
 
         match request.method:
@@ -55,9 +51,22 @@ def secret_store(request, nsid=None, secretid=None):
                 if secretid:
                     if not result:
                         return JsonResponse(error_message('Secret not found'), status=404)
-                    return JsonResponse(success_message('Get secret', result[0]), status=200)
+                    return JsonResponse(success_message('Get secret', {'secret': result[0]}), status=200)
 
                 return JsonResponse(success_message('Get secrets', {'secrets': result}), status=200)
+
+            case 'POST':
+                if role == 'viewer':
+                    return JsonResponse(error_message('Permission denied'), status=403)
+
+                secret = Secret.objects.filter(namespace=ns, secretid=secretid).first()
+                if not secret:
+                    return JsonResponse(error_message('Secret not found'), status=404)
+
+                if action == 'values':
+                    return JsonResponse(success_message('Get secret values', {'values': secret.values()}), status=200)
+
+                return JsonResponse(error_message('Invalid action'), status=400)
 
             case 'PUT':
                 if role not in ['owner', 'manager']:
@@ -119,8 +128,8 @@ def secret_store(request, nsid=None, secretid=None):
     except JSONDecodeError:
         return JsonResponse(error_message('Invalid JSON data'), status=400)
 
-    except (TypeError, ValidationError):
-        return JsonResponse(error_message('Invalid secretid/input data type'), status=400)
+    except (ValueError, ValidationError) as e:
+        return JsonResponse(error_message('Unexpected secretid/input data type'), status=400)
 
     except Exception as e:
         logging.exception(e)

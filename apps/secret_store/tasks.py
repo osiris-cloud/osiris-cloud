@@ -17,5 +17,5 @@ def update_secret(secret) -> None:
 @shared_task(name='delete_secret')
 def delete_secret(secret) -> None:
     secret = deserialize_obj(secret)
+    secret.delete()
     pass
-

@@ -2,10 +2,11 @@ from django.db import models
 from encrypted_model_fields.fields import EncryptedTextField
 
 from json import loads as json_loads
-from uuid_utils import uuid7
 
 from ..k8s.models import Namespace
 from ..k8s.constants import R_STATES
+
+from core.model_fields import UUID7StringField
 
 SECRET_TYPES = (('opaque', 'Key value pair secret'),
                 ('auth', 'Auth secret'),
@@ -13,7 +14,7 @@ SECRET_TYPES = (('opaque', 'Key value pair secret'),
 
 
 class Secret(models.Model):
-    secretid = models.UUIDField(auto_created=True, default=uuid7, unique=True)
+    secretid = UUID7StringField(auto_created=True)
     name = models.CharField(max_length=64)
     type = models.CharField(max_length=16, choices=SECRET_TYPES, default='opaque')
     data = EncryptedTextField()
