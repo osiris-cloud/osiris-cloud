@@ -8,7 +8,7 @@ class UUID7StringField(models.CharField):
     def __init__(self, *args, **kwargs):
         kwargs['max_length'] = 36
         kwargs['unique'] = True
-        kwargs['default'] = lambda: str(uuid7())
+        kwargs['default'] = str(uuid7())
         super().__init__(*args, **kwargs)
 
     def to_python(self, value):

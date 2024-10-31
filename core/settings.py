@@ -76,6 +76,7 @@ class Env:
     firewall_url = os.getenv('FIREWALL_URL')
 
     registry_domain = os.getenv('REGISTRY_DOMAIN', 'registry.osiriscloud.io')
+    container_apps_domain = os.getenv('CONTAINER_APPS_DOMAIN', 'poweredge.dev')
 
     def __post_init__(self):
         kubeconfig_path = os.path.join(BASE_DIR, 'kubeconfig.yaml')
@@ -128,6 +129,7 @@ OC_APPS = [
     "apps.dns_manager",
     "apps.vm",
     "apps.container_registry",
+    "apps.container_apps",
     "apps.secret_store",
 ]
 

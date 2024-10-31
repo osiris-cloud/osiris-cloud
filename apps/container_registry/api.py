@@ -74,7 +74,7 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 if crid:
                     if not result:
                         return JsonResponse(error_message('Registry not found'), status=404)
-                    return JsonResponse(success_message('Get registry', result[0]), status=200)
+                    return JsonResponse(success_message('Get registry', {'registry': result[0]}), status=200)
 
                 return JsonResponse(success_message('Get registry', {'registries': result}), status=200)
 

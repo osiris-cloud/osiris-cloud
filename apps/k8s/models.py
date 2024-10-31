@@ -1,8 +1,10 @@
 from django.db import models
 from django.db.models import Q
-import uuid_utils as uuid
+
+from core.model_fields import UUID7StringField
 
 from ..users.models import User
+from .constants import PVC_CONTAINER_MODES
 
 
 class Namespace(models.Model):
@@ -68,13 +70,26 @@ class NamespaceRoles(models.Model):
         db_table = 'namespace_roles'
 
 
+class PVCContainerMode(models.Model):
+    init = models.CharField(max_length=2, blank=True, default='', choices=PVC_CONTAINER_MODES)
+    main = models.CharField(max_length=2, blank=True, default='', choices=PVC_CONTAINER_MODES)
+    sidecar = models.CharField(max_length=2, blank=True, default='', choices=PVC_CONTAINER_MODES)
+
+
 class PVC(models.Model):
+    pvcid = UUID7StringField(auto_created=True)
     name = models.CharField(max_length=100)
     size = models.IntegerField()
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pvcs')
+    mount_path = models.TextField(default='')
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
+    container_app_mode = models.ForeignKey(PVCContainerMode, on_delete=models.SET_NULL, null=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.container_app_mode:
+            self.container_app_mode = PVCContainerMode.objects.create()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'pvcs'
@@ -82,7 +97,7 @@ class PVC(models.Model):
 
 
 class Event(models.Model):
-    event_id = models.UUIDField(auto_created=True, default=uuid.uuid4, unique=True)
+    event_id = UUID7StringField(auto_created=True)
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='events')
     message = models.TextField()
     related_link = models.CharField(max_length=256, blank=True, null=True)
