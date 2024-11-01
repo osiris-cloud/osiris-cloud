@@ -10,13 +10,13 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/asgi/
 import os
 import django
 
+django.setup()  # Need this here to initialize api first
+
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 
 from main.middleware import TokenAuthMiddleware
-
-django.setup()  # Need this here to initialize api first
 
 from apps.api import urls
 

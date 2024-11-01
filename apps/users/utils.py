@@ -14,8 +14,11 @@ MAILGUN_DOMAIN = env.mailgun_sender_domain
 MAILGUN_SENDER_EMAIL = env.mailgun_sender_email
 
 
-def get_default_ns(user: User) -> Namespace:
-    return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
+def get_default_ns(user: User) -> Namespace | None:
+    try:
+        return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
+    except:
+        return None
 
 
 def validate_dict(d):

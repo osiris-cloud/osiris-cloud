@@ -1,19 +1,15 @@
 import logging
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.db.models import Sum
-from json import loads as json_loads
 from json.decoder import JSONDecodeError
 
 from core.utils import success_message, error_message, random_str
 from .models import User, Limit
 from ..k8s.models import PVC, Namespace, NamespaceRoles
-from ..vm.models import VM
-from ..oauth.models import NYUUser
-from ..users.utils import schedule_ns_deletion, sanitize_nsid, validate_ns_creation, validate_ns_update, \
-    validate_user_update, delete_owner_resources, notify_new_owner
+from ..users.utils import (schedule_ns_deletion, sanitize_nsid, validate_ns_creation, validate_ns_update,
+                           validate_user_update, delete_owner_resources, notify_new_owner)
 
 
 def get_user_default_ns(user: User) -> Namespace:
@@ -134,7 +130,7 @@ def namespace(request, nsid=None):
 
                 if new_ns_name:
                     ns.name = new_ns_name
-                
+
                 if new_ns_default:
                     # If the context namespace is set to default, unset 'default' on prev default namespace
                     Namespace.objects.filter(users=request.user, default=True).update(default=False)
@@ -151,7 +147,7 @@ def namespace(request, nsid=None):
                     if new_owner_obj == ns.owner:
                         return JsonResponse(error_message('New owner is already the namespace owner'),
                                             status=400)
-                    
+
                     # Compare NS allocated resources with new owner's limit
                     total_resources = VM.objects.filter(namespace=ns).aggregate(
                         cpu=Sum('cpu'),
@@ -182,7 +178,7 @@ def namespace(request, nsid=None):
                         raise JsonResponse(error_message('Total RAM usage exceeds new owner\'s limit'), status=400)
                     if user_disk_limit is not None and total_disk_used > user_disk_limit:
                         raise JsonResponse(error_message('Total disk usage exceeds new owner\'s limit'), status=400)
-                    
+
                     # Remove the current owner role
                     NamespaceRoles.objects.filter(namespace=ns, role='owner').delete()
 
@@ -197,7 +193,7 @@ def namespace(request, nsid=None):
                             user=new_owner_obj,
                             role='owner'
                         )
-                    
+
                     notify_new_owner(new_owner_obj.email, ns.nsid, ns.name, request.user.username)
 
                 if new_ns_users is not None:

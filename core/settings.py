@@ -27,14 +27,9 @@ if DEBUG == False:
     import sentry_sdk
 
     sentry_sdk.init(
-        dsn="https://d140ad735d6170ed7a240ad5cefe7670@o4507397577375744.ingest.us.sentry.io/4507397582422016",
-        # Set traces_sample_rate to 1.0 to capture 100%
-        # of transactions for performance monitoring.
-        traces_sample_rate=1.0,
-        # Set profiles_sample_rate to 1.0 to profile 100%
-        # of sampled transactions.
-        # We recommend adjusting this value in production.
-        profiles_sample_rate=1.0,
+        dsn=os.environ.get('SENTRY_DSN'),
+        traces_sample_rate=1.0,  # Set to 1.0 to capture 100% of transactions for performance monitoring
+        profiles_sample_rate=1.0,  # Set profiles_sample_rate to 1.0 to profile 100%
     )
 
 logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO)
@@ -91,7 +86,6 @@ class Env:
 env = Env()
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
-
 ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io', 'localhost']
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://osiriscloud.io', 'https://staging.osiriscloud.io']
 
@@ -120,6 +114,7 @@ INSTALLED_APPS = [
     "apps.k8s",
     "apps.oauth",
     "apps.users",
+    "apps.admin_console",
 ]
 
 # Client facing apps

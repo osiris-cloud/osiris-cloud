@@ -509,67 +509,6 @@ function getSelf(callback) {
     });
 }
 
-function capitalize(string) {
-    return string[0].toUpperCase() + string.slice(1);
-}
-
-function Confirm(message, callback, options = {}) {
-    if (!options.yes) options.yes = 'Confirm';
-    if (!options.no) options.no = 'Cancel';
-    if (!options.icon) options.icon = 'info';
-
-    let confirm = $("#popup-confirm");
-    let deny = $("#popup-deny");
-
-    $("#popup-message").text(message);
-
-    if (options.icon === 'info') {
-        $('#popup-icon-info').removeClass('hidden');
-        $('#popup-icon-check').addClass('hidden');
-    } else if (options.icon === 'check') {
-        $('#popup-icon-info').addClass('hidden');
-        $('#popup-icon-check').removeClass('hidden');
-    }
-
-    confirm.text(options.yes);
-    deny.text(options.no);
-
-    popupModal.show();
-
-    confirm.unbind().click(() => {
-        popupModal.hide();
-        callback(true);
-    });
-
-    deny.unbind().click(() => {
-        popupModal.hide();
-        callback(false);
-    });
-}
-
-function Alert(message, callback = null, options = {}) {
-    if (!options.ok) options.ok = 'OK';
-    if (!options.icon) options.icon = 'info';
-    let $ok = $("#alert-ok");
-    $ok.text(options.ok);
-
-    $("#alert-message").text(message);
-
-    if (options.icon === 'info') {
-        $('#alert-icon-info').removeClass('hidden');
-        $('#alert-icon-check').addClass('hidden');
-    } else if (options.icon === 'check') {
-        $('#alert-icon-info').addClass('hidden');
-        $('#alert-icon-check').removeClass('hidden');
-    }
-
-    alertModal.show();
-
-    $ok.unbind().click(() => {
-        alertModal.hide();
-        if (callback) callback();
-    });
-}
 
 function showShareSpinner(show = true) {
     if (show) $sharingSpinner.removeClass('hidden'); else $sharingSpinner.addClass('hidden');

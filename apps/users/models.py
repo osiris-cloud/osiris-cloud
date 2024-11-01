@@ -18,12 +18,12 @@ ROLES = (
 
 class User(AbstractUser):
     id = models.AutoField(primary_key=True)
-    role = models.CharField(max_length=20, choices=ROLES, default='user')
+    role = models.CharField(max_length=20, choices=ROLES, default='guest')
     last_login = models.DateTimeField(null=True, blank=True)
     avatar = models.URLField(null=True, blank=True)
 
     def not_manager(self):
-        return self.username != 'manager'
+        return self.username != 'osirisadmin'
 
     def get_limit(self):
         return self.limit.first()
@@ -37,6 +37,9 @@ class User(AbstractUser):
         }
 
     def detailed_info(self):
+        if self.username == 'admin':
+            return {}
+
         from ..k8s.models import Namespace, PVC  # Avoid circular import
         from ..vm.models import VM
         from ..oauth.models import GithubUser
@@ -136,6 +139,7 @@ class Limit(models.Model):
     disk = models.IntegerField(null=True, default=0)
     public_ip = models.IntegerField(null=True, default=0)
     gpu = models.IntegerField(null=True, default=0)
+    registries = models.IntegerField(null=True, default=0)
 
     def info(self):
         return {
@@ -144,6 +148,7 @@ class Limit(models.Model):
             'disk': self.disk,
             'public_ip': self.public_ip,
             'gpu': self.gpu,
+            'registries': self.registries
         }
 
     class Meta:
