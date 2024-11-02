@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib import admin
 from core.model_fields import UUID7StringField
 
 from ..k8s.models import Namespace, PVC
@@ -45,6 +46,13 @@ class Container(models.Model):
         }
 
 
+@admin.register(Container)
+class ContainerAdmin(admin.ModelAdmin):
+    list_display = ('image', 'cpu_request', 'memory_request', 'cpu_limit', 'memory_limit')
+    search_fields = ('containerid',)
+    list_filter = ('port_protocol',)
+
+
 class CustomDomain(models.Model):
     name = models.CharField(max_length=253)
     gen_tls_cert = models.BooleanField()
@@ -54,6 +62,12 @@ class CustomDomain(models.Model):
             'name': self.name,
             'gen_cert': self.gen_tls_cert,
         }
+
+
+@admin.register(CustomDomain)
+class CustomDomainAdmin(admin.ModelAdmin):
+    list_display = ('name', 'gen_tls_cert')
+    search_fields = ('name',)
 
 
 class HPA(models.Model):
@@ -77,6 +91,12 @@ class HPA(models.Model):
         }
 
 
+@admin.register(HPA)
+class HPAAdmin(admin.ModelAdmin):
+    list_display = ('enabled', 'min_replicas', 'max_replicas', 'cpu_trigger', 'memory_trigger')
+    list_filter = ('enabled',)
+
+
 class ContainerApp(models.Model):
     appid = UUID7StringField(auto_created=True)
     name = models.CharField(max_length=64)
@@ -87,6 +107,7 @@ class ContainerApp(models.Model):
     pvcs = models.ManyToManyField(PVC, blank=True)
     hpa = models.ForeignKey(HPA, on_delete=models.SET_NULL, null=True, default=None)
     connection_port = models.IntegerField(null=True, default=None)
+    replicas = models.IntegerField(default=1)
     connection_protocol = models.CharField(max_length=16,
                                            choices=(('http', 'Web app'),
                                                     ('tcp', 'TCP on random port'),
@@ -156,3 +177,9 @@ class ContainerApp(models.Model):
         if not self.hpa:
             self.container_app_mode = HPA.objects.create()
         super().save(*args, **kwargs)
+
+
+@admin.register(ContainerApp)
+class ContainerAppAdmin(admin.ModelAdmin):
+    list_display = ('name', 'url', 'connection_protocol')
+    list_filter = ('connection_protocol',)
