@@ -34,7 +34,7 @@ def vm_vnc(request, vmid=None, rest=None):
         UUID(vmid)
     except ValueError:
         return JsonResponse({'error': 'Invalid VMID'})
-    return render(request, "console/vnc.html")
+    return render(request, "components/vm/console/vnc.html")
 
 # def vm_terminal(request):
 #     return render(request, "console/terminal.html")

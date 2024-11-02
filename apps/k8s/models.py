@@ -1,8 +1,10 @@
 from django.db import models
 from django.db.models import Q
+from django.contrib import admin
 import uuid_utils as uuid
 
 from ..users.models import User
+from .constants import LB_PROTOCOLS, NS_ROLES, R_STATES
 
 
 class Namespace(models.Model):
@@ -52,11 +54,11 @@ class Namespace(models.Model):
         ordering = ['-created_at']
 
 
-NS_ROLES = (
-    ('owner', 'Owner: Full control'),
-    ('manager', 'Manager: Read and write'),
-    ('viewer', 'Viewer: Read only'),
-)
+@admin.register(Namespace)
+class NSAdmin(admin.ModelAdmin):
+    list_display = ('nsid', 'name', 'default', 'locked')
+    search_fields = ('nsid',)
+    list_filter = ('default',)
 
 
 class NamespaceRoles(models.Model):
@@ -81,6 +83,12 @@ class PVC(models.Model):
         ordering = ['-created_at']
 
 
+@admin.register(PVC)
+class PVCAdmin(admin.ModelAdmin):
+    list_display = ('name', 'size', 'owner', 'namespace')
+    search_fields = ('owner',)
+
+
 class Event(models.Model):
     event_id = models.UUIDField(auto_created=True, default=uuid.uuid4, unique=True)
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='events')
@@ -100,3 +108,32 @@ class Event(models.Model):
 
     class Meta:
         db_table = 'ns_events'
+
+
+class LBEndpoint(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.CharField(max_length=256, blank=True, null=True)
+    ip = models.GenericIPAddressField()
+    port = models.IntegerField()
+    protocol = models.CharField(max_length=3, choices=LB_PROTOCOLS, default='tcp')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
+
+    class Meta:
+        db_table = 'lb_endpoints'
+        ordering = ['-created_at']
+
+
+class Settings(models.Model):
+    key = models.CharField(max_length=100, unique=True)
+    value = models.TextField()
+
+    class Meta:
+        db_table = 'settings'
+
+
+@admin.register(Settings)
+class SettingsAdmin(admin.ModelAdmin):
+    list_display = ('key', 'value')
+    search_fields = ('key',)

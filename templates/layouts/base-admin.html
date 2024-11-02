@@ -4,22 +4,23 @@
 <html lang="en" class="dark">
 
 <head>
-    <title>{% block title %}Osiris Cloud{% endblock title %}</title>
-    {% include "components/head.html" %}
-    {% block top_import %}{% endblock top_import %}
+    <title>{% block title %}Osiris Cloud Admin{% endblock title %}</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'common/icon.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'common/icon.png' %}">
+    <link rel="stylesheet" href="{% static 'dist/main.css' %}">
+    <link rel="stylesheet" href="{% static 'common/loader.css' %}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    {% block top_import %}{% endblock top_import %}
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-800">
-
-{% block navigation %}
-    {% include "components/navbar/navbar.html" %}
-{% endblock navigation %}
+{% include "components/navbar/navbar-simple.html" %}
 
 <div class="h-screen flex pt-16 overflow-hidden bg-gray-50 dark:bg-gray-900">
-
     {% block sidebar %}
-        {% include "components/sidebar/sidebar.html" %}
+        {% include "components/sidebar/sidebar-admin.html" %}
         <div class="fixed inset-0 z-10 hidden bg-gray-900/50 dark:bg-gray-900/90" id="sidebarBackdrop"></div>
     {% endblock sidebar %}
 
@@ -31,15 +32,10 @@
             <div class="my-4 text-sm text-center text-gray-500">&copy; 2024 Osiris Cloud (ver. {{ ver }})</div>
         {% endblock copy %}
     </div>
-
 </div>
 
 <script src="{% static 'dist/main.bundle.js' %}"></script>
 <script src="{% static 'common/common.js' %}"></script>
-{% block namespace_js %}
-    <script src="{% static 'common/namespace.js' %}"></script>
-{% endblock namespace_js %}
-
 {% block bottom_import %}{% endblock bottom_import %}
 
 </body>

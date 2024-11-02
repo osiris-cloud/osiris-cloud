@@ -43,10 +43,3 @@ def seed(request):
     create_vms()
     create_events()
     return redirect('login_view')
-
-
-def init(request):
-    """
-    Initialize the application
-    """
-    pass

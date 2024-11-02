@@ -4,13 +4,9 @@ from encrypted_model_fields.fields import EncryptedTextField
 from json import loads as json_loads
 
 from ..k8s.models import Namespace
-from ..k8s.constants import R_STATES
+from ..k8s.constants import R_STATES, SECRET_TYPES
 
 from core.model_fields import UUID7StringField
-
-SECRET_TYPES = (('opaque', 'Key value pair secret'),
-                ('auth', 'Auth secret'),
-                )
 
 
 class Secret(models.Model):
