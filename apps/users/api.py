@@ -238,8 +238,6 @@ def user(request, username=None):
                     if not user_infos:
                         return JsonResponse(error_message('User not found'), status=404)
 
-                    print(user_infos[0])
-
                     return JsonResponse(success_message('Get user', {'user': user_infos[0]}), status=200)
 
                 if not cluster_admin:
