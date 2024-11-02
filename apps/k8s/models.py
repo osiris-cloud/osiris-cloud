@@ -3,6 +3,7 @@ from django.db.models import Q
 import uuid_utils as uuid
 
 from ..users.models import User
+from .constants import LB_PROTOCOLS, NS_ROLES, R_STATES
 
 
 class Namespace(models.Model):
@@ -52,13 +53,6 @@ class Namespace(models.Model):
         ordering = ['-created_at']
 
 
-NS_ROLES = (
-    ('owner', 'Owner: Full control'),
-    ('manager', 'Manager: Read and write'),
-    ('viewer', 'Viewer: Read only'),
-)
-
-
 class NamespaceRoles(models.Model):
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -104,16 +98,16 @@ class Event(models.Model):
 
 class LBEndpoint(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField()
-    ip = models.CharField(max_length=100)
-    port = models.CharField(max_length=100)
-    protocol = models.CharField(max_length=100)
+    description = models.CharField(max_length=256, blank=True, null=True)
+    ip = models.GenericIPAddressField()
+    port = models.IntegerField()
+    protocol = models.CharField(max_length=3, choices=LB_PROTOCOLS, default='tcp')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    status = models.CharField(max_length=30, default='Pending')
+    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
 
     class Meta:
-        db_table = 'endpoints'
+        db_table = 'lb_endpoints'
         ordering = ['-created_at']
 
 

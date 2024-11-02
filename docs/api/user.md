@@ -23,33 +23,33 @@ Sample Output:
 {
   "status": "success",
   "message": "Get user",
-  "username": "fb123",
-  "first_name": "Foo",
-  "last_name": "Bar",
-  "email": "fb123@nyu.edu",
-  "avatar": "https://blob.osiriscloud.io/profile.webp",
-  "date_joined": "16:40:22, Wed 14 Aug 2024",
-  "last_login": "17:51:28, Wed 14 Aug 2024",
-  "default_nsid": "fb123-ghn5",
-  "cluster_role": "user",
-  "github": null,
-  "namespaces": [
-    "fb123-ghn5",
-    "my-namespace-a5jt"
-  ],
-  "resource_used": {
-    "cpu": 2,
-    "memory": 4,
-    "disk": 30,
-    "public_ip": 0,
-    "gpu": 0
-  },
-  "resource_limit": {
-    "cpu": 24,
-    "memory": 32,
-    "disk": 512,
-    "public_ip": 5,
-    "gpu": 5
+  "user": {
+    "username": "fb123",
+    "first_name": "Foo",
+    "last_name": "Bar",
+    "email": "fb123@nyu.edu",
+    "avatar": "https://blob.osiriscloud.io/profile.webp",
+    "date_joined": "16:40:22, Wed 14 Aug 2024",
+    "last_login": "17:51:28, Wed 14 Aug 2024",
+    "default_nsid": "fb123-ghn5",
+    "cluster_role": "user",
+    "github": null,
+    "resource_used": {
+      "cpu": 2,
+      "memory": 4,
+      "disk": 30,
+      "public_ip": 0,
+      "gpu": 0,
+      "registry": 0
+    },
+    "resource_limit": {
+      "cpu": 24,
+      "memory": 32,
+      "disk": 512,
+      "public_ip": 5,
+      "gpu": 5,
+      "registry": 0
+    }
   }
 }
 ```
@@ -124,23 +124,21 @@ Sample Output:
   "default_nsid": "fb123-ghn5",
   "cluster_role": "user",
   "github": null,
-  "namespaces": [
-    "fb123-ghn5",
-    "my-namespace-a5jt"
-  ],
   "resource_used": {
     "cpu": 2,
     "memory": 4,
     "disk": 30,
     "public_ip": 0,
-    "gpu": 0
+    "gpu": 0,
+    "registry": 0
   },
   "resource_limit": {
     "cpu": null,
     "memory": 32,
     "disk": 512,
     "public_ip": 5,
-    "gpu": 5
+    "gpu": 5,
+    "registry": 0
   }
 }
 ```

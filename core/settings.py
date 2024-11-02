@@ -56,6 +56,7 @@ class Env:
 
     github_client_id = os.getenv('GITHUB_CLIENT_ID')
     github_client_secret = os.getenv('GITHUB_CLIENT_SECRET')
+    github_token = os.getenv('GITHUB_TOKEN')
 
     cf_storage_url = os.getenv('CF_STORAGE_URL')
     cf_access_key = os.getenv('CF_ACCESS_KEY')
@@ -212,7 +213,7 @@ else:
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "EST"
 USE_I18N = True
 USE_TZ = True
 
@@ -255,7 +256,7 @@ CELERY_ACKS_LATE = True
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'
+CELERY_TIMEZONE = 'EST'
 CELERY_TASK_ALWAYS_EAGER = DEBUG  # Setting this to true will run tasks synchronously and block the main thread
 ########################################
 

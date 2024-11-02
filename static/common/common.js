@@ -1,3 +1,8 @@
+window.addEventListener('load', function () {
+    window.popupModal = FlowbiteInstances.getInstance('Modal', 'popup-modal');
+    window.alertModal = FlowbiteInstances.getInstance('Modal', 'alert-modal');
+});
+
 function parseURL() {
     // URL SCHEME: <protocol>/<host>/<app>/<nsid>/<resource-id>/<option>
     const parts = window.location.href.split('/');

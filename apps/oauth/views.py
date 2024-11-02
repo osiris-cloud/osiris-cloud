@@ -1,3 +1,5 @@
+import logging
+
 from authlib.integrations.django_client import OAuth
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
@@ -10,24 +12,15 @@ from core.settings import env
 from core.utils import random_str, serialize_obj
 
 from ..k8s.models import Namespace, NamespaceRoles
-from ..users.models import Limit
+from ..users.models import Limit, Usage
 
 from ..oauth.models import GithubUser, NYUUser
 from ..users.models import User
 
 from .tasks import set_profile_avatar
 
-import logging
+from ..k8s.constants import DEFAULT_LIMIT, DEFAULT_ROLE
 
-DEFAULT_LIMIT = {
-    'cpu': 0,
-    'memory': 0,
-    'disk': 0,
-    'public_ip': 0,
-    'gpu': 0,
-}
-
-DEFAULT_ROLE = 'user'
 
 nyu_oauth = OAuth()
 github_oauth = OAuth()
@@ -74,11 +67,11 @@ def get_user_default_ns(user: User) -> Namespace:
 def nyu_callback(request):
     try:
         user_info = nyu_oauth.nyu.authorize_access_token(request)
-        ns_name = None
 
         # if user exists, we log them in
         if user := authenticate(request, mode='nyu', user_info=user_info):
-            pass
+            if user.role == 'blocked':
+                return HttpResponse('Your account is blocked. Please contact support.')
 
         # if user does not exist, we create a new account, and give them user role for now
         else:
@@ -113,7 +106,8 @@ def nyu_callback(request):
             Limit.objects.create(user=user, **DEFAULT_LIMIT)
             logging.info(f"Default limits applied for namespace {ns_name}")
 
-        request.session['namespace'] = ns_name
+            Usage.objects.create(user=user, cpu=0, memory=0, disk=0, public_ip=0, gpu=0, registries=0)
+
         login(request, user)
 
         return redirect(request.build_absolute_uri(reverse("dashboard")))
@@ -150,8 +144,9 @@ def github_callback(request):
         else:
             # if user exists, we log them in. DOES NOT CREATE A NEW USER
             if user := authenticate(request, mode='github', user_info=user_info):
+                if user.role == 'blocked':
+                    return HttpResponse('Your account is blocked. Please contact support.')
                 login(request, user)
-                request.session['namespace'] = get_user_default_ns(user).nsid
                 return redirect(request.build_absolute_uri(reverse("dashboard")))
             else:
                 return redirect(request.build_absolute_uri(reverse("login_view")))

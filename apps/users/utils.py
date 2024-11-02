@@ -227,3 +227,11 @@ def notify_new_owner(owner_email, namespace_id, namespace_name, requester_userna
         return False
 
     return True
+
+
+def greater_than(r1: dict, r2: dict) -> bool:
+    """
+    Compare two resource dictionaries
+    Returns True if r1 is less than r2, False otherwise
+    """
+    return all(r1[key] > r2[key] for key in r1)
