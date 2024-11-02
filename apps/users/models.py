@@ -86,6 +86,12 @@ class Usage(models.Model):
         db_table = 'usage'
 
 
+@admin.register(Usage)
+class UsageAdmin(admin.ModelAdmin):
+    list_display = ('user', 'cpu', 'memory', 'disk', 'public_ip', 'gpu', 'registry')
+    search_fields = ('user',)
+
+
 class Limit(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='limit')
     cpu = models.IntegerField(null=True, default=0)
@@ -122,6 +128,12 @@ class Limit(models.Model):
 
     class Meta:
         db_table = 'limits'
+
+
+@admin.register(Limit)
+class LimitAdmin(admin.ModelAdmin):
+    list_display = ('user', 'cpu', 'memory', 'disk', 'public_ip', 'gpu', 'registry')
+    search_fields = ('user',)
 
 
 class Group(models.Model):

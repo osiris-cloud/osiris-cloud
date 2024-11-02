@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.contrib import admin
 import uuid_utils as uuid
 
 from ..users.models import User
@@ -53,6 +54,13 @@ class Namespace(models.Model):
         ordering = ['-created_at']
 
 
+@admin.register(Namespace)
+class NSAdmin(admin.ModelAdmin):
+    list_display = ('nsid', 'name', 'default', 'locked')
+    search_fields = ('nsid',)
+    list_filter = ('default',)
+
+
 class NamespaceRoles(models.Model):
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -73,6 +81,12 @@ class PVC(models.Model):
     class Meta:
         db_table = 'pvcs'
         ordering = ['-created_at']
+
+
+@admin.register(PVC)
+class PVCAdmin(admin.ModelAdmin):
+    list_display = ('name', 'size', 'owner', 'namespace')
+    search_fields = ('owner',)
 
 
 class Event(models.Model):
@@ -117,3 +131,9 @@ class Settings(models.Model):
 
     class Meta:
         db_table = 'settings'
+
+
+@admin.register(Settings)
+class SettingsAdmin(admin.ModelAdmin):
+    list_display = ('key', 'value')
+    search_fields = ('key',)
