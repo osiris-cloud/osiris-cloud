@@ -40,7 +40,7 @@ class RemoveSlashMiddleware:
     def __call__(self, request):
         path = request.path.split('/')
         if len(path) > 1:
-            if 'admin' in path[1]:
+            if 'underground' in path[1]:
                 pass
             elif request.path.endswith('/') and len(request.path) > 1:
                 return HttpResponsePermanentRedirect(request.path[:-1])

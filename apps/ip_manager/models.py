@@ -4,11 +4,12 @@ from ..users.models import User
 from ..vm.models import VM
 
 
-class IPv4(models.Model):
-    address = models.GenericIPAddressField(protocol='IPv4')
+class IP(models.Model):
+    namespace = models.ForeignKey('k8s.Namespace', on_delete=models.CASCADE)
+    address = models.GenericIPAddressField()
     mac = models.CharField(max_length=17, null=True, blank=True)
     vm = models.ForeignKey(VM, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'ipv4'
+        db_table = 'ip_address'

@@ -1,3 +1,8 @@
+window.addEventListener('load', function () {
+    window.popupModal = FlowbiteInstances.getInstance('Modal', 'popup-modal');
+    window.alertModal = FlowbiteInstances.getInstance('Modal', 'alert-modal');
+});
+
 function parseURL() {
     // URL SCHEME: <protocol>/<host>/<app>/<nsid>/<resource-id>/<option>
     const parts = window.location.href.split('/');
@@ -12,7 +17,7 @@ function parseURL() {
 
 const currentURL = parseURL();
 
-function CancelURL() {
+function cancelURL() {
     return `${currentURL.host}/${currentURL.app}/${currentURL.nsid}`
         + (currentURL.resource_id ? `/${currentURL.resource_id}` : '');
 }
@@ -51,6 +56,7 @@ function createStateBadge(state) {
     let stateClass = '';
     switch (state) {
         case 'creating':
+        case 'updating':
             stateClass = 'bg-yellow-100 text-yellow-800 dark:bg-gray-700 dark:text-yellow-300 border-yellow-300';
             break;
         case 'active':
@@ -59,10 +65,69 @@ function createStateBadge(state) {
         case 'stopped':
         case 'deleting':
         case 'error':
+        case 'zombie':
             stateClass = 'bg-red-100 text-red-800 dark:bg-gray-700 dark:text-red-400 border-red-400';
             break;
     }
     return $('<span/>', {
         class: `text-xs font-medium me-2 px-2.5 py-0.5 rounded border ${stateClass}`, text: capitalize(state),
+    });
+}
+
+function Confirm(message, callback, options = {}) {
+    if (!options.yes) options.yes = 'Confirm';
+    if (!options.no) options.no = 'Cancel';
+    if (!options.icon) options.icon = 'info';
+
+    let confirm = $("#popup-confirm");
+    let deny = $("#popup-deny");
+
+    $("#popup-message").text(message);
+
+    if (options.icon === 'info') {
+        $('#popup-icon-info').removeClass('hidden');
+        $('#popup-icon-check').addClass('hidden');
+    } else if (options.icon === 'check') {
+        $('#popup-icon-info').addClass('hidden');
+        $('#popup-icon-check').removeClass('hidden');
+    }
+
+    confirm.text(options.yes);
+    deny.text(options.no);
+
+    popupModal.show();
+
+    confirm.unbind().click(() => {
+        popupModal.hide();
+        callback(true);
+    });
+
+    deny.unbind().click(() => {
+        popupModal.hide();
+        callback(false);
+    });
+}
+
+function Alert(message, callback = null, options = {}) {
+    if (!options.ok) options.ok = 'OK';
+    if (!options.icon) options.icon = 'info';
+    let $ok = $("#alert-ok");
+    $ok.text(options.ok);
+
+    $("#alert-message").text(message);
+
+    if (options.icon === 'info') {
+        $('#alert-icon-info').removeClass('hidden');
+        $('#alert-icon-check').addClass('hidden');
+    } else if (options.icon === 'check') {
+        $('#alert-icon-info').addClass('hidden');
+        $('#alert-icon-check').removeClass('hidden');
+    }
+
+    alertModal.show();
+
+    $ok.unbind().click(() => {
+        alertModal.hide();
+        if (callback) callback();
     });
 }

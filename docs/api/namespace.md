@@ -23,18 +23,20 @@ Sample Response:
 {
   "status": "success",
   "message": "Get namespace",
-  "nsid": "fb123-ghn5",
-  "name": "Default",
-  "default": true,
-  "created_at": "2024-10-20T18:26:11.556Z",
-  "updated_at": "2024-10-20T18:26:11.556Z",
-  "owner": {
-    "username": "fb123",
-    "name": "Foo Bar",
-    "email": "fb123@nyu.edu",
-    "avatar": "https://blob.osiriscloud.io/profile.webp"
-  },
-  "users": []
+  "namespace": {
+    "nsid": "fb123-ghn5",
+    "name": "Default",
+    "default": true,
+    "created_at": "2024-10-20T18:26:11.556Z",
+    "updated_at": "2024-10-20T18:26:11.556Z",
+    "owner": {
+      "username": "fb123",
+      "name": "Foo Bar",
+      "email": "fb123@nyu.edu",
+      "avatar": "https://blob.osiriscloud.io/profile.webp"
+    },
+    "users": []
+  }
 }
 ```
 

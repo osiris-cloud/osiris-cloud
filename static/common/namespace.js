@@ -2,10 +2,8 @@ let nsModal;
 let $nsModal = $('#namespace-modal');
 let nsModalClosable = true;
 
-let popupModal;
 let $popupModal = $('#popup-modal');
 
-let alertModal;
 let $alertModal = $('#alert-modal');
 
 let roleDropdown;
@@ -78,7 +76,6 @@ window.addEventListener('load', function () {
     }
     nsModal._options.closable = false;
 
-    popupModal = FlowbiteInstances.getInstance('Modal', 'popup-modal');
     popupModal._options.onShow = () => {
         setTimeout(() => {
             $popupModal.addClass('show');
@@ -94,7 +91,6 @@ window.addEventListener('load', function () {
         }, 50);
     }
 
-    alertModal = FlowbiteInstances.getInstance('Modal', 'alert-modal');
     alertModal._options.onShow = function () {
         setTimeout(() => {
             $alertModal.addClass('show');
@@ -116,13 +112,14 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
         success: (resp) => {
-            nsUsers = resp.users;
-            nsOwner = resp.owner;
-            currentDefault = resp.default;
+            let ns = resp.namespace;
+            nsUsers = ns.users;
+            nsOwner = ns.owner;
+            currentDefault = ns.default;
             if (apply) {
-                $('#dropdown-ns-button').text(resp.name);
-                window.namespace = resp.nsid;
-                resp.users.forEach((user) => {
+                $('#dropdown-ns-button').text(ns.name);
+                window.namespace = ns.nsid;
+                ns.users.forEach((user) => {
                     if (user.username === userSelf.username)
                         currentRole = user.role;
                     if (user.username === userSelf.username && user.role === 'viewer')
@@ -148,23 +145,25 @@ $createNS.on('click', () => {
     roleTransferOwner.addClass('hidden');
     $nsUserList.append(createUserListItem(userSelf));
 });
+
 $namespaceSettings.on('click', false, () => {
     createNS = false;
     $nsModalTitle.text('Edit Namespace');
     loadNamespace(window.namespace, false, (resp) => {
-        $nsModalName.val(resp.name);
+        let ns= resp.namespace;
+        $nsModalName.val(ns.name);
         $nsSubmitButton.text('Save');
         roleTransferOwner.removeClass('hidden');
-        $nsUserList.append(createUserListItem({...resp.owner, 'role': 'owner'}));
-        resp.users.forEach((user) => {
+        $nsUserList.append(createUserListItem({...ns.owner, 'role': 'owner'}));
+        ns.users.forEach((user) => {
             $nsUserList.append(createUserListItem(user));
         });
         if (nsOwner.username !== userSelf.username) {
             $('#set-as-default-container').addClass('hidden');
             $nsDelete.addClass('hidden');
         } else {
-            $setAsDefault.prop('checked', resp.default);
-            $setAsDefault.prop('disabled', resp.default);
+            $setAsDefault.prop('checked', ns.default);
+            $setAsDefault.prop('disabled', ns.default);
         }
         showShareSpinner(false);
     });
@@ -215,26 +214,27 @@ $nsSubmitButton.on('click', () => {
         contentType: 'application/json',
         data: JSON.stringify(data),
         success: (resp) => {
+            let ns = resp.namespace;
             $nsSubmitButton.prop('disabled', false);
             nsModal.hide();
             if (createNS)
                 Confirm('Namespace created. Do you want to switch it?', (ok) => {
                     if (ok) {
                         let url = parseURL();
-                        window.location.href = `${url.host}/${url.app}/${resp.nsid}`;
+                        window.location.href = `${url.host}/${url.app}/${ns.nsid}`;
                     }
                 }, {'yes': 'Switch', 'no': 'Stay', 'icon': 'check'});
             else
                 Alert('Namespace Updated', () => {
-                    nsUsers = resp.users;
-                    nsOwner = resp.owner;
-                    $('#dropdown-ns-button').text(resp.name);
+                    nsUsers = ns.users;
+                    nsOwner = ns.owner;
+                    $('#dropdown-ns-button').text(ns.name);
                 }, {'icon': 'check'});
             loadAllNamespaces();
             showShareSpinner(false);
         },
         error: (resp) => {
-            Alert(resp.responseJSON.message || resp.responseJSON.detail || "Internal Server Error");
+            Alert(resp.responseJSON.message || "Internal Server Error");
             $nsSubmitButton.prop('disabled', false);
             showShareSpinner(false);
         }
@@ -496,7 +496,7 @@ function handleSocketMessage(event) {
 
 function getSelf(callback) {
     $.ajax({
-        url: '/api/user',
+        url: '/api/user/_self',
         type: 'GET',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
@@ -509,67 +509,6 @@ function getSelf(callback) {
     });
 }
 
-function capitalize(string) {
-    return string[0].toUpperCase() + string.slice(1);
-}
-
-function Confirm(message, callback, options = {}) {
-    if (!options.yes) options.yes = 'Confirm';
-    if (!options.no) options.no = 'Cancel';
-    if (!options.icon) options.icon = 'info';
-
-    let confirm = $("#popup-confirm");
-    let deny = $("#popup-deny");
-
-    $("#popup-message").text(message);
-
-    if (options.icon === 'info') {
-        $('#popup-icon-info').removeClass('hidden');
-        $('#popup-icon-check').addClass('hidden');
-    } else if (options.icon === 'check') {
-        $('#popup-icon-info').addClass('hidden');
-        $('#popup-icon-check').removeClass('hidden');
-    }
-
-    confirm.text(options.yes);
-    deny.text(options.no);
-
-    popupModal.show();
-
-    confirm.unbind().click(() => {
-        popupModal.hide();
-        callback(true);
-    });
-
-    deny.unbind().click(() => {
-        popupModal.hide();
-        callback(false);
-    });
-}
-
-function Alert(message, callback = null, options = {}) {
-    if (!options.ok) options.ok = 'OK';
-    if (!options.icon) options.icon = 'info';
-    let $ok = $("#alert-ok");
-    $ok.text(options.ok);
-
-    $("#alert-message").text(message);
-
-    if (options.icon === 'info') {
-        $('#alert-icon-info').removeClass('hidden');
-        $('#alert-icon-check').addClass('hidden');
-    } else if (options.icon === 'check') {
-        $('#alert-icon-info').addClass('hidden');
-        $('#alert-icon-check').removeClass('hidden');
-    }
-
-    alertModal.show();
-
-    $ok.unbind().click(() => {
-        alertModal.hide();
-        if (callback) callback();
-    });
-}
 
 function showShareSpinner(show = true) {
     if (show) $sharingSpinner.removeClass('hidden'); else $sharingSpinner.addClass('hidden');
@@ -593,7 +532,7 @@ function loadAllNamespaces() {
             $namespaceLlist.append($nsArray);
         },
         error: (resp) => {
-            Alert(resp.message || resp.detail || "Internal Server Error");
+            Alert(resp.message || "Internal Server Error");
         },
     });
 }

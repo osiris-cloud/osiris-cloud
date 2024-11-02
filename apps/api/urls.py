@@ -11,12 +11,18 @@ from ..users import consumers as user_consumers
 from ..k8s import api as k8s_api
 
 from ..secret_store import api as secret_store_api
+from ..admin_console import api as admin_api
 from ..container_registry import api as registry_api
 from ..container_apps import api as container_apps_api
 
 root_urlpatterns = [
     path('', routes.root),
     path('/token', routes.get_token),
+]
+
+admin_urlpatterns = [
+    path('/admin/external-user', admin_api.external_user),
+    path('/admin/gh-search', admin_api.gh_user_search),
 ]
 
 vm_urlpatterns = [
@@ -42,7 +48,7 @@ secret_store_urlpatterns = [
 
 event_urlpatterns = [
     re_path(r'^/event$', k8s_api.event),
-    re_path(r'^/event/(?P<event_id>[^/]+)$', k8s_api.event),
+    re_path(r'^/event/(?P<event_id>[^/]+)$', k8s_api.event)
 ]
 
 container_registry_urlpatterns = [
@@ -63,6 +69,7 @@ container_apps_urlpatterns = [
 
 urlpatterns = (
         root_urlpatterns +
+        admin_urlpatterns +
         vm_urlpatterns +
         user_urlpatterns +
         secret_store_urlpatterns +
