@@ -232,6 +232,12 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
     if not spec.get('exposed_public'):
         return False, 'exposed_public is required'
 
+    if replica := spec.get('replicas'):
+        if not isinstance(replica, int):
+            return False, 'replicas must be an integer'
+        if replica < 1:
+            return False, 'replicas must be greater than or equal to 0'
+
     if not isinstance(spec['exposed_public'], bool):
         return False, 'exposed_public must be a boolean'
 

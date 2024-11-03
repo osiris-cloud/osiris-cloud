@@ -83,6 +83,7 @@ Request body parameters:
 
 - `slug` (string, required): The unique slug of the container app. This will be used to generate the URL.
 
+- `replicas` (int, optional): The number of instances of the app. Default is 1.
 
 - `connection_protocol` (string, required): The connection protocol for the app. This can be `http`, `tcp` or `udp`.
   If `tcp` or `udp` is used, the app will be exposed on a random ip and port. If `http`, the app will be exposed on port
@@ -229,6 +230,7 @@ Sample Response:
     "appid": "0192efdc-fdd9-74c1-b5d9-816ce8c7d900",
     "name": "LogMeIn1",
     "url": "logmein1.poweredge.dev",
+    "replicas": 1,
     "connection_port": 443,
     "connection_protocol": "http",
     "state": "creating",
@@ -384,6 +386,7 @@ Sample Response:
     "appid": "0192efdc-fdd9-74c1-b5d9-816ce8c7d900",
     "name": "LogMeIn1",
     "url": "logmein1.poweredge.dev",
+    "replicas": 1,
     "connection_port": 443,
     "connection_protocol": "http",
     "state": "creating",
