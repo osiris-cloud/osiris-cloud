@@ -93,8 +93,8 @@ class HPA(models.Model):
 
 @admin.register(HPA)
 class HPAAdmin(admin.ModelAdmin):
-    list_display = ('enabled', 'min_replicas', 'max_replicas', 'cpu_trigger', 'memory_trigger')
-    list_filter = ('enabled',)
+    list_display = ('enable', 'min_replicas', 'max_replicas', 'cpu_trigger', 'memory_trigger')
+    list_filter = ('enable',)
 
 
 class ContainerApp(models.Model):
