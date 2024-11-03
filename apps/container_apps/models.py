@@ -71,7 +71,7 @@ class CustomDomainAdmin(admin.ModelAdmin):
 
 
 class HPA(models.Model):
-    enabled = models.BooleanField(default=False)
+    enable = models.BooleanField(default=False)
     min_replicas = models.IntegerField(default=1)
     max_replicas = models.IntegerField(default=1)
     scaleup_stb_window = models.IntegerField(default=300)
@@ -81,7 +81,7 @@ class HPA(models.Model):
 
     def info(self):
         return {
-            'enabled': self.enabled,
+            'enabled': self.enable,
             'min_replicas': self.min_replicas,
             'max_replicas': self.max_replicas,
             'scaleup_stb_window': self.scaleup_stb_window,
@@ -169,6 +169,7 @@ class ContainerApp(models.Model):
             **container_types,
             'volumes': self.volume_info(),
             'autoscale': self.hpa.info() if self.hpa else None,
+            'exposed_public': self.exposed_public,
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }
