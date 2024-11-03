@@ -10,7 +10,7 @@ def profile(request):
         return render(request, '404-app.html')
 
     return render(request, 'apps/dashboard/profile.html', context={
-        'github': request.user.github.username if request.user.github else None,
+        'github': request.user.github.username if hasattr(request.user, 'github') else None,
         'default_ns': default_ns.nsid,
         'segment': ['profile'],
     })
