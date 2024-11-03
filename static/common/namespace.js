@@ -52,53 +52,59 @@ loadAllNamespaces();
 
 window.addEventListener('load', function () {
     nsModal = FlowbiteInstances.getInstance('Modal', 'namespace-modal');
-    nsModal._options.onShow = () => {
-        setTimeout(() => {
-            $nsModal.addClass('show');
-        }, 10);
-        connectSearch();
-        $nsListDropdown.addClass('hidden');
-        $nsSubmitButton.prop('disabled', false);
-    }
-    nsModal._options.onHide = () => {
-        $nsModal.removeClass('show');
-        showShareSpinner(false);
-        connectSearch(false);
-        if (roleDropdown)
-            roleDropdown.destroyAndRemoveInstance();
-        $nsModalName.val('');
-        $userSearch.val('');
-        $nsUserList.empty();
-        $setAsDefault.prop('checked', false);
-        selectedUser = {};
-        nsOwner = {};
-        nsUsers = [];
-    }
-    nsModal._options.closable = false;
-
-    popupModal._options.onShow = () => {
-        setTimeout(() => {
-            $popupModal.addClass('show');
-        }, 10);
-        nsModalClosable = false;
-        roleDropdown?.hide();
-        $nsListDropdown.addClass('hidden');
-    }
-    popupModal._options.onHide = () => {
-        $popupModal.removeClass('show');
-        setTimeout(() => {
-            nsModalClosable = true;
-        }, 50);
+    if (nsModal) {
+        nsModal._options.onShow = () => {
+            setTimeout(() => {
+                $nsModal.addClass('show');
+            }, 10);
+            connectSearch();
+            $nsListDropdown.addClass('hidden');
+            $nsSubmitButton.prop('disabled', false);
+        }
+        nsModal._options.onHide = () => {
+            $nsModal.removeClass('show');
+            showShareSpinner(false);
+            connectSearch(false);
+            if (roleDropdown)
+                roleDropdown.destroyAndRemoveInstance();
+            $nsModalName.val('');
+            $userSearch.val('');
+            $nsUserList.empty();
+            $setAsDefault.prop('checked', false);
+            selectedUser = {};
+            nsOwner = {};
+            nsUsers = [];
+        }
+        nsModal._options.closable = false;
     }
 
-    alertModal._options.onShow = function () {
-        setTimeout(() => {
-            $alertModal.addClass('show');
-        }, 10);
-        $nsListDropdown.addClass('hidden');
-    };
-    alertModal._options.onHide = function () {
-        $alertModal.removeClass('show');
+    if (popupModal) {
+        popupModal._options.onShow = () => {
+            setTimeout(() => {
+                $popupModal.addClass('show');
+            }, 10);
+            nsModalClosable = false;
+            roleDropdown?.hide();
+            $nsListDropdown.addClass('hidden');
+        }
+        popupModal._options.onHide = () => {
+            $popupModal.removeClass('show');
+            setTimeout(() => {
+                nsModalClosable = true;
+            }, 50);
+        }
+    }
+
+    if (alertModal) {
+        alertModal._options.onShow = function () {
+            setTimeout(() => {
+                $alertModal.addClass('show');
+            }, 10);
+            $nsListDropdown.addClass('hidden');
+        };
+        alertModal._options.onHide = function () {
+            $alertModal.removeClass('show');
+        }
     }
 });
 
@@ -124,6 +130,7 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
                     if (user.username === userSelf.username && user.role === 'viewer')
                         $namespaceSettings.addClass('hidden');
                 });
+                localStorage.setItem('namespace', ns.nsid);
             }
             if (callback)
                 callback(resp);
@@ -149,7 +156,7 @@ $namespaceSettings.on('click', false, () => {
     createNS = false;
     $nsModalTitle.text('Edit Namespace');
     loadNamespace(currentURL.nsid, false, (resp) => {
-        let ns= resp.namespace;
+        let ns = resp.namespace;
         $nsModalName.val(ns.name);
         $nsSubmitButton.text('Save');
         roleTransferOwner.removeClass('hidden');

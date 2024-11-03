@@ -5,7 +5,7 @@
             <div class="flex-1 px-3 space-y-1 bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                 <ul class="pb-2 space-y-2">
                     <li>
-                        <div onclick="window.location.href = '/dashboard/' + window.namespace"
+                        <div onclick="window.location.href = '/dashboard/' + currentURL.nsid"
                            class="flex items-center p-2 text-base text-gray-900 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'dashboard' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
                             <svg class="w-6 h-6 text-gray-800 dark:text-white"
                                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
@@ -18,7 +18,7 @@
                         </div>
                     </li>
                     <li>
-                        <div onclick="window.location.href = '/vm/' + window.namespace"
+                        <div onclick="window.location.href = '/vm/' + currentURL.nsid"
                            class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'vm' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
 
                             <svg class="w-6 h-6 text-gray-800 dark:text-white"
@@ -33,7 +33,7 @@
                     </li>
 
                     <li>
-                        <div onclick="window.location.href = '/container-apps/' + window.namespace"
+                        <div onclick="window.location.href = '/container-apps/' + currentURL.nsid"
                            class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'container-app' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
                             <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true"
                                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
@@ -47,7 +47,7 @@
                     </li>
 
                     <li>
-                       <div onclick="window.location.href = '/container-registry/' + window.namespace"
+                       <div onclick="window.location.href = '/container-registry/' + currentURL.nsid"
                            class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'container_registry' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
                             <svg class="w-6 h-6 text-gray-800 dark:text-white" xmlns="http://www.w3.org/2000/svg"
                                  fill="#000000" viewBox="0 0 32 32">
@@ -73,7 +73,7 @@
 {#                    </li>#}
 
                     <li>
-                        <div onclick="window.location.href = '/db/' + window.namespace"
+                        <div onclick="window.location.href = '/db/' + currentURL.nsid"
                            class="flex items-center p-2 text-base text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 group dark:text-gray-200 dark:hover:bg-gray-700 {% if 'db' in segment %} bg-gray-100 dark:bg-gray-700 {% endif %}">
                             <svg class="w-6 h-6 text-gray-800 dark:text-white"
                                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
