@@ -168,7 +168,6 @@ $namespaceSettings.on('click', false, () => {
             $('#set-as-default-container').addClass('hidden');
             $nsDelete.addClass('hidden');
         } else {
-            console.log(ns.default);
             $setAsDefault.prop('checked', ns.default);
             $setAsDefault.prop('disabled', ns.default);
         }
@@ -216,7 +215,7 @@ $nsSubmitButton.on('click', () => {
 
     $.ajax({
         url: '/api/namespace' + (createNS ? '' : '/' + currentURL.nsid),
-        type: createNS ? 'POST' : 'PATCH',
+        type: createNS ? 'PUT' : 'PATCH',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
         data: JSON.stringify(data),
