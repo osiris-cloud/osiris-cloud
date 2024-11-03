@@ -118,7 +118,6 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
             currentDefault = ns.default;
             if (apply) {
                 $('#dropdown-ns-button').text(ns.name);
-                window.namespace = ns.nsid;
                 ns.users.forEach((user) => {
                     if (user.username === userSelf.username)
                         currentRole = user.role;
@@ -149,7 +148,7 @@ $createNS.on('click', () => {
 $namespaceSettings.on('click', false, () => {
     createNS = false;
     $nsModalTitle.text('Edit Namespace');
-    loadNamespace(window.namespace, false, (resp) => {
+    loadNamespace(currentURL.nsid, false, (resp) => {
         let ns= resp.namespace;
         $nsModalName.val(ns.name);
         $nsSubmitButton.text('Save');
@@ -162,6 +161,7 @@ $namespaceSettings.on('click', false, () => {
             $('#set-as-default-container').addClass('hidden');
             $nsDelete.addClass('hidden');
         } else {
+            console.log(ns.default);
             $setAsDefault.prop('checked', ns.default);
             $setAsDefault.prop('disabled', ns.default);
         }
@@ -208,7 +208,7 @@ $nsSubmitButton.on('click', () => {
     $nsSubmitButton.prop('disabled', true);
 
     $.ajax({
-        url: '/api/namespace' + (createNS ? '' : '/' + window.namespace),
+        url: '/api/namespace' + (createNS ? '' : '/' + currentURL.nsid),
         type: createNS ? 'POST' : 'PATCH',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
@@ -248,7 +248,7 @@ $nsDelete.on('click', () => {
     Confirm(`Are you sure you want to delete ${$('#dropdown-ns-button').text()}? All contained resources will be deleted.`, (ok) => {
         if (!ok) return;
         $.ajax({
-            url: '/api/namespace/' + window.namespace,
+            url: '/api/namespace/' + currentURL.nsid,
             type: 'DELETE',
             headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
             contentType: 'application/json',
@@ -426,7 +426,7 @@ function createNSListItem(name, owner, nsid) {
         .addClass('text-sm');
 
     const mainText = $('<div></div>')
-        .text(name + (nsid === window.namespace ? ' (Current)' : ''));
+        .text(name + (nsid === currentURL.nsid ? ' (Current)' : ''));
 
     const subText = $('<div></div>')
         .addClass('text-xs font-normal text-gray-500 dark:text-gray-300')
@@ -501,7 +501,7 @@ function getSelf(callback) {
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
         success: (resp) => {
-            callback(resp);
+            callback(resp.user);
         },
         error: (resp) => {
             Alert(resp.responseJSON.message || "Internal Server Error");
@@ -524,7 +524,7 @@ function loadAllNamespaces() {
             $namespaceLlist.empty();
             let $nsArray = [];
             resp.namespaces.forEach((ns) => {
-                if (ns.nsid === window.namespace)
+                if (ns.nsid === currentURL.nsid)
                     $nsArray.unshift(createNSListItem(ns.name, ns.owner.name, ns.nsid))
                 else
                     $nsArray.push(createNSListItem(ns.name, ns.owner.name, ns.nsid));
