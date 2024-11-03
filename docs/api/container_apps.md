@@ -90,8 +90,8 @@ Request body parameters:
   80 and 443.
 
 
-- `exposed_public` (boolean, optional): If false, the app will only be accessible from the NYU network. Default
-  is `true`. The app will be public only if the `connection_protocol` is `http`.
+- `exposed_public` (boolean, required): If false, the app will only be accessible from the NYU network. The app will be
+  public only if the `connection_protocol` is `http`.
 
 
 - `custom_domains` (array, optional): This setting only applies if the `connection_protocol` is `http`. It takes 2
@@ -302,8 +302,8 @@ Request body parameters:
   80 and 443.
 
 
-- `exposed_public` (boolean, optional): If false, the app will only be accessible from the NYU network. Default
-  is `true`. The app will be public only if the `connection_protocol` is `http`.
+- `exposed_public` (boolean, optional): If false, the app will only be accessible from the NYU network. The app will be
+  public only if the `connection_protocol` is `http`.
 
 
 - `custom_domains` (array, optional): This setting only applies if the `connection_protocol` is `http`. It takes 2

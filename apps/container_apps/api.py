@@ -106,6 +106,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
                         app = ContainerApp.objects.create(namespace=ns,
                                                           name=app_data['name'],
                                                           slug=app_data['slug'],
+                                                          replicas=app_data.get('replicas', 1),
                                                           connection_protocol=conn_proto,
                                                           connection_port=conn_port,
                                                           restart_policy=app_data['restart_policy'],
