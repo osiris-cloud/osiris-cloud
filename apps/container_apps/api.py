@@ -72,7 +72,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
         match request.method:
             case 'GET':
                 # Get all apps in the namespace
-                app_filter = {'crid': appid} if appid else {}
+                app_filter = {'appid': appid} if appid else {}
                 apps = ContainerApp.objects.filter(namespace=ns, **app_filter)
                 result = [ca.info() for ca in apps]
                 if appid:
