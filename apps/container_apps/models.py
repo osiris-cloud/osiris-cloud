@@ -161,6 +161,7 @@ class ContainerApp(models.Model):
             'appid': self.appid,
             'name': self.name,
             'url': self.url,
+            'replicas': self.replicas,
             'connection_port': 443 if self.connection_protocol == 'http' else self.connection_port,
             'connection_protocol': self.connection_protocol,
             'state': self.state,
