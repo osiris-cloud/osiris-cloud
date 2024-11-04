@@ -41,7 +41,15 @@ function showNoResource(show = true) {
 }
 
 function normalizeTime(time) {
-    return new Date(time).toLocaleString();
+    const date = new Date(time);
+    return date.toLocaleString(undefined, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+    });
 }
 
 function capitalize(string) {
