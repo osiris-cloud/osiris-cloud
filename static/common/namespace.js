@@ -127,8 +127,9 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
                 ns.users.forEach((user) => {
                     if (user.username === userSelf.username)
                         currentRole = user.role;
-                    if (user.username === userSelf.username && user.role === 'viewer')
+                    if (user.username === userSelf.username && currentRole === 'viewer') // this is buggy. Should change to a better approach
                         $namespaceSettings.addClass('hidden');
+                        $nsDelete.addClass('hidden');
                 });
                 localStorage.setItem('namespace', ns.nsid);
             }
@@ -167,6 +168,8 @@ $namespaceSettings.on('click', false, () => {
         if (nsOwner.username !== userSelf.username) {
             $('#set-as-default-container').addClass('hidden');
             $nsDelete.addClass('hidden');
+            $setAsDefault.prop('disabled', !ns.default);
+            roleTransferOwner.addClass('hidden');
         } else {
             $setAsDefault.prop('checked', ns.default);
             $setAsDefault.prop('disabled', ns.default);
