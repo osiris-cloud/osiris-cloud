@@ -38,3 +38,13 @@ DEFAULT_ROLE = 'guest'
 SECRET_TYPES = (('opaque', 'Key value pair secret'),
                 ('auth', 'Auth secret'),
                 )
+
+DEFAULT_HPA_SPEC = {
+    'enable': False,
+    'min_replicas': 1,
+    'max_replicas': 1,
+    'scaleup_stb_window': 300,
+    'scaledown_stb_window': 300,
+    'cpu_trigger': 90,
+    'memory_trigger': 90,
+}

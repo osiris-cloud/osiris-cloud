@@ -3,7 +3,7 @@ from django.contrib import admin
 from core.model_fields import UUID7StringField
 
 from ..k8s.models import Namespace, PVC
-from ..k8s.constants import R_STATES
+from ..k8s.constants import R_STATES, DEFAULT_HPA_SPEC
 from ..secret_store.models import Secret
 
 from core.settings import env
@@ -81,7 +81,7 @@ class HPA(models.Model):
 
     def info(self):
         return {
-            'enabled': self.enable,
+            'enable': self.enable,
             'min_replicas': self.min_replicas,
             'max_replicas': self.max_replicas,
             'scaleup_stb_window': self.scaleup_stb_window,
@@ -101,13 +101,13 @@ class ContainerApp(models.Model):
     appid = UUID7StringField(auto_created=True)
     name = models.CharField(max_length=64)
     slug = models.CharField(max_length=64)
+    replicas = models.IntegerField(default=1)
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     containers = models.ManyToManyField(Container, blank=True)
     custom_domains = models.ManyToManyField(CustomDomain, blank=True)
     pvcs = models.ManyToManyField(PVC, blank=True)
     hpa = models.ForeignKey(HPA, on_delete=models.SET_NULL, null=True, default=None)
     connection_port = models.IntegerField(null=True, default=None)
-    replicas = models.IntegerField(default=1)
     connection_protocol = models.CharField(max_length=16,
                                            choices=(('http', 'Web app'),
                                                     ('tcp', 'TCP on random port'),
@@ -177,7 +177,7 @@ class ContainerApp(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.hpa:
-            self.container_app_mode = HPA.objects.create()
+            self.container_app_mode = HPA.objects.create(**DEFAULT_HPA_SPEC)
         super().save(*args, **kwargs)
 
 

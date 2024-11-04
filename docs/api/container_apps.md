@@ -353,7 +353,6 @@ Request body parameters:
 
 - `volumes` (array, optional): Persistent Volumes to attach to the app.
     - `name` (string, required): The name of the volume.
-    - `size` (int, required): The size of the volume in GB.
     - `mount_path` (string, required): The path to mount the volume in the container.
     - `mode` (string, required): The access mode for `init`, `main` and `sidecar`. Possible values are
         - `''` : An empty string represents no access.

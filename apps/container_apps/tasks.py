@@ -15,3 +15,7 @@ def patch_deployment() -> None:
 def delete_deployment() -> None:
     pass
 
+
+@shared_task(name='redeploy')
+def redeploy() -> None:
+    pass
