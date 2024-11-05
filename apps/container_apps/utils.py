@@ -1,6 +1,10 @@
 import re
+import kubernetes
+
+from ..k8s.utils import make_k8s_client
 
 from ..secret_store.models import Secret
+from .models import Container, ContainerApp, HPA
 
 
 def validate_container_spec(spec: dict, user) -> tuple[bool, [str | None]]:
@@ -139,6 +143,8 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
     """
     if not spec.get('name'):
         return False, 'name is required'
+    if not isinstance(spec['name'], str):
+        return False, 'name must be a string'
 
     main = spec.get('main')
     if not main:
@@ -243,5 +249,188 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
     return True, None
 
 
-def validate_app_update_spec(spec: dict) -> tuple[bool, [str | None]]:
-    pass
+def validate_hpa_update_spec(spec: dict) -> tuple[bool, [str | None]]:
+    """
+    Validate HPA update spec
+    """
+    enable = spec.get('enable')
+    if enable is not None:
+        if not isinstance(enable, bool):
+            return False, 'enable must be a boolean'
+
+    min_replicas = spec.get('min_replicas')
+
+    if min_replicas is not None:
+        if not isinstance(min_replicas, int):
+            return False, 'min_replicas must be an integer'
+
+    max_replicas = spec.get('max_replicas')
+    if max_replicas is not None:
+        if not isinstance(max_replicas, int):
+            return False, 'max_replicas must be an integer'
+
+    scaleup_stb_window = spec.get('scaleup_stb_window')
+    if scaleup_stb_window is not None:
+        if not isinstance(scaleup_stb_window, int):
+            return False, 'scaleup_stb_window must be an integer'
+        if scaleup_stb_window < 0:
+            return False, 'scaleup_stb_window must be greater than or equal to 0'
+
+    scaledown_stb_window = spec.get('scaledown_stb_window')
+    if scaledown_stb_window is not None:
+        if not isinstance(scaledown_stb_window, int):
+            return False, 'scaledown_stb_window must be an integer'
+        if scaledown_stb_window < 0:
+            return False, 'scaledown_stb_window must be greater than or equal to 0'
+
+    cpu_trigger = spec.get('cpu_trigger')
+    if cpu_trigger is not None:
+        if not isinstance(cpu_trigger, int):
+            return False, 'cpu_trigger must be an integer'
+        if cpu_trigger < 1:
+            return False, 'cpu_trigger must be greater than 1%'
+
+    memory_trigger = spec.get('memory_trigger')
+    if memory_trigger is not None:
+        if not isinstance(memory_trigger, int):
+            return False, 'memory_trigger must be an integer'
+        if memory_trigger < 1:
+            return False, 'memory_trigger must be greater than 1%'
+
+
+def validate_app_update_spec(spec: dict, user) -> tuple[bool, [str | None]]:
+    """
+    Validate container update spec
+    """
+    if name := spec.get('name'):
+        if not isinstance(name, str):
+            return False, 'name must be a string'
+
+    if main := spec.get('main'):
+        if main == {}:
+            return False, 'main container config is required'
+        if not isinstance(main, dict):
+            return False, 'main must be an object'
+        valid, err = validate_container_spec(main, user)
+        if not valid:
+            return False, err
+
+    if sidecar := spec.get('sidecar'):
+        if not isinstance(sidecar, dict):
+            return False, 'sidecar must be an object'
+        valid, err = validate_container_spec(sidecar, user)
+        if not valid:
+            return False, err
+
+    if init := spec.get('init'):
+        if not isinstance(sidecar, dict):
+            return False, 'init must be an object'
+        valid, err = validate_container_spec(init, user)
+        if not valid:
+            return False, err
+
+    if custom_domain := spec.get('custom_domain'):
+        if not isinstance(custom_domain, list):
+            return False, 'custom_domain must be an array'
+        for each in custom_domain:
+            if not isinstance(each, dict):
+                return False, 'custom_domain must be an array of objects'
+            if not isinstance(each.get('name'), str):
+                return False, 'name is required for custom_domain'
+            if not DOMAIN_REGEX.match(each['name']):
+                return False, 'Invalid custom domain'
+            if not isinstance(each.get('gen_cert'), bool):
+                return False, 'gen_cert must be a bool'
+
+    if volumes := spec.get('volumes'):
+        if not isinstance(volumes, list):
+            return False, 'volumes must be an array'
+        for each in volumes:
+            if not isinstance(each, dict):
+                return False, 'volumes must be an array of objects'
+            if volid := each.get('volid'):
+                if not isinstance(volid, str):
+                    return False, 'volid must be a string'
+            if not isinstance(each.get('name'), str):
+                return False, 'name is required for volumes'
+            if not isinstance(each.get('mount_path'), str):
+                return False, 'mount_path is required for volumes'
+            if not isinstance(each.get('mode'), dict):
+                return False, 'mode is required for volumes'
+            v_modes = ('', 'ro', 'rw')
+            if not each['mode'].get('init') in v_modes:
+                return False, 'init is required for mode'
+            if not each['mode'].get('main') in v_modes:
+                return False, 'main is required for mode'
+            if not each['mode'].get('sidecar') in v_modes:
+                return False, 'sidecar is required for mode'
+
+    if hpa := spec.get('autoscale'):
+        if not isinstance(hpa, dict):
+            return False, 'hpa must be an object'
+        valid, err = validate_hpa_update_spec(hpa)
+        if not valid:
+            return False, err
+
+    if r_policy := spec.get('restart_policy'):
+        if r_policy not in ('always', 'on_failure', 'never'):
+            return False, 'Invalid restart_policy'
+
+        if not spec.get('connection_protocol'):
+            return False, 'connection_protocol is required'
+
+        if spec['connection_protocol'] not in ('http', 'tcp', 'udp'):
+            return False, 'Invalid connection_protocol'
+
+    if exp_pub := spec.get('exposed_public'):
+        if not isinstance(exp_pub, bool):
+            return False, 'exposed_public must be a boolean'
+
+    if replica := spec.get('replicas'):
+        if not isinstance(replica, int):
+            return False, 'replicas must be an integer'
+        if replica < 1:
+            return False, 'replicas must be greater than or equal to 0'
+    return True, None
+
+
+def create_k8s_container_spec(containerid: str):
+    container = Container.objects.get(containerid=containerid)
+    client = make_k8s_client()
+    # Extract the environment variables from the secret if available
+    env_vars = []
+    if container.env_secret:
+        env_vars = [client.V1EnvVar(name=key, value=value)
+                    for key, value in container_obj.env_secret.data.items()]
+
+    # Create the container specification
+    container = client.V1Container(
+        name=f"container-{container_obj.containerid}",
+        image=container_obj.image,
+        command=container_obj.command,
+        args=container_obj.args,
+        ports=[
+            client.V1ContainerPort(
+                container_port=container_obj.port,
+                protocol=container_obj.port_protocol.upper() if container_obj.port_protocol else "TCP"
+            )
+        ] if container_obj.port else [],
+        resources=client.V1ResourceRequirements(
+            requests={
+                "cpu": str(container_obj.cpu_request),
+                "memory": f"{container_obj.memory_request}Mi"
+            },
+            limits={
+                "cpu": str(container_obj.cpu_limit),
+                "memory": f"{container_obj.memory_limit}Mi"
+            }
+        ),
+        env=env_vars
+    )
+
+    # Add the image pull secret if specified
+    image_pull_secrets = []
+    if container_obj.pull_secret:
+        image_pull_secrets.append(client.V1LocalObjectReference(name=container_obj.pull_secret.name))
+
+    return container, image_pull_secrets
