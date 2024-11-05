@@ -8,7 +8,7 @@ Returns: `application/json`
 
 Parameters:
 
-- `nsid` (string, required): The id of the namespace in which the registry belongs.
+- `nsid` (string, required): The id of the namespace in which the app belongs.
 
 - `appid` (string, optional): The id of the container app. If not provided, all app instances in the
   namespace will be returned.
@@ -74,7 +74,7 @@ Returns: `application/json`
 
 Parameters:
 
-- `nsid` (string, required): The id of the namespace in which the registry belongs.
+- `nsid` (string, required): The id of the namespace in which the app belongs.
 
 Request body parameters:
 
@@ -287,7 +287,7 @@ Returns: `application/json`
 
 Parameters:
 
-- `nsid` (string, required): The id of the namespace in which the registry belongs.
+- `nsid` (string, required): The id of the namespace in which the app belongs.
 
 Request body parameters:
 
@@ -445,7 +445,7 @@ Returns: `application/json`
 
 Parameters:
 
-- `nsid` (string, required): The id of the namespace in which the registry belongs.
+- `nsid` (string, required): The id of the namespace in which the app belongs.
 
 - `appid` (string, required): The id of the container app.
 
