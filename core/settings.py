@@ -5,7 +5,6 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 """
 
 import os
-import yaml
 from pathlib import Path
 
 from dotenv import load_dotenv, find_dotenv
@@ -47,9 +46,7 @@ FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
 @dataclass
 class Env:
     debug = DEBUG
-    mailgun_api_key = os.getenv('MAILGUN_API_KEY')
-    mailgun_sender_domain = os.getenv('MAILGUN_SENDER_DOMAIN')
-    mailgun_sender_email = os.getenv('MAILGUN_SENDER_EMAIL')
+
     nyu_client_id = os.getenv('NYU_CLIENT_ID')
     nyu_client_secret = os.getenv('NYU_CLIENT_SECRET')
     nyu_openid_meta = os.getenv('NYU_META_URL')
@@ -58,16 +55,24 @@ class Env:
     github_client_secret = os.getenv('GITHUB_CLIENT_SECRET')
     github_token = os.getenv('GITHUB_TOKEN')
 
+    mailgun_api_key = os.getenv('MAILGUN_API_KEY')
+    mailgun_sender_domain = os.getenv('MAILGUN_SENDER_DOMAIN')
+    mailgun_sender_email = os.getenv('MAILGUN_SENDER_EMAIL')
+
+    rabbitmq_url = os.getenv('MQ_URL')
+
     cf_storage_url = os.getenv('CF_STORAGE_URL')
     cf_access_key = os.getenv('CF_ACCESS_KEY')
     cf_secret_key = os.getenv('CF_SECRET_KEY')
 
-    rabbitmq_url = os.getenv('MQ_URL')
+    aws_access_key = os.getenv('AWS_ACCESS_KEY')
+    aws_secret_key = os.getenv('AWS_SECRET_KEY')
+    kubeconfig_object_path = os.getenv('KUBECONFIG_OBJECT_PATH')
 
-    k8s_config = {}
     k8s_url = ''
     k8s_ws_url = ''
     k8s_token = ''
+    k8s_client = None
 
     firewall_url = os.getenv('FIREWALL_URL')
 
@@ -75,14 +80,19 @@ class Env:
     container_apps_domain = os.getenv('CONTAINER_APPS_DOMAIN', 'poweredge.dev')
 
     def __post_init__(self):
-        kubeconfig_path = os.path.join(BASE_DIR, 'kubeconfig.yaml')
-        if os.path.exists(kubeconfig_path):
-            with open(kubeconfig_path, 'r') as file:
-                self.k8s_config = yaml.safe_load(file)
-                self.k8s_url = self.k8s_config['clusters'][0]['cluster']['server']
-                self.k8s_token = self.k8s_config['users'][0]['user']['token']
-                url = urlparse(self.k8s_url)
-                self.k8s_ws_url = 'ws://' if url.scheme == 'http' else 'wss://' + url.netloc + url.path
+        from .utils import get_s3_file_contents
+
+        kubeconfig = get_s3_file_contents(self.kubeconfig_object_path, self.aws_access_key, self.aws_secret_key)
+        if kubeconfig:
+            from kubernetes import config
+            from yaml import safe_load
+
+            k8s_config = safe_load(kubeconfig)
+            self.k8s_url = k8s_config['clusters'][0]['cluster']['server']
+            self.k8s_token = k8s_config['users'][0]['user']['token']
+            url = urlparse(self.k8s_url)
+            self.k8s_ws_url = 'ws://' if url.scheme == 'http' else 'wss://' + url.netloc + url.path
+            self.k8s_client = config.new_client_from_config_dict(k8s_config)
 
 
 env = Env()
@@ -112,7 +122,7 @@ INSTALLED_APPS = [
     'encrypted_model_fields',
     "main",
     "apps.api",
-    "apps.ip_manager",
+    # "apps.ip_manager",
     "apps.k8s",
     "apps.oauth",
     "apps.users",
@@ -122,8 +132,8 @@ INSTALLED_APPS = [
 # Client facing apps
 OC_APPS = [
     "apps.dashboard",
-    "apps.dns_manager",
-    "apps.vm",
+    # "apps.dns_manager",
+    # "apps.vm",
     "apps.container_registry",
     "apps.container_apps",
     "apps.secret_store",
@@ -156,6 +166,7 @@ ASGI_APPLICATION = "core.asgi.application"
 
 AUTH_USER_MODEL = "users.User"
 AUTHENTICATION_BACKENDS = ['apps.oauth.backend.AuthBackend']
+SESSION_COOKIE_HTTPONLY = True
 
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/dashboard"
@@ -190,17 +201,18 @@ DB_PORT = os.getenv('DB_PORT')
 DB_NAME = os.getenv('DB_NAME')
 
 DATABASE_CONNECTION_POOLING = False
+
 if DEBUG == False:
     DATABASES = {
         'default': {
-            'ENGINE': 'mssql',
+            'ENGINE': 'django.db.backends.mysql',
             'NAME': DB_NAME,
             'USER': DB_USERNAME,
             'PASSWORD': DB_PASS,
             'HOST': DB_HOST,
             'PORT': DB_PORT,
             'OPTIONS': {
-                'driver': 'ODBC Driver 17 for SQL Server',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             },
         },
     }
@@ -237,14 +249,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-########################################
-# ### Async Tasks (Celery) Settings ###
-
-# CELERY_SCRIPTS_DIR = os.path.join(BASE_DIR, "tasks_scripts")
-#
-# CELERY_LOGS_URL = "/tasks_logs/"
-# CELERY_LOGS_DIR = os.path.join(BASE_DIR, "tasks_logs")
-#
+################# Celery Settings #######
 CELERY_BROKER_URL = env.rabbitmq_url
 CELERY_RESULT_BACKEND = "django-db"
 
@@ -259,7 +264,7 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'EST'
-CELERY_TASK_ALWAYS_EAGER = DEBUG  # Setting this to true will run tasks synchronously and block the main thread
+CELERY_TASK_ALWAYS_EAGER = DEBUG  # Setting this to True will run tasks synchronously and block the main thread
 ########################################
 
 
@@ -286,8 +291,6 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'apps.api.exceptions.exceptions',
 }
-
-SESSION_COOKIE_HTTPONLY = True
 
 # REST_FRAMEWORK = {
 #     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
