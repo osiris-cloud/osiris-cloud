@@ -1,8 +1,7 @@
 FROM python:3.12
 
-# set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 ENV DOPPLER_TOKEN=$DOPPLER_TOKEN
 
 # Install node 18 and npm
@@ -25,26 +24,20 @@ RUN apt-get install -y apt-transport-https && \
     apt-get update && \
     apt-get -y install doppler
 
-WORKDIR /osiris-cloud
-COPY . /osiris-cloud/
+COPY . /opt/osiris-cloud
+WORKDIR /opt/osiris-cloud
 
-# install python dependencies
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Modules, Webpack and Tailwind set up
-RUN npm i
+RUN npm install
 RUN npm run build
 RUN npx tailwindcss -i ./static/assets/style.css -o ./static/dist/css/output.css
 
-# Manage Assets & DB
-RUN python manage.py collectstatic --no-input
-
-# Expose the port Daphne will run on
 EXPOSE 8000
 
-# See if app works
-HEALTHCHECK --interval=10s --timeout=30s CMD curl -f http://localhost:8000/ || exit 1
+HEALTHCHECK --interval=60s --timeout=30s CMD curl -f http://localhost:8000/healthz || exit 1
 
-# Run Daphne
+ENTRYPOINT ["./entrypoint.sh"]
+
 CMD ["doppler", "run", "--", "daphne", "-b", "0.0.0.0", "-p", "8000", "--proxy-headers", "core.asgi:application"]
