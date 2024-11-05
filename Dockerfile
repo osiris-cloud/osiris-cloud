@@ -38,6 +38,6 @@ EXPOSE 8000
 
 HEALTHCHECK --interval=60s --timeout=30s CMD curl -f http://localhost:8000/healthz || exit 1
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/opt/osiris-cloud/entrypoint.sh"]
 
-CMD ["doppler", "run", "--", "daphne", "-b", "0.0.0.0", "-p", "8000", "--proxy-headers", "core.asgi:application"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "--proxy-headers", "core.asgi:application"]

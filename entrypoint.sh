@@ -3,9 +3,9 @@
 set -ex
 
 echo "Apply database migrations"
-python manage.py migrate --noinput
+doppler run -- python manage.py migrate --noinput
 
 echo "Collect static files"
-python manage.py collectstatic --no-input
+doppler run -- python manage.py collectstatic --no-input
 
-exec "$@"
+exec doppler run -- "$@"
