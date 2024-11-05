@@ -51,7 +51,7 @@ def deserialize_obj(obj):
 
 def get_s3_file_contents(object_path, access_key, secret_key) -> str | None:
     try:
-        s3_client = boto3.client('s3',aws_access_key_id=access_key,aws_secret_access_key=secret_key)
+        s3_client = boto3.client('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key)
         bucket_name, object_key = object_path.split('/', 1)
         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
         file_contents = response['Body'].read().decode('utf-8')
