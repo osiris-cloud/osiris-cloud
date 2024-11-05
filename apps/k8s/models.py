@@ -147,6 +147,6 @@ class LBEndpoint(models.Model):
 
 
 @admin.register(LBEndpoint)
-class PVCAdmin(admin.ModelAdmin):
+class LBAdmin(admin.ModelAdmin):
     list_display = ('name', 'ip', 'port', 'protocol', 'state')
     search_fields = ('ip', 'port')
