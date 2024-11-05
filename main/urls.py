@@ -6,6 +6,7 @@ from core.settings import DEBUG
 
 urlpatterns = [
     path("", views.index, name="index"),
+    path("healthz", views.healthz, name="healthz"),
     path("login", include("apps.oauth.urls")),
     path("logout", views.logout_view, name="logout"),
     path("profile", include("apps.users.urls")),
