@@ -1,5 +1,6 @@
 import random
 import string
+import boto3
 
 from datetime import datetime
 from django.utils import timezone
@@ -46,3 +47,14 @@ def serialize_obj(obj):
 
 def deserialize_obj(obj):
     return list(django_serializers.deserialize('json', obj))[0].object
+
+
+def get_s3_file_contents(object_path, access_key, secret_key) -> str | None:
+    try:
+        s3_client = boto3.client('s3',aws_access_key_id=access_key,aws_secret_access_key=secret_key)
+        bucket_name, object_key = object_path.split('/', 1)
+        response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+        file_contents = response['Body'].read().decode('utf-8')
+        return file_contents
+    except:
+        return None
