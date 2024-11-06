@@ -80,19 +80,27 @@ class Env:
     container_apps_domain = os.getenv('CONTAINER_APPS_DOMAIN', 'poweredge.dev')
 
     def __post_init__(self):
-        from .utils import get_s3_file_contents
+        kubeconfig_path = os.path.join(BASE_DIR, 'kubeconfig.yaml')
+        if os.path.exists(kubeconfig_path):
+            with open(kubeconfig_path, 'r') as file:
+                kubeconfig = file.read()
+        else:
+            from .utils import get_s3_file_contents
+            kubeconfig = get_s3_file_contents(self.kubeconfig_object_path, self.aws_access_key, self.aws_secret_key)
 
-        kubeconfig = get_s3_file_contents(self.kubeconfig_object_path, self.aws_access_key, self.aws_secret_key)
         if kubeconfig:
             from kubernetes import config
             from yaml import safe_load
 
+            print('# Initializing k8s client...')
             k8s_config = safe_load(kubeconfig)
             self.k8s_url = k8s_config['clusters'][0]['cluster']['server']
             self.k8s_token = k8s_config['users'][0]['user']['token']
             url = urlparse(self.k8s_url)
             self.k8s_ws_url = 'ws://' if url.scheme == 'http' else 'wss://' + url.netloc + url.path
             self.k8s_client = config.new_client_from_config_dict(k8s_config)
+        else:
+            print('# kubeconfig not found.')
 
 
 env = Env()
