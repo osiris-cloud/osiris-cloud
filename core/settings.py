@@ -72,7 +72,7 @@ class Env:
     k8s_url = ''
     k8s_ws_url = ''
     k8s_token = ''
-    k8s_client = None
+    k8s_api_client = None
 
     firewall_url = os.getenv('FIREWALL_URL')
 
@@ -92,15 +92,15 @@ class Env:
             from kubernetes import config
             from yaml import safe_load
 
-            print('# Initializing k8s client...')
             k8s_config = safe_load(kubeconfig)
             self.k8s_url = k8s_config['clusters'][0]['cluster']['server']
             self.k8s_token = k8s_config['users'][0]['user']['token']
             url = urlparse(self.k8s_url)
             self.k8s_ws_url = 'ws://' if url.scheme == 'http' else 'wss://' + url.netloc + url.path
-            self.k8s_client = config.new_client_from_config_dict(k8s_config)
+            self.k8s_api_client = config.new_client_from_config_dict(k8s_config)
+            print('# Initialized k8s client.')
         else:
-            print('# kubeconfig not found.')
+            print('# kubeconfig not found. k8s client not initialized.')
 
 
 env = Env()
