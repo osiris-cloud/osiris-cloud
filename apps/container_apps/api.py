@@ -104,7 +104,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
             case 'PUT':
                 valid, err = validate_app_spec(app_data, request.user)
                 if not valid:
-                    return JsonResponse(err, status=400)
+                    return JsonResponse(error_message(err), status=400)
 
                 conn_proto = app_data['connection_protocol']
                 if conn_proto == 'http':
@@ -129,8 +129,8 @@ def container_apps(request, nsid=None, appid=None, action=None):
                             if spec:
                                 app.containers.create(type=('main', 'init', 'sidecar')[i],
                                                       image=spec['image'],
-                                                      port=spec['port'],
-                                                      port_protocol=['port_protocol'],
+                                                      port=spec.get('port'),
+                                                      port_protocol=spec.get('port_protocol'),
                                                       command=spec.get('command', []),
                                                       args=spec.get('args', []),
                                                       cpu_request=spec['cpu_request'],
@@ -144,8 +144,10 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
                         if pvcs := app_data.get('volumes'):
                             for volume in pvcs:
-                                modes = volume['modes']
+                                print(volume)
+                                modes = volume['mode']
                                 pvc = PVC.objects.create(name=volume['name'],
+                                                         namespace=ns,
                                                          size=volume['size'],
                                                          mount_path=volume['mount_path'],
                                                          container_app_mode=PVCContainerMode.objects.create(
@@ -154,17 +156,18 @@ def container_apps(request, nsid=None, appid=None, action=None):
                                                              sidecar=modes['sidecar'])
                                                          )
                                 pvc.save()
+                                app.pvcs.add(pvc)
 
                         if custom_domains := app_data.get('custom_domain'):
                             for domain in custom_domains:
                                 app.custom_domains.create(name=domain['name'], gen_cert=domain['gen_cert'])
 
                         if hpa := app_data.get('autoscale'):
-                            app.hpa = HPA.objects.create(enabled=hpa['enabled'],
+                            app.hpa = HPA.objects.create(enable=hpa['enable'],
                                                          min_replicas=hpa['min_replicas'],
                                                          max_replicas=hpa['max_replicas'],
-                                                         scaleup_stb_window=hpa['scaleup_stb_window'],
-                                                         scaledown_stb_window=hpa['scaledown_stb_window'],
+                                                         scaleup_stb_window=hpa.get('scaleup_stb_window', 300),
+                                                         scaledown_stb_window=hpa.get('scaledown_stb_window', 300),
                                                          cpu_trigger=hpa['cpu_trigger'],
                                                          memory_trigger=hpa['memory_trigger'])
                         app.save()
@@ -174,6 +177,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
                     return JsonResponse(error_message("Couldn't create app"), status=500)
 
                 create_deployment.delay(app.appid)
+
                 return JsonResponse(success_message('Create container app', {'app': app.info()}), status=201)
 
             case 'PATCH':
@@ -183,7 +187,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
                 valid, err = validate_app_update_spec(app_data, request.user)
                 if not valid:
-                    return JsonResponse(err, status=400)
+                    return JsonResponse(error_message(err), status=400)
 
                 with transaction.atomic():
                     if name := app_data.get('name'):
@@ -210,8 +214,8 @@ def container_apps(request, nsid=None, appid=None, action=None):
                         # Update container if it exists and spec is provided
                         elif container and spec:
                             container.image = spec['image']
-                            container.port = spec['port']
-                            container.port_protocol = spec['port_protocol']
+                            container.port = spec.get('port')
+                            container.port_protocol = spec.get('port_protocol')
                             container.command = spec.get('command', [])
                             container.args = spec.get('args', [])
                             container.cpu_request = spec['cpu_request']
@@ -232,8 +236,8 @@ def container_apps(request, nsid=None, appid=None, action=None):
                         elif spec and container is None:
                             container = app.containers.create(type=c_type,
                                                               image=spec['image'],
-                                                              port=spec['port'],
-                                                              port_protocol=spec['port_protocol'],
+                                                              port=spec.get('port'),
+                                                              port_protocol=spec.get('port_protocol'),
                                                               command=spec.get('command', []),
                                                               args=spec.get('args', []),
                                                               cpu_request=spec['cpu_request'],
@@ -258,22 +262,26 @@ def container_apps(request, nsid=None, appid=None, action=None):
                             existing_volumes.delete()
                         else:
                             for volume in volumes:
-                                pvc = existing_volumes.filter(pvcid=volume['volid']).first()
-                                if pvc:  # Update volume if it exists
+                                if volid := volume.get('volid'):
+                                    if volid not in existing_vol_ids:
+                                        return JsonResponse(error_message(f'Invalid volume id: {volid}'), status=400)
+                                # Update volume if it exists
+                                if pvc := existing_volumes.filter(pvcid=volid).first():
                                     existing_vol_ids.remove(pvc.pvcid)
                                     pvc.mount_path = volume['mount_path']
-                                    pvc.container_app_mode.init = volume['modes']['init']
-                                    pvc.container_app_mode.main = volume['modes']['main']
-                                    pvc.container_app_mode.sidecar = volume['modes']['sidecar']
+                                    pvc.container_app_mode.init = volume['mode']['init']
+                                    pvc.container_app_mode.main = volume['mode']['main']
+                                    pvc.container_app_mode.sidecar = volume['mode']['sidecar']
                                     pvc.save()
                                 else:  # Create volume if it doesn't exist
                                     pvc = PVC.objects.create(name=volume['name'],
                                                              size=volume['size'],
+                                                             namespace=ns,
                                                              mount_path=volume['mount_path'],
                                                              container_app_mode=PVCContainerMode.objects.create(
-                                                                 init=volume['modes']['init'],
-                                                                 main=volume['modes']['main'],
-                                                                 sidecar=volume['modes']['sidecar'])
+                                                                 init=volume['mode']['init'],
+                                                                 main=volume['mode']['main'],
+                                                                 sidecar=volume['mode']['sidecar'])
                                                              )
                                     pvc.save()
                                     new_volumes.append(pvc)
@@ -315,7 +323,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
                         if hpa == {}:
                             app.hpa.update(**DEFAULT_HPA_SPEC)
                         else:
-                            app.hpa.enable = hpa.get('enabled', app.hpa.enable)
+                            app.hpa.enable = hpa.get('enable', app.hpa.enable)
                             app.hpa.min_replicas = hpa.get('min_replicas', app.hpa.min_replicas)
                             app.hpa.max_replicas = hpa.get('max_replicas', app.hpa.max_replicas)
                             app.hpa.scaleup_stb_window = hpa.get('scaleup_stb_window', app.hpa.scaleup_stb_window)
