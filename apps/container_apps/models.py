@@ -24,10 +24,10 @@ class Container(models.Model):
     port_protocol = models.CharField(max_length=16, choices=(('tcp', 'TCP'), ('udp', 'UDP')), null=True, default=None)
     command = models.JSONField(null=True, default=list)
     args = models.JSONField(null=True, default=list)
-    cpu_request = models.IntegerField()
+    cpu_request = models.FloatField()
     memory_request = models.IntegerField()
     cpu_limit = models.IntegerField()
-    memory_limit = models.IntegerField()
+    memory_limit = models.FloatField()
 
     def info(self):
         return {
@@ -138,7 +138,9 @@ class ContainerApp(models.Model):
 
     @property
     def url(self):
-        return f'https://{self.slug}.{env.container_apps_domain}'
+        if self.connection_protocol == 'http':
+            return f'https://{self.slug}.{env.container_apps_domain}'
+        return f'{self.slug}.{env.container_apps_domain}'
 
     @property
     def cpu_limit(self):

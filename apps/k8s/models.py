@@ -81,7 +81,7 @@ class PVCContainerMode(models.Model):
 class PVC(models.Model):
     pvcid = UUID7StringField(auto_created=True)
     name = models.CharField(max_length=100)
-    size = models.IntegerField()
+    size = models.FloatField()
     mount_path = models.TextField(default='')
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     container_app_mode = models.ForeignKey(PVCContainerMode, on_delete=models.SET_NULL, null=True, default=None)
