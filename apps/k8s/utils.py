@@ -37,12 +37,6 @@ NETWORKS = {
 RESOURCE_TOL = 0.8
 
 
-def make_k8s_client(kubeconfig: dict | None = None) -> kubernetes.client:
-    if kubeconfig is None:
-        kubeconfig = env.k8s_config
-    return kubernetes.config.new_client_from_config_dict(kubeconfig)
-
-
 def create_namespace(client: kubernetes.client, *, ns: str) -> str | None:
     v1 = kubernetes.client.CoreV1Api(client)
     namespace_metadata = kubernetes.client.V1ObjectMeta(name=ns)
