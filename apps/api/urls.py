@@ -74,7 +74,8 @@ urlpatterns = (
         user_urlpatterns +
         secret_store_urlpatterns +
         event_urlpatterns +
-        container_registry_urlpatterns
+        container_registry_urlpatterns +
+        container_apps_urlpatterns
 )
 
 websocket_urlpatterns = (
