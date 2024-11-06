@@ -17,6 +17,7 @@ class Namespace(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     locked = models.BooleanField(default=False)
+    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
 
     @property
     def owner(self):
