@@ -48,3 +48,9 @@ DEFAULT_HPA_SPEC = {
     'cpu_trigger': 90,
     'memory_trigger': 90,
 }
+
+RESTART_POLICIES = {
+    'always': 'Always',
+    'on_failure': 'OnFailure',
+    'never': 'Never'
+}
