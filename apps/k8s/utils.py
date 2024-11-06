@@ -1,13 +1,11 @@
 import json
-import yaml
 import kubernetes
 import logging
-import uuid
-from copy import deepcopy
 
+from .models import Namespace
 from core.settings import env
-from core.utils import random_str, error_message, success_message
 from django.utils import timezone
+from time import time, sleep
 
 from apps.users.models import User
 
@@ -35,21 +33,6 @@ NETWORKS = {
 }
 
 RESOURCE_TOL = 0.8
-
-
-def create_namespace(client: kubernetes.client, *, ns: str) -> str | None:
-    v1 = kubernetes.client.CoreV1Api(client)
-    namespace_metadata = kubernetes.client.V1ObjectMeta(name=ns)
-    namespace_spec = kubernetes.client.V1Namespace(metadata=namespace_metadata)
-    try:
-        v1.create_namespace(body=namespace_spec)
-        return ns
-    except kubernetes.client.exceptions.ApiException as e:
-        if e.status == 409:
-            logging.error(f"Namespace {ns} already exists")
-        else:
-            logging.exception(f"Error creating namespace {ns}: {e}")
-        return None
 
 
 def create_secret(client: kubernetes.client, *, ns: str, secret_name: str, secret_data: dict) -> bool:
@@ -313,40 +296,45 @@ def provision_vm(client: kubernetes.client, namespace: str, vm_name: str, cpu: i
         return False
 
 
-def create_vm(spec: dict, user: User):
-    create_t = timezone.now()
-    vmid = str(uuid.uuid4())
-    disk_name = f"{spec['k8sName']}-disk-0-{random_str(4)}"
-    spec['network_type'] = 'khepri' if spec['network_type'] == 'public' else spec['network_type']
+# def create_vm(spec: dict, user: User):
+#     create_t = timezone.now()
+#     vmid = str(uuid.uuid4())
+#     disk_name = f"{spec['k8sName']}-disk-0-{random_str(4)}"
+#     spec['network_type'] = 'khepri' if spec['network_type'] == 'public' else spec['network_type']
+#
+#     vm_template = fill_vm_template(
+#         ns=user.namespace.all().first().name,
+#         name=spec['k8sName'],
+#         memory=spec['ram'],
+#         disk=spec['disk'],
+#         distro=spec['os'],
+#         vmid=vmid,
+#         create_time=create_t,
+#         cpu=spec['cpu'],
+#         network_name=spec['network_type'],
+#         mac_address=spec['mac'],
+#         hostname=spec['k8sName'],
+#         cloudinit_secret=spec['k8sName'],
+#         pvc_name=spec['pvc_name'],
+#     )
+#
+#     # pprint(vm_template)
+#
+#     with open("vm_template.yaml", 'w') as f:
+#         yaml.dump(vm_template, f)
 
-    vm_template = fill_vm_template(
-        ns=user.namespace.all().first().name,
-        name=spec['k8sName'],
-        memory=spec['ram'],
-        disk=spec['disk'],
-        distro=spec['os'],
-        vmid=vmid,
-        create_time=create_t,
-        cpu=spec['cpu'],
-        network_name=spec['network_type'],
-        mac_address=spec['mac'],
-        hostname=spec['k8sName'],
-        cloudinit_secret=spec['k8sName'],
-        pvc_name=spec['pvc_name'],
-    )
 
-    # pprint(vm_template)
-
-    with open("vm_template.yaml", 'w') as f:
-        yaml.dump(vm_template, f)
-
-
-# api data validation
-def validate_dict(d):
-    if not isinstance(d, dict):
+def create_namespace(nsid) -> bool:
+    if env.k8s_api_client is None:
         return False
-    for key, value in d.items():
-        if isinstance(value, dict):
-            return False
-    return True
 
+    v1 = kubernetes.client.CoreV1Api(env.k8s_api_client)
+    namespace_metadata = kubernetes.client.V1ObjectMeta(name=nsid)
+    namespace_spec = kubernetes.client.V1Namespace(metadata=namespace_metadata)
+    try:
+        v1.create_namespace(body=namespace_spec)
+        return True
+    except kubernetes.client.exceptions.ApiException as e:
+        if e.status == 409:
+            return True
+        return False
