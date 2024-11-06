@@ -19,7 +19,7 @@ def init_k8s_for_user(self, user):
         v1 = make_k8s_client()
         ns_name = user.username + '-' + ''.join(
             [random.choice(string.ascii_lowercase + string.digits) for _ in range(5)])
-        if create_namespace(v1, ns_name):  # Create a namespace for the user
+        if create_namespace(v1, ns=ns_name):  # Create a namespace for the user
             ns = Namespace.objects.create(name=ns_name, owner=user, default=True)
             Limit.objects.create(user=user, cpu=4, memory=2, disk=30, public_ip=0)
             logging.info(f"Namespace {ns_name} created for user {user.username} with task id {self.request.id}")
