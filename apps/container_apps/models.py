@@ -18,10 +18,10 @@ class Container(models.Model):
     image = models.TextField()
     pull_secret = models.ForeignKey(Secret, on_delete=models.SET_NULL, null=True, default=None,
                                     related_name='container_pull_secrets')
-    port = models.IntegerField(null=True, default=None)
-    port_protocol = models.CharField(max_length=16, choices=(('tcp', 'TCP'), ('udp', 'UDP')), null=True, default=None)
     env_secret = models.ForeignKey(Secret, on_delete=models.SET_NULL, null=True, default=None,
                                    related_name='container_env_secrets')
+    port = models.IntegerField(null=True, default=None)
+    port_protocol = models.CharField(max_length=16, choices=(('tcp', 'TCP'), ('udp', 'UDP')), null=True, default=None)
     command = models.JSONField(null=True, default=list)
     args = models.JSONField(null=True, default=list)
     cpu_request = models.IntegerField()
