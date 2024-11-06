@@ -11,7 +11,7 @@ from ..secret_store.models import Secret
 from .models import Container, ContainerApp, HPA
 
 
-def validate_container_spec(spec: dict, user) -> tuple[bool, [str | None]]:
+def validate_container_spec(spec: dict, user, port_req=True) -> tuple[bool, [str | None]]:
     if not spec.get('image'):
         return False, 'image is required'
 
@@ -21,32 +21,32 @@ def validate_container_spec(spec: dict, user) -> tuple[bool, [str | None]]:
         try:
             p_secret = Secret.objects.get(secretid=pull_secret)
             if p_secret.namespace.get_role(user) not in ns_roles:
-                return False, 'Secret not found or no permission to access'
+                return False, 'pull_secret not found or no permission to access'
             if p_secret.type != 'auth':
                 return False, 'Only auth secrets are allowed'
         except Exception:
-            return False, 'Secret not found or no permission to access'
+            return False, 'pull_secret not found or no permission to access'
 
     if env_secret := spec.get('env_secret'):
         try:
             e_secret = Secret.objects.get(secretid=env_secret)
             if e_secret.namespace.get_role(user) not in ns_roles:
-                return False, 'Secret not found or no permission to access'
+                return False, 'env_secret not found or no permission to access'
             if e_secret.type != 'opaque':
                 return False, 'Only opaque secrets are allowed'
         except Exception:
-            return False, 'Secret not found or no permission to access'
+            return False, 'env_secret not found or no permission to access'
 
     port = spec.get('port')
-    if not port:
+    if not port and port_req:
         return False, 'port is required'
-    if not isinstance(port, int):
+    if not isinstance(port, int) and port_req:
         return False, 'port must be an integer'
 
     port_protocol = spec.get('port_protocol')
-    if not port_protocol:
+    if not port_protocol and port_req:
         return False, 'port_protocol is required'
-    if port_protocol not in ('tcp', 'udp'):
+    if port_protocol not in ('tcp', 'udp') and port_req:
         return False, 'Invalid port_protocol'
 
     if command := spec.get('command'):
@@ -112,17 +112,13 @@ def validate_hpa_spec(spec: dict) -> tuple[bool, [str | None]]:
     if not isinstance(max_replicas, int):
         return False, 'max_replicas must be an integer'
 
-    scaleup_stb_window = spec.get('scaleup_stb_window')
-    if not scaleup_stb_window:
-        return False, 'scaleup_stb_window is required'
-    if not isinstance(scaleup_stb_window, int):
-        return False, 'scaleup_stb_window must be an integer'
+    if scaleup_stb_window := spec.get('scaleup_stb_window'):
+        if not isinstance(scaleup_stb_window, int):
+            return False, 'scaleup_stb_window must be an integer'
 
-    scaledown_stb_window = spec.get('scaledown_stb_window')
-    if not scaledown_stb_window:
-        return False, 'scaledown_stb_window is required'
-    if not isinstance(scaledown_stb_window, int):
-        return False, 'scaledown_stb_window must be an integer'
+    if scaledown_stb_window := spec.get('scaledown_stb_window'):
+        if not isinstance(scaledown_stb_window, int):
+            return False, 'scaledown_stb_window must be an integer'
 
     cpu_trigger = spec.get('cpu_trigger')
     if not cpu_trigger:
@@ -135,6 +131,8 @@ def validate_hpa_spec(spec: dict) -> tuple[bool, [str | None]]:
         return False, 'memory_trigger is required'
     if not isinstance(memory_trigger, int):
         return False, 'memory_trigger must be an integer'
+
+    return True, None
 
 
 DOMAIN_REGEX = re.compile(r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.(?:[A-Za-z]{2,6}|[A-Za-z0-9-]{2,}\.[A-Za-z]{2,6})$')
@@ -162,14 +160,14 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
     if sidecar := spec.get('sidecar'):
         if not isinstance(sidecar, dict):
             return False, 'sidecar must be an object'
-        valid, err = validate_container_spec(sidecar, user)
+        valid, err = validate_container_spec(sidecar, user, False)
         if not valid:
             return False, err
 
     if init := spec.get('init'):
         if not isinstance(sidecar, dict):
             return False, 'init must be an object'
-        valid, err = validate_container_spec(init, user)
+        valid, err = validate_container_spec(init, user, False)
         if not valid:
             return False, err
 
@@ -194,7 +192,7 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
                 return False, 'volumes must be an array of objects'
             if not isinstance(each.get('name'), str):
                 return False, 'name is required for volumes'
-            if not isinstance(each.get('size'), int):
+            if not isinstance(each.get('size'), float) or isinstance(each.get('size'), int):
                 return False, 'size is required for volumes'
             if not isinstance(each.get('mount_path'), str):
                 return False, 'mount_path is required for volumes'
@@ -213,6 +211,7 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
         if not isinstance(hpa, dict):
             return False, 'hpa must be an object'
         valid, err = validate_hpa_spec(hpa)
+
         if not valid:
             return False, err
 
@@ -239,7 +238,7 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
     if not SLUG_REGEX.match(slug):
         return False, 'Invalid slug'
 
-    if not spec.get('exposed_public'):
+    if spec.get('exposed_public') is None:
         return False, 'exposed_public is required'
 
     if not isinstance(spec['exposed_public'], bool):
@@ -301,6 +300,8 @@ def validate_hpa_update_spec(spec: dict) -> tuple[bool, [str | None]]:
         if memory_trigger < 1:
             return False, 'memory_trigger must be greater than 1%'
 
+    return True, None
+
 
 def validate_app_update_spec(spec: dict, user) -> tuple[bool, [str | None]]:
     """
@@ -322,14 +323,14 @@ def validate_app_update_spec(spec: dict, user) -> tuple[bool, [str | None]]:
     if sidecar := spec.get('sidecar'):
         if not isinstance(sidecar, dict):
             return False, 'sidecar must be an object'
-        valid, err = validate_container_spec(sidecar, user)
+        valid, err = validate_container_spec(sidecar, user, False)
         if not valid:
             return False, err
 
     if init := spec.get('init'):
         if not isinstance(sidecar, dict):
             return False, 'init must be an object'
-        valid, err = validate_container_spec(init, user)
+        valid, err = validate_container_spec(init, user, False)
         if not valid:
             return False, err
 
@@ -523,8 +524,7 @@ class KubernetesResource:
         pod_template = env.k8s_client.V1PodTemplateSpec(
             metadata=env.k8s_client.V1ObjectMeta(
                 labels={
-                    'app': app.slug,
-                    'app-id': app.appid
+                    'appid': app.appid
                 }
             ),
             spec=env.k8s_client.V1PodSpec(
@@ -541,16 +541,14 @@ class KubernetesResource:
                 name=app.slug,
                 namespace=app.namespace.name,
                 labels={
-                    'app': app.slug,
-                    'app-id': app.appid
+                    'appid': app.appid
                 }
             ),
             spec=env.k8s_client.V1DeploymentSpec(
                 replicas=app.replicas,
                 selector=env.k8s_client.V1LabelSelector(
                     match_labels={
-                        'app': app.slug,
-                        'app-id': app.appid
+                        'appid': app.appid
                     }
                 ),
                 template=pod_template
@@ -571,14 +569,12 @@ class KubernetesResource:
                 name=app.slug,
                 namespace=app.namespace.name,
                 labels={
-                    'app': app.slug,
-                    'app-id': app.appid
+                    'appid': app.appid
                 }
             ),
             spec=env.k8s_client.V1ServiceSpec(
                 selector={
-                    'app': app.slug,
-                    'app-id': app.appid
+                    'appid': app.appid
                 },
                 ports=[
                     env.k8s_client.V1ServicePort(
@@ -636,7 +632,7 @@ class KubernetesResource:
                 scale_target_ref=env.k8s_client.V2CrossVersionObjectReference(
                     api_version="apps/v1",
                     kind="Deployment",
-                    name=app.slug
+                    name=f'{app.appid}-hpa'
                 ),
                 min_replicas=app.hpa.min_replicas,
                 max_replicas=app.hpa.max_replicas,
@@ -690,7 +686,7 @@ class KubernetesResource:
                 tls.append(
                     env.k8s_client.V1IngressTLS(
                         hosts=[domain.name],
-                        secret_name=f"tls-{app.slug}-{domain.name}"
+                        secret_name=f"{app.appid}-{domain.name}"
                     )
                 )
 
