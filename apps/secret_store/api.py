@@ -32,6 +32,9 @@ def secret_store(request, nsid=None, secretid=None, action=None):
     if (request.method in ['PATCH, DELETE']) and secretid is None:
         return JsonResponse(error_message('secretid is required'), status=400)
 
+    if (request.user.role in ('guest', 'blocked')) and (request.method in ('PUT', 'PATCH', 'DELETE')):
+        return JsonResponse(error_message('Permission denied'), status=403)
+
     try:
         ns = Namespace.objects.filter(nsid=nsid).first()
         if ns is None:

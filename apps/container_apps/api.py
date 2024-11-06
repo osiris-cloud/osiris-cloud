@@ -6,10 +6,8 @@ from celery import chain
 from django.http import JsonResponse
 from django.db import transaction
 from rest_framework.decorators import api_view
-from django.core.exceptions import ValidationError
 
 from ..k8s.models import Namespace, PVC, PVCContainerMode
-from ..k8s.constants import DEFAULT_HPA_SPEC
 from ..secret_store.models import Secret
 from .models import ContainerApp, HPA, CustomDomain
 
@@ -62,6 +60,9 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
     if (request.method in ('POST', 'PATCH', 'DELETE')) and appid is None:
         return JsonResponse(error_message('appid is required'), status=400)
+
+    if (request.user.role in ('guest', 'blocked')) and (request.method in ('PUT', 'PATCH', 'DELETE')):
+        return JsonResponse(error_message('Permission denied'), status=403)
 
     try:
         ns = Namespace.objects.filter(nsid=nsid).first()
@@ -358,11 +359,9 @@ def container_apps(request, nsid=None, appid=None, action=None):
     except JSONDecodeError:
         return JsonResponse(error_message('Invalid JSON data'), status=400)
 
-    except (ValidationError, ValueError) as e:
-        print(e)
+    except ValueError as e:
         return JsonResponse(error_message('Invalid appid/input data type'), status=400)
 
     except Exception as e:
-        print(e)
         logging.exception(e)
         return JsonResponse(error_message('Internal server error'), status=500)
