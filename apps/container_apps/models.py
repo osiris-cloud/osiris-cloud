@@ -171,7 +171,7 @@ class ContainerApp(models.Model):
             'custom_domains': [custom_domain.info() for custom_domain in self.custom_domains.all()],
             **container_types,
             'volumes': self.volume_info(),
-            'autoscale': self.hpa.info() if self.hpa else None,
+            'autoscale': self.hpa.info() if self.hpa else {},
             'exposed_public': self.exposed_public,
             'created_at': self.created_at,
             'updated_at': self.updated_at,
