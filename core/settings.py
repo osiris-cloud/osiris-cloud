@@ -202,7 +202,7 @@ TEMPLATES = [
 
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DB_USERNAME = os.getenv('DB_USERNAME')
+DB_USERNAME = os.getenv('DB_USER')
 DB_PASS = os.getenv('DB_PASS')
 DB_HOST = os.getenv('DB_HOST')
 DB_PORT = os.getenv('DB_PORT')
