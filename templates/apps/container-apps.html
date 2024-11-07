@@ -1,0 +1,121 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if 'list' in segment %}
+        Container Apps
+    {% elif 'create' in segment %}
+        Create Container App
+    {% elif 'edit' in segment %}
+        Edit Container App | {{ ca.name }}
+    {% elif 'view' in segment %}
+        Container App | {{ ca.name }}
+    {% endif %}
+{% endblock title %}
+
+{% block content %}
+    <main class="grow">
+        <div class="p-4 mt-4 mx-4 md:items-center md:p-6 xl:pl-6 xl:pr-6 xl:pt-6 dark:text-white">
+            <div class="items-center justify-between block sm:flex md:divide-x md:divide-gray-100 dark:divide-gray-700">
+                <h2 class="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
+                    {% if 'list' in segment %}
+                        Container Apps
+                    {% elif 'create' in segment %}
+                        Create Container App
+                    {% elif 'edit' in segment %}
+                        Edit Container App: {{ cr.name }}
+                    {% elif 'view' in segment %}
+                        Container App: {{ cr.name }}
+                    {% endif %}
+                </h2>
+
+                <div class="flex border-none items-center">
+                    {% if 'view' in segment %}
+                        <button type="button" id="redeploy-app"
+                                class="text-gray-900 bg-white border border-gray-300 focus:outline-none h-10
+                                hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm 
+                                px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 
+                                dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+                        >
+                            Redeploy
+                        </button>
+                    {% endif %}
+
+                    {% if request.ns_role != 'viewer' %}
+                        <button id="create-app" type="button"
+                                class="
+                        {% if 'list' in segment %}
+                        text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 h-10
+                        focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 
+                        dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-primary-800
+                        {% else %}
+                        text-gray-900 bg-white border border-gray-300 focus:outline-none h-10
+                        hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm 
+                        px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 
+                        dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700
+                        {% endif %}"
+                                onclick="window.location.href=
+                                        {% if 'list' in segment %}
+                                            window.location.href + '/create'
+                                        {% elif 'view' in segment %}
+                                            window.location.href + '/edit'
+                                        {% else %}
+                                            cancelURL()
+                                        {% endif %}
+                                        "
+                        >
+                            {% if 'list' in segment %}
+                                New App
+                            {% elif 'view' in segment %}
+                                Edit
+                            {% else %}
+                                Cancel
+                            {% endif %}
+                        </button>
+
+                        {% if 'view' in segment %}
+                            <button type="button" id="delete-app"
+                                    class="text-red-700 hover:text-white border border-gray-300 hover:bg-red-800 focus:ring-4 
+                                focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center
+                                dark:border-gray-600 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 
+                                dark:focus:ring-red-900 dark:bg-gray-800 h-10 ml-2"
+                            >
+                                Delete
+                            </button>
+                        {% endif %}
+
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="pl-4 pr-4 mx-4 md:items-center md:pl-6 md:pr-6 xl:pl-6 xl:pr-6 dark:text-white">
+            {% if 'list' in segment %}
+                <p class="mb-10">
+                    Container Apps enables you to deploy, manage, and scale your containerized applications.
+                    The platform directly supports Osiris Cloud Container Registry and common service providers like AWS ECR, and Microsoft ACR.
+                </p>
+                {% include 'components/container_apps/table.html' %}
+            {% elif 'create' in segment %}
+                {% include 'components/container_apps/create.html' %}
+            {% elif 'view' in segment %}
+                {% include 'components/container_apps/view.html' %}
+            {% elif 'edit' in segment %}
+                {% include 'components/container_apps/edit.html' %}
+            {% endif %}
+        </div>
+    
+    </main>
+{% endblock content %}
+
+{% block bottom_import %}
+    {% if 'create' in segment %}
+        <script src="{% static 'container_apps/create.js' %}"></script>
+    {% elif 'list' in segment %}
+        <script src="{% static 'container_apps/list.js' %}"></script>
+    {% elif 'view' in segment %}
+        <script src="{% static 'container_apps/view.js' %}"></script>
+    {% elif 'edit' in segment %}
+        <script src="{% static 'container_apps/edit.js' %}"></script>
+    {% endif %}
+{% endblock bottom_import %}
