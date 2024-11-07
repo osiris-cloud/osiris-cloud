@@ -1,12 +1,9 @@
 import kubernetes
-
-from json import loads as json_loads
-
 from core.settings import env
 from ..k8s.models import PVC
 from ..k8s.constants import RESTART_POLICIES
 
-from .models import Container, ContainerApp, HPA
+from .models import Container, ContainerApp
 
 
 class AppResource:
