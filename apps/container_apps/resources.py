@@ -151,12 +151,13 @@ class AppResource:
                 }
             ),
             spec=kubernetes.client.V1PodSpec(
-                runtime_class_name="kata-qemu",
                 restart_policy=RESTART_POLICIES[app.restart_policy],
                 init_containers=[self.create_container_spec(c, app) for c in init_containers],
                 containers=[self.create_container_spec(c, app) for c in main_containers + sidecar_containers],
                 volumes=self.create_volumes(app),
-                image_pull_secrets=self.create_image_pull_secrets(containers)
+                image_pull_secrets=[
+                    kubernetes.client.V1LocalObjectReference(name='ecr-pull-secret')
+                ]
             )
         )
 
