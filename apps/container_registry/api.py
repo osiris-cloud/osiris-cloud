@@ -124,7 +124,7 @@ def container_registry(request, nsid=None, crid=None, action=None):
 
                 cr.save()
 
-                create_registry.delay(serialize_obj(cr))
+                create_registry.delay(cr.crid)
 
                 return JsonResponse(success_message('Create registry', cr.info()), status=201)
 

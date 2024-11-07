@@ -102,7 +102,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
                     return JsonResponse(error_message('Not implemented'), status=501)
 
                 else:
-                    return JsonResponse(error_message('Not implemented'), status=501)
+                    return JsonResponse(error_message('Invalid action'), status=400)
 
             case 'PUT':
                 valid, err = validate_app_spec(app_data, request.user)
@@ -131,21 +131,24 @@ def container_apps(request, nsid=None, appid=None, action=None):
                                                       exposed_public=app_data['exposed_public'])
 
                     for i, spec in enumerate((app_data.get('main'), app_data.get('init'), app_data.get('sidecar'))):
+
                         if spec:
-                            app.containers.create(type=('main', 'init', 'sidecar')[i],
-                                                  image=spec['image'],
-                                                  port=spec.get('port'),
-                                                  port_protocol=spec.get('port_protocol'),
-                                                  command=spec.get('command', []),
-                                                  args=spec.get('args', []),
-                                                  cpu_request=spec['cpu_request'],
-                                                  memory_request=spec['memory_request'],
-                                                  cpu_limit=spec['cpu_limit'],
-                                                  memory_limit=spec['memory_limit'])
+                            request.user.usage.cpu += spec['cpu_limit']
+                            request.user.usage.memory += spec['memory_limit']
+                            con = app.containers.create(type=('main', 'init', 'sidecar')[i],
+                                                        image=spec['image'],
+                                                        port=spec.get('port'),
+                                                        port_protocol=spec.get('port_protocol'),
+                                                        command=spec.get('command', []),
+                                                        args=spec.get('args', []),
+                                                        cpu_request=spec['cpu_request'],
+                                                        memory_request=spec['memory_request'],
+                                                        cpu_limit=spec['cpu_limit'],
+                                                        memory_limit=spec['memory_limit'])
                             if spec.get('pull_secret'):
-                                app.pull_secrets.add(Secret.objects.get(secretid=spec['pull_secret']))
+                                con.pull_secret = Secret.objects.get(secretid=spec['pull_secret'])
                             if spec.get('env_secret'):
-                                app.env_secrets.add(Secret.objects.get(secretid=spec['env_secret']))
+                                con.env_secret = Secret.objects.get(secretid=spec['env_secret'])
 
                     if pvcs := app_data.get('volumes'):
                         for volume in pvcs:
