@@ -143,6 +143,12 @@ class AppResource:
         main_containers = [c for c in containers if c.type == 'main']
         sidecar_containers = [c for c in containers if c.type == 'sidecar']
 
+        security_context = kubernetes.client.V1SecurityContext(
+            privileged=False,
+            allow_privilege_escalation=False,
+            read_only_root_filesystem=False,
+        )
+
         # Create pod template spec
         pod_template = kubernetes.client.V1PodTemplateSpec(
             metadata=kubernetes.client.V1ObjectMeta(
@@ -157,7 +163,10 @@ class AppResource:
                 volumes=self.create_volumes(app),
                 image_pull_secrets=[
                     kubernetes.client.V1LocalObjectReference(name='ecr-pull-secret')
-                ]
+                ],
+                security_context=security_context,
+                enable_service_links=False,
+                automount_service_account_token=False
             )
         )
 
