@@ -183,11 +183,10 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
                 return False, 'volumes must be an array of objects'
             if not isinstance(each.get('name'), str):
                 return False, 'name is required for volumes'
-            if not isinstance(each.get('size'), float) or isinstance(each.get('size'), int):
+            if not (isinstance(each.get('size'), float) or isinstance(each.get('size'), int)):
                 return False, 'size is required for volumes'
             if not isinstance(each.get('mount_path'), str):
                 return False, 'mount_path is required for volumes'
-
             if not isinstance(each.get('mode'), dict):
                 return False, 'mode is required for volumes'
             v_modes = ('', 'ro', 'rw')
