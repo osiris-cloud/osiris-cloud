@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-set -ex
+set -e
 
 echo "Apply database migrations"
 doppler run -- python manage.py migrate --noinput

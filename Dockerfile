@@ -24,8 +24,15 @@ RUN apt-get install -y apt-transport-https && \
     apt-get update && \
     apt-get -y install doppler
 
-COPY . /opt/osiris-cloud
-WORKDIR /opt/osiris-cloud
+RUN apt-get update && apt-get install -y dos2unix
+
+COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN dos2unix /usr/local/bin/entrypoint.sh
+
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+WORKDIR /osiris-cloud
+COPY . .
 
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
@@ -38,6 +45,6 @@ EXPOSE 8000
 
 HEALTHCHECK --interval=60s --timeout=30s CMD curl -f http://localhost:8000/healthz || exit 1
 
-ENTRYPOINT ["/opt/osiris-cloud/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "--proxy-headers", "core.asgi:application"]
