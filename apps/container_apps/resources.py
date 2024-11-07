@@ -35,15 +35,31 @@ class AppResource:
             body=pvc_spec
         )
 
+    def create_empty_dir_volume(self, pvc: PVC) -> dict:
+        volume = kubernetes.client.V1Volume(
+            name=pvc.pvcid,
+            empty_dir=kubernetes.client.V1EmptyDirVolumeSource()
+        )
+
+        volume_mount = kubernetes.client.V1VolumeMount(
+            name=pvc.pvcid,
+            mount_path=pvc.mount_path
+        )
+
+        return {
+            "volume": volume,
+            "volume_mount": volume_mount
+        }
+
     def create_container_resources(self, container: Container) -> kubernetes.client.V1ResourceRequirements:
         return kubernetes.client.V1ResourceRequirements(
             requests={
-                'cpu': str(container.cpu_request),  # Convert to string
-                'memory': f'{container.memory_request}Gi'  # Changed to Gi suffix
+                'cpu': str(container.cpu_request),
+                'memory': f'{container.memory_request}Gi'
             },
             limits={
-                'cpu': str(container.cpu_limit),  # Convert to string
-                'memory': f'{container.memory_limit}Gi'  # Changed to Gi suffix
+                'cpu': str(container.cpu_limit),
+                'memory': f'{container.memory_limit}Gi'
             }
         )
 
@@ -106,9 +122,7 @@ class AppResource:
             volumes.append(
                 kubernetes.client.V1Volume(
                     name=f"pvc-{pvc.pvcid}",
-                    persistent_volume_claim=kubernetes.client.V1PersistentVolumeClaimVolumeSource(
-                        claim_name=pvc.pvcid
-                    )
+                    empty_dir=kubernetes.client.V1EmptyDirVolumeSource()
                 )
             )
 
@@ -506,7 +520,7 @@ class AppResource:
                     )
                 except kubernetes.client.exceptions.ApiException as e:
                     if e.status == 404:
-                        resources['pvcs'].append(self.create_pvc(pvc))
+                        resources['pvcs'].append(self.create_empty_dir_volume(pvc))
 
             resources['deployment'] = self.patch_deployment_containers(app)
 
@@ -539,7 +553,7 @@ class AppResource:
             resources = {}
 
             if app.pvcs.exists():
-                resources['pvcs'] = [self.create_pvc(pvc) for pvc in app.pvcs.all()]
+                resources['pvcs'] = [self.create_empty_dir_volume(pvc) for pvc in app.pvcs.all()]
             resources['deployment'] = self.create_deployment(app)
 
             resources['service'] = self.create_service(app)
