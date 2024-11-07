@@ -47,7 +47,7 @@ class User(AbstractUser):
             'last_login': self.last_login,
             'default_nsid': get_default_ns(self).nsid,
             'cluster_role': self.role,
-            'github': self.github.username if self.github else None,
+            'github': self.github.username if hasattr(self, 'github') else None,
             'resource_usage': self.usage.info(),
             'resource_limit': self.limit.info(),
         }

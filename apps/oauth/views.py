@@ -3,6 +3,7 @@ import logging
 from authlib.integrations.django_client import OAuth
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -20,7 +21,6 @@ from ..users.models import User
 from .tasks import set_profile_avatar
 
 from ..k8s.constants import DEFAULT_LIMIT, DEFAULT_ROLE
-
 
 nyu_oauth = OAuth()
 github_oauth = OAuth()
@@ -76,37 +76,39 @@ def nyu_callback(request):
         # if user does not exist, we create a new account, and give them user role for now
         else:
             user_info = user_info['userinfo']
-            user = User.objects.create_user(
-                username=user_info['sub'],
-                first_name=user_info['firstname'],
-                last_name=user_info['lastname'],
-                email=user_info['sub'] + '@nyu.edu',
-                last_login=timezone.now(),
-                role=DEFAULT_ROLE,
-            )
 
-            # We set the user's profile avatar
-            set_profile_avatar.delay(serialize_obj(user))
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    username=user_info['sub'],
+                    first_name=user_info['firstname'],
+                    last_name=user_info['lastname'],
+                    email=user_info['sub'] + '@nyu.edu',
+                    last_login=timezone.now(),
+                    role=DEFAULT_ROLE,
+                )
 
-            NYUUser.objects.create(first_name=user_info['firstname'],
-                                   last_name=user_info['lastname'],
-                                   netid=user_info['sub'],
-                                   affiliation=user_info['eduperson_primary_affiliation'],
-                                   user=user
-                                   )
+                NYUUser.objects.create(first_name=user_info['firstname'],
+                                       last_name=user_info['lastname'],
+                                       netid=user_info['sub'],
+                                       affiliation=user_info['eduperson_primary_affiliation'],
+                                       user=user
+                                       )
 
-            # We create a default NS for the user
-            ns_name = user_info['sub'] + '-' + random_str()
-            ns = Namespace.objects.create(nsid=ns_name, name='Default', default=True)
-            logging.info(f"Default namespace {ns_name} created for user {user.username}")
+                # We create a default NS for the user
+                ns_name = user_info['sub'] + '-' + random_str()
+                ns = Namespace.objects.create(nsid=ns_name, name='Default', default=True)
+                logging.info(f"Default namespace {ns_name} created for user {user.username}")
 
-            # We add the user to the NS role Table wih owner role
-            NamespaceRoles.objects.create(namespace=ns, user=user, role='owner')
+                # We add the user to the NS role Table wih owner role
+                NamespaceRoles.objects.create(namespace=ns, user=user, role='owner')
 
-            Limit.objects.create(user=user, **DEFAULT_LIMIT)
-            logging.info(f"Default limits applied for namespace {ns_name}")
+                Limit.objects.create(user=user, **DEFAULT_LIMIT)
+                logging.info(f"Default limits applied for namespace {ns_name}")
 
-            Usage.objects.create(user=user, cpu=0, memory=0, disk=0, public_ip=0, gpu=0, registries=0)
+                Usage.objects.create(user=user, cpu=0, memory=0, disk=0, public_ip=0, gpu=0, registry=0)
+
+                # We set the user's profile avatar
+                set_profile_avatar.delay(serialize_obj(user))
 
         login(request, user)
 

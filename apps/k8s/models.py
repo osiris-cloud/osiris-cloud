@@ -1,9 +1,11 @@
 from django.db import models
 from django.db.models import Q
+
+from core.model_fields import UUID7StringField
 from django.contrib import admin
-import uuid_utils as uuid
 
 from ..users.models import User
+from .constants import PVC_CONTAINER_MODES
 from .constants import LB_PROTOCOLS, NS_ROLES, R_STATES
 
 
@@ -15,6 +17,7 @@ class Namespace(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     locked = models.BooleanField(default=False)
+    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
 
     @property
     def owner(self):
@@ -70,13 +73,26 @@ class NamespaceRoles(models.Model):
         db_table = 'namespace_roles'
 
 
+class PVCContainerMode(models.Model):
+    init = models.CharField(max_length=2, blank=True, default='', choices=PVC_CONTAINER_MODES)
+    main = models.CharField(max_length=2, blank=True, default='', choices=PVC_CONTAINER_MODES)
+    sidecar = models.CharField(max_length=2, blank=True, default='', choices=PVC_CONTAINER_MODES)
+
+
 class PVC(models.Model):
+    pvcid = UUID7StringField(auto_created=True)
     name = models.CharField(max_length=100)
-    size = models.IntegerField()
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pvcs')
+    size = models.FloatField()
+    mount_path = models.TextField(default='')
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
+    container_app_mode = models.ForeignKey(PVCContainerMode, on_delete=models.SET_NULL, null=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.container_app_mode:
+            self.container_app_mode = PVCContainerMode.objects.create()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'pvcs'
@@ -85,12 +101,12 @@ class PVC(models.Model):
 
 @admin.register(PVC)
 class PVCAdmin(admin.ModelAdmin):
-    list_display = ('name', 'size', 'owner', 'namespace')
-    search_fields = ('owner',)
+    list_display = ('name', 'size', 'namespace', 'pvcid')
+    search_fields = ('namespace',)
 
 
 class Event(models.Model):
-    event_id = models.UUIDField(auto_created=True, default=uuid.uuid4, unique=True)
+    eventid = UUID7StringField(auto_created=True)
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='events')
     message = models.TextField()
     related_link = models.CharField(max_length=256, blank=True, null=True)
@@ -99,7 +115,7 @@ class Event(models.Model):
 
     def info(self):
         return {
-            'event_id': self.event_id,
+            'eventid': self.eventid,
             'message': self.message,
             'related_link': self.related_link,
             'time': self.time,
@@ -110,12 +126,18 @@ class Event(models.Model):
         db_table = 'ns_events'
 
 
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ('namespace', 'time', 'message', 'eventid')
+    search_fields = ('namespace',)
+
+
 class LBEndpoint(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=64)
     description = models.CharField(max_length=256, blank=True, null=True)
     ip = models.GenericIPAddressField()
     port = models.IntegerField()
-    protocol = models.CharField(max_length=3, choices=LB_PROTOCOLS, default='tcp')
+    protocol = models.CharField(max_length=4, choices=LB_PROTOCOLS, default='tcp')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     state = models.CharField(max_length=16, choices=R_STATES, default='creating')
@@ -125,15 +147,7 @@ class LBEndpoint(models.Model):
         ordering = ['-created_at']
 
 
-class Settings(models.Model):
-    key = models.CharField(max_length=100, unique=True)
-    value = models.TextField()
-
-    class Meta:
-        db_table = 'settings'
-
-
-@admin.register(Settings)
-class SettingsAdmin(admin.ModelAdmin):
-    list_display = ('key', 'value')
-    search_fields = ('key',)
+@admin.register(LBEndpoint)
+class LBAdmin(admin.ModelAdmin):
+    list_display = ('name', 'ip', 'port', 'protocol', 'state')
+    search_fields = ('ip', 'port')

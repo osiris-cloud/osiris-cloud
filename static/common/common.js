@@ -6,11 +6,14 @@ window.addEventListener('load', function () {
 function parseURL() {
     // URL SCHEME: <protocol>/<host>/<app>/<nsid>/<resource-id>/<option>
     const parts = window.location.href.split('/');
+    let resourceId = parts[5];
+    if (resourceId === 'create' || resourceId === 'edit')
+        resourceId = undefined;
     return {
         host: window.location.origin,
         app: parts[3],
-        nsid: parts[4],
-        resource_id: parts[5],
+        nsid: parts[4] ? parts[4] : window.localStorage.getItem('namespace'),
+        resource_id: resourceId,
         option: (parts[6]) ? parts[6] : 'view',
     };
 }
@@ -18,8 +21,7 @@ function parseURL() {
 const currentURL = parseURL();
 
 function cancelURL() {
-    return `${currentURL.host}/${currentURL.app}/${currentURL.nsid}`
-        + (currentURL.resource_id ? `/${currentURL.resource_id}` : '');
+    return `${currentURL.host}/${currentURL.app}/${currentURL.nsid}` + (currentURL.resource_id ? `/${currentURL.resource_id}` : '');
 }
 
 function showLoader(show = true) {
@@ -39,7 +41,15 @@ function showNoResource(show = true) {
 }
 
 function normalizeTime(time) {
-    return new Date(time).toLocaleString();
+    const date = new Date(time);
+    return date.toLocaleString(undefined, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+    });
 }
 
 function capitalize(string) {

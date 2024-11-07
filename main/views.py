@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
+from django.http import HttpResponse
 
 
 def index(request):
@@ -43,3 +44,7 @@ def seed(request):
     create_vms()
     create_events()
     return redirect('login_view')
+
+
+def healthz(request):
+    return HttpResponse("OK")

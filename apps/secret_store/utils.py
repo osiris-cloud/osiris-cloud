@@ -1,4 +1,4 @@
-def validate_secret_creation(secret_data: dict) -> tuple[bool, str | None]:
+def validate_secret_creation(secret_data: dict) -> tuple[bool, [str | None]]:
     """
     Validate the data for creating a secret
     """

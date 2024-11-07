@@ -13,6 +13,7 @@ static/dist/main.css.map
 
 static/dist/css/output.css
 static/dist/main.bundle.js
+static/dist/main.bundle.js.map
 
 .env
 

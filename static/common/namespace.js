@@ -52,53 +52,59 @@ loadAllNamespaces();
 
 window.addEventListener('load', function () {
     nsModal = FlowbiteInstances.getInstance('Modal', 'namespace-modal');
-    nsModal._options.onShow = () => {
-        setTimeout(() => {
-            $nsModal.addClass('show');
-        }, 10);
-        connectSearch();
-        $nsListDropdown.addClass('hidden');
-        $nsSubmitButton.prop('disabled', false);
-    }
-    nsModal._options.onHide = () => {
-        $nsModal.removeClass('show');
-        showShareSpinner(false);
-        connectSearch(false);
-        if (roleDropdown)
-            roleDropdown.destroyAndRemoveInstance();
-        $nsModalName.val('');
-        $userSearch.val('');
-        $nsUserList.empty();
-        $setAsDefault.prop('checked', false);
-        selectedUser = {};
-        nsOwner = {};
-        nsUsers = [];
-    }
-    nsModal._options.closable = false;
-
-    popupModal._options.onShow = () => {
-        setTimeout(() => {
-            $popupModal.addClass('show');
-        }, 10);
-        nsModalClosable = false;
-        roleDropdown?.hide();
-        $nsListDropdown.addClass('hidden');
-    }
-    popupModal._options.onHide = () => {
-        $popupModal.removeClass('show');
-        setTimeout(() => {
-            nsModalClosable = true;
-        }, 50);
+    if (nsModal) {
+        nsModal._options.onShow = () => {
+            setTimeout(() => {
+                $nsModal.addClass('show');
+            }, 10);
+            connectSearch();
+            $nsListDropdown.addClass('hidden');
+            $nsSubmitButton.prop('disabled', false);
+        }
+        nsModal._options.onHide = () => {
+            $nsModal.removeClass('show');
+            showShareSpinner(false);
+            connectSearch(false);
+            if (roleDropdown)
+                roleDropdown.destroyAndRemoveInstance();
+            $nsModalName.val('');
+            $userSearch.val('');
+            $nsUserList.empty();
+            $setAsDefault.prop('checked', false);
+            selectedUser = {};
+            nsOwner = {};
+            nsUsers = [];
+        }
+        nsModal._options.closable = false;
     }
 
-    alertModal._options.onShow = function () {
-        setTimeout(() => {
-            $alertModal.addClass('show');
-        }, 10);
-        $nsListDropdown.addClass('hidden');
-    };
-    alertModal._options.onHide = function () {
-        $alertModal.removeClass('show');
+    if (popupModal) {
+        popupModal._options.onShow = () => {
+            setTimeout(() => {
+                $popupModal.addClass('show');
+            }, 10);
+            nsModalClosable = false;
+            roleDropdown?.hide();
+            $nsListDropdown.addClass('hidden');
+        }
+        popupModal._options.onHide = () => {
+            $popupModal.removeClass('show');
+            setTimeout(() => {
+                nsModalClosable = true;
+            }, 50);
+        }
+    }
+
+    if (alertModal) {
+        alertModal._options.onShow = function () {
+            setTimeout(() => {
+                $alertModal.addClass('show');
+            }, 10);
+            $nsListDropdown.addClass('hidden');
+        };
+        alertModal._options.onHide = function () {
+            $alertModal.removeClass('show');
+        }
     }
 });
 
@@ -118,13 +124,14 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
             currentDefault = ns.default;
             if (apply) {
                 $('#dropdown-ns-button').text(ns.name);
-                window.namespace = ns.nsid;
                 ns.users.forEach((user) => {
                     if (user.username === userSelf.username)
                         currentRole = user.role;
-                    if (user.username === userSelf.username && user.role === 'viewer')
+                    if (user.username === userSelf.username && currentRole === 'viewer') // this is buggy. Should change to a better approach
                         $namespaceSettings.addClass('hidden');
+                        $nsDelete.addClass('hidden');
                 });
+                localStorage.setItem('namespace', ns.nsid);
             }
             if (callback)
                 callback(resp);
@@ -149,8 +156,8 @@ $createNS.on('click', () => {
 $namespaceSettings.on('click', false, () => {
     createNS = false;
     $nsModalTitle.text('Edit Namespace');
-    loadNamespace(window.namespace, false, (resp) => {
-        let ns= resp.namespace;
+    loadNamespace(currentURL.nsid, false, (resp) => {
+        let ns = resp.namespace;
         $nsModalName.val(ns.name);
         $nsSubmitButton.text('Save');
         roleTransferOwner.removeClass('hidden');
@@ -161,6 +168,8 @@ $namespaceSettings.on('click', false, () => {
         if (nsOwner.username !== userSelf.username) {
             $('#set-as-default-container').addClass('hidden');
             $nsDelete.addClass('hidden');
+            $setAsDefault.prop('disabled', !ns.default);
+            roleTransferOwner.addClass('hidden');
         } else {
             $setAsDefault.prop('checked', ns.default);
             $setAsDefault.prop('disabled', ns.default);
@@ -208,8 +217,8 @@ $nsSubmitButton.on('click', () => {
     $nsSubmitButton.prop('disabled', true);
 
     $.ajax({
-        url: '/api/namespace' + (createNS ? '' : '/' + window.namespace),
-        type: createNS ? 'POST' : 'PATCH',
+        url: '/api/namespace' + (createNS ? '' : '/' + currentURL.nsid),
+        type: createNS ? 'PUT' : 'PATCH',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
         data: JSON.stringify(data),
@@ -248,7 +257,7 @@ $nsDelete.on('click', () => {
     Confirm(`Are you sure you want to delete ${$('#dropdown-ns-button').text()}? All contained resources will be deleted.`, (ok) => {
         if (!ok) return;
         $.ajax({
-            url: '/api/namespace/' + window.namespace,
+            url: '/api/namespace/' + currentURL.nsid,
             type: 'DELETE',
             headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
             contentType: 'application/json',
@@ -426,7 +435,7 @@ function createNSListItem(name, owner, nsid) {
         .addClass('text-sm');
 
     const mainText = $('<div></div>')
-        .text(name + (nsid === window.namespace ? ' (Current)' : ''));
+        .text(name + (nsid === currentURL.nsid ? ' (Current)' : ''));
 
     const subText = $('<div></div>')
         .addClass('text-xs font-normal text-gray-500 dark:text-gray-300')
@@ -501,7 +510,7 @@ function getSelf(callback) {
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
         success: (resp) => {
-            callback(resp);
+            callback(resp.user);
         },
         error: (resp) => {
             Alert(resp.responseJSON.message || "Internal Server Error");
@@ -524,7 +533,7 @@ function loadAllNamespaces() {
             $namespaceLlist.empty();
             let $nsArray = [];
             resp.namespaces.forEach((ns) => {
-                if (ns.nsid === window.namespace)
+                if (ns.nsid === currentURL.nsid)
                     $nsArray.unshift(createNSListItem(ns.name, ns.owner.name, ns.nsid))
                 else
                     $nsArray.push(createNSListItem(ns.name, ns.owner.name, ns.nsid));

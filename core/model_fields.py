@@ -2,13 +2,17 @@ from django.db import models
 from uuid_utils import uuid7, UUID
 
 
+def generate_uuid7() -> str:
+    return str(uuid7())
+
+
 class UUID7StringField(models.CharField):
     description = "Field for storing UUID version 7"
 
     def __init__(self, *args, **kwargs):
         kwargs['max_length'] = 36
         kwargs['unique'] = True
-        kwargs['default'] = str(uuid7())
+        kwargs['default'] = generate_uuid7
         super().__init__(*args, **kwargs)
 
     def to_python(self, value):

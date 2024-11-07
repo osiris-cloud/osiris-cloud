@@ -4,8 +4,10 @@ R_STATES = (('creating', 'Resource is being created'),
             ('active', 'Resource is live'),
             ('stopped', 'Resource is stopped'),
             ('error', 'Resource is in error'),
-            ('zombie', 'Resource exists in database but in cluster')
+            ('zombie', 'Resource exists in database but in cluster'),
             )
+
+PVC_CONTAINER_MODES = (('', 'No Access'), ('ro', 'Read Only'), ('rw', 'Read Write'))
 
 DOCKER_HEADERS = {
     "Accept": "application/vnd.docker.distribution.manifest.v2+json"
@@ -36,3 +38,19 @@ DEFAULT_ROLE = 'guest'
 SECRET_TYPES = (('opaque', 'Key value pair secret'),
                 ('auth', 'Auth secret'),
                 )
+
+DEFAULT_HPA_SPEC = {
+    'enable': False,
+    'min_replicas': 1,
+    'max_replicas': 1,
+    'scaleup_stb_window': 300,
+    'scaledown_stb_window': 300,
+    'cpu_trigger': 90,
+    'memory_trigger': 90,
+}
+
+RESTART_POLICIES = {
+    'always': 'Always',
+    'on_failure': 'OnFailure',
+    'never': 'Never'
+}

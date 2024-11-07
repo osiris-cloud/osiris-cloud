@@ -26,6 +26,9 @@ def namespace(request, nsid=None):
     if (request.method in ['PATCH, DELETE']) and nsid is None:
         return JsonResponse(error_message('nsid is required'), status=400)
 
+    if (request.user.role in ('guest', 'blocked')) and (request.method in ('PUT', 'PATCH', 'DELETE')):
+        return JsonResponse(error_message('Permission denied'), status=403)
+
     ns_data = request.data
 
     try:
