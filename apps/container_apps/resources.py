@@ -81,6 +81,7 @@ class AppResource:
         container_spec = kubernetes.client.V1Container(
             name=f"{container.type}-{container.containerid}",
             image=container.image,
+            image_pull_policy='Always',
             resources=self.create_container_resources(container),
             ports=self.create_container_ports(container),
             volume_mounts=self.create_volume_mounts(container, app)
@@ -139,6 +140,7 @@ class AppResource:
                 }
             ),
             spec=kubernetes.client.V1PodSpec(
+                runtime_class_name="kata-qemu",
                 restart_policy=RESTART_POLICIES[app.restart_policy],
                 init_containers=[self.create_container_spec(c, app) for c in init_containers],
                 containers=[self.create_container_spec(c, app) for c in main_containers + sidecar_containers],
