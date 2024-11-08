@@ -80,7 +80,6 @@ Request body parameters:
 
 - `name` (string, required): The name of the container app.
 
-
 - `slug` (string, required): The unique slug of the container app. This will be used to generate the URL.
 
 - `replicas` (int, optional): The number of instances of the app. Default is 1.

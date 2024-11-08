@@ -94,7 +94,7 @@ class AppResource:
         container_spec = kubernetes.client.V1Container(
             name=f"{container.type}-{container.containerid}",
             image=container.image,
-            image_pull_policy='Always',
+            image_pull_policy='IfNotPresent',
             resources=self.create_container_resources(container),
             ports=self.create_container_ports(container),
             volume_mounts=self.create_volume_mounts(container, app)
