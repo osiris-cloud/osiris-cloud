@@ -27,6 +27,10 @@ def privacy(request):
     return render(request, "pages/privacy.html")
 
 
+def eula(request):
+    return render(request, "pages/eula.html")
+
+
 def logout_view(request):
     request.session.clear()
     logout(request)
