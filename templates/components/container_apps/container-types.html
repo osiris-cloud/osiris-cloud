@@ -1,0 +1,225 @@
+{% if not c_type == 'main' %}
+    <div class="grid-con-sm mt-6 mb-2">
+        <div class="grid-item-sm">
+            <span class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">Enable</span>
+            <label class="inline-flex items-center cursor-pointer">
+                <input id="{{ c_type }}-container-toggle" type="checkbox" value="" class="sr-only peer">
+                <div class="relative w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full 
+                        rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] 
+                        after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border 
+                        after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"
+                >
+                </div>
+            </label>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const containerToggle = $('#{{ c_type }}-container-toggle');
+            containerToggle.change(function () {
+                if (this.checked) {
+                    $('#{{ c_type }}-container-content').show();
+                } else {
+                    $('#{{ c_type }}-container-content').hide();
+                }
+            });
+        })();
+    </script>
+{% endif %}
+
+<div id="{{ c_type }}-container-content" class="grid-con-sm mt-6 mb-2"
+     {% if not c_type == 'main' %}style="display: none;"{% endif %}
+>
+
+    <div class="grid-item-sm">
+        <label class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">
+            Image Source
+        </label>
+        <div class="inline-flex rounded-md shadow-sm" role="group">
+            <button type="button" id="{{ c_type }}-img-src-oc"
+                    class="px-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-s-lg 
+                    dark:text-white dark:hover:text-white bg-blue-700 text-white"
+            >
+                Osiris Cloud
+            </button>
+            <button type="button" id="{{ c_type }}-img-src-ext"
+                    class="px-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-e-lg 
+                    dark:text-gray-200 text-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+                External
+            </button>
+        </div>
+    </div>
+
+    <div class="grid-item-sm" id="{{ c_type }}-oc-img-reg-con">
+        <label for="{{ c_type }}-oc-img-reg"
+               class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+            Registry
+        </label>
+        <div>
+            <select id="{{ c_type }}-oc-img-reg" class="block py-1.5 px-0 w-full text-sm text-gray-500
+                                bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                                dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                <option class="dark:bg-gray-700 hidden" value="">Select Registry</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="grid-item-sm" id="{{ c_type }}-oc-img-con">
+        <label for="{{ c_type }}-oc-img" class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+            Image
+        </label>
+        <div>
+            <select id="{{ c_type }}-oc-img" class="block py-1.5 px-0 w-full text-sm text-gray-500
+                                bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                                dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                <option class="dark:bg-gray-700 hidden" value="">Select image</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="grid-item-sm" id="{{ c_type }}-img-url-con" style="display: none;">
+        <label for="{{ c_type }}-img-url" class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">
+            Image URL
+        </label>
+        <input type="text" id="{{ c_type }}-img-url"
+               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+               placeholder="eg. nginx:latest"
+        />
+    </div>
+
+    <div class="grid-item-sm" id="{{ c_type }}-oc-img-pull-secret-con" style="display: none;">
+        <label for="{{ c_type }}-oc-img-pull-secret"
+               class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+            Pull Secret
+        </label>
+        <div>
+            <select id="{{ c_type }}-oc-img-pull-secret" class="block py-1.5 px-0 w-full text-sm text-gray-500
+                                bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                                dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                <option class="dark:bg-gray-700 hidden" value="">Select Secret</option>
+                <option class="dark:bg-gray-700" value="">None</option>
+            </select>
+        </div>
+    </div>
+
+    {% if c_type == 'main' %}
+        <div class="grid-item-sm">
+            <label for="{{ c_type }}-container-port"
+                   class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white"
+            >
+                Container Port
+            </label>
+            <input type="text" id="{{ c_type }}-container-port"
+                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                       focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                       dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                   placeholder="eg. 8000"
+            />
+        </div>
+
+        <div class="grid-item-sm">
+            <label for="{{ c_type }}-container-proto"
+                   class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+                Port Protocol
+            </label>
+            <div>
+                <select id="{{ c_type }}-container-proto" class="block py-1.5 px-0 w-full text-sm text-gray-500
+                                bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                                dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                    <option class="dark:bg-gray-700" value="tcp" selected>TCP</option>
+                    <option class="dark:bg-gray-700" value="udp">UDP</option>
+                </select>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="grid-item-sm">
+        <label for="{{ c_type }}-env-secret"
+               class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+            Environment Secret
+        </label>
+        <div>
+            <select id="{{ c_type }}-env-secret" class="block py-1.5 px-0 w-full text-sm text-gray-500
+                                bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                                dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                <option class="dark:bg-gray-700 hidden" value="">Select Secret</option>
+                <option class="dark:bg-gray-700" value="">None</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="grid-item-sm">
+        <label for="{{ c_type }}-size" class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
+            Resource Allocation
+        </label>
+        <div>
+            <select id="{{ c_type }}-size" class="block py-1.5 px-0 w-full text-sm text-gray-500
+                                bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                                dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                <option class="dark:bg-gray-700" value="small" selected>Small (0.25 vCPU, 500 MB RAM)
+                </option>
+                <option class="dark:bg-gray-700" value="standard">Standard (0.5 vCPU, 1 GB RAM)</option>
+                <option class="dark:bg-gray-700" value="medium">Medium (1 vCPU, 2 GB RAM)</option>
+                <option class="dark:bg-gray-700" value="large">Large (2 vCPU, 4 GB RAM)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="grid-item-sm">
+        <label for="{{ c_type }}-cmd" class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">
+            Command
+        </label>
+        <input type="text" id="{{ c_type }}-cmd"
+               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+               placeholder="eg. echo" minlength="1"
+        />
+    </div>
+
+    <div class="grid-item-sm">
+        <label for="{{ c_type }}-args" class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">
+            Arguments
+        </label>
+        <input type="text" id="{{ c_type }}-args"
+               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+               placeholder="eg. hello" minlength="1"
+        />
+    </div>
+</div>
+
+<script>
+    (function () {
+        const osirisBtn = $('#{{ c_type }}-img-src-oc');
+        const externalBtn = $('#{{ c_type }}-img-src-ext');
+        const OCImgRegCon = $('#{{ c_type }}-oc-img-reg-con');
+        const OCImgCon = $('#{{ c_type }}-oc-img-con');
+        const ImgUrlCon = $('#{{ c_type }}-img-url-con');
+        const OCImgPullSecretCon = $('#{{ c_type }}-oc-img-pull-secret-con');
+        const selectedClasses = 'bg-blue-700 text-white';
+        const unselectedClasses = 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700';
+
+        osirisBtn.click(function () {
+            $(this).removeClass(unselectedClasses).addClass(selectedClasses);
+            externalBtn.removeClass(selectedClasses).addClass(unselectedClasses);
+            OCImgCon.show();
+            ImgUrlCon.hide();
+            OCImgPullSecretCon.hide();
+            OCImgRegCon.show();
+        });
+
+        externalBtn.click(function () {
+            $(this).removeClass(unselectedClasses).addClass(selectedClasses);
+            osirisBtn.removeClass(selectedClasses).addClass(unselectedClasses);
+            OCImgCon.hide();
+            ImgUrlCon.show();
+            OCImgRegCon.hide();
+            OCImgPullSecretCon.show();
+        });
+    })();
+</script>
