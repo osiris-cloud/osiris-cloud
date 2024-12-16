@@ -2,10 +2,6 @@ let nsModal;
 let $nsModal = $('#namespace-modal');
 let nsModalClosable = true;
 
-let $popupModal = $('#popup-modal');
-
-let $alertModal = $('#alert-modal');
-
 let roleDropdown;
 
 let $createNS = $('#create-namespace');
@@ -51,7 +47,36 @@ loadNamespace();
 loadAllNamespaces();
 
 window.addEventListener('load', function () {
-    nsModal = FlowbiteInstances.getInstance('Modal', 'namespace-modal');
+    if ($('#namespace-modal').length > 0)
+        nsModal = FlowbiteInstances.getInstance('Modal', 'namespace-modal');
+
+    if (window.popupModal) {
+        popupModal._options.onShow = () => {
+            setTimeout(() => {
+                $popupModal.addClass('show');
+            }, 10);
+            nsModalClosable = false;
+            roleDropdown?.hide();
+            $nsListDropdown.addClass('hidden');
+        }
+        popupModal._options.onHide = () => {
+            $popupModal.removeClass('show');
+            setTimeout(() => {
+                nsModalClosable = true;
+            }, 50);
+        }
+    }
+    if (window.alertModal) {
+        alertModal._options.onShow = function () {
+            setTimeout(() => {
+                $alertModal.addClass('show');
+            }, 10);
+            $nsListDropdown.addClass('hidden');
+        };
+        alertModal._options.onHide = function () {
+            $alertModal.removeClass('show');
+        }
+    }
     if (nsModal) {
         nsModal._options.onShow = () => {
             setTimeout(() => {
@@ -77,35 +102,6 @@ window.addEventListener('load', function () {
         }
         nsModal._options.closable = false;
     }
-
-    if (popupModal) {
-        popupModal._options.onShow = () => {
-            setTimeout(() => {
-                $popupModal.addClass('show');
-            }, 10);
-            nsModalClosable = false;
-            roleDropdown?.hide();
-            $nsListDropdown.addClass('hidden');
-        }
-        popupModal._options.onHide = () => {
-            $popupModal.removeClass('show');
-            setTimeout(() => {
-                nsModalClosable = true;
-            }, 50);
-        }
-    }
-
-    if (alertModal) {
-        alertModal._options.onShow = function () {
-            setTimeout(() => {
-                $alertModal.addClass('show');
-            }, 10);
-            $nsListDropdown.addClass('hidden');
-        };
-        alertModal._options.onHide = function () {
-            $alertModal.removeClass('show');
-        }
-    }
 });
 
 function loadNamespace(nsid = '', apply = true, callback = null) {
@@ -129,7 +125,7 @@ function loadNamespace(nsid = '', apply = true, callback = null) {
                         currentRole = user.role;
                     if (user.username === userSelf.username && currentRole === 'viewer') // this is buggy. Should change to a better approach
                         $namespaceSettings.addClass('hidden');
-                        $nsDelete.addClass('hidden');
+                    $nsDelete.addClass('hidden');
                 });
                 localStorage.setItem('namespace', ns.nsid);
             }
