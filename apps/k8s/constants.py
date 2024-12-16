@@ -54,3 +54,10 @@ RESTART_POLICIES = {
     'on_failure': 'OnFailure',
     'never': 'Never'
 }
+
+ACCESS_SCOPES = ('global',
+                 'container-registry',
+                 'container-apps',
+                 'namespace',
+                 'secret-store',
+                 )

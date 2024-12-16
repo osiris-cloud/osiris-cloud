@@ -2,25 +2,6 @@ const $imageTable = $('#registry-image-table');
 const $imageTableContainer = $('#registry-image-table-container');
 const $deleteRegistry = $('#delete-registry');
 
-function copyToClip(value, defaultIconId, successIconId, tooltipId) {
-    navigator.clipboard.writeText(value.trim());
-
-    if (!defaultIconId || !successIconId || !tooltipId) return;
-
-    $(`#${defaultIconId}`).addClass('hidden');
-    $(`#${successIconId}`).removeClass('hidden');
-
-    setTimeout(() => {
-        $(`#${tooltipId}`).addClass('hidden');
-    }, 100);
-
-    setTimeout(() => {
-        $(`#${defaultIconId}`).removeClass('hidden');
-        $(`#${successIconId}`).addClass('hidden');
-        $(`#${tooltipId}`).removeClass('hidden');
-    }, 1000);
-}
-
 function createImageTableEntry(repo, tag) {
     const $row = $('<tr/>', {
         class: 'bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700',

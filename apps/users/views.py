@@ -9,8 +9,13 @@ def profile(request):
     if default_ns is None:
         return render(request, '404-app.html')
 
-    return render(request, 'apps/dashboard/profile.html', context={
+    return render(request, 'apps/pages/profile.html', context={
         'github': request.user.github.username if hasattr(request.user, 'github') else None,
         'default_ns': default_ns.nsid,
         'segment': ['profile'],
     })
+
+
+@login_required
+def access_keys(request):
+    return render(request, 'apps/pages/access-keys.html')

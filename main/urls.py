@@ -9,7 +9,8 @@ urlpatterns = [
     path("healthz", views.healthz, name="healthz"),
     path("login", include("apps.oauth.urls")),
     path("logout", views.logout_view, name="logout"),
-    path("profile", include("apps.users.urls")),
+    path("", include("apps.users.urls")),
+
     path("faq", views.faq, name="faq"),
     path("about", views.about, name="about"),
     path("privacy", views.privacy, name="privacy"),
