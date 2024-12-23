@@ -1,18 +1,13 @@
-"""
-https://docs.djangoproject.com/en/4.2/topics/settings/
-https://docs.djangoproject.com/en/4.2/ref/settings/
-https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-"""
-
 import os
-from pathlib import Path
+import logging
 
+from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 from str2bool import str2bool
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-import logging
+from .utils import load_file_from_s3, load_file, generate_kid
 
 load_dotenv(override=True if os.environ.get('DEBUG') is None else False)
 
@@ -67,7 +62,7 @@ class Env:
 
     aws_access_key = os.getenv('AWS_ACCESS_KEY')
     aws_secret_key = os.getenv('AWS_SECRET_KEY')
-    kubeconfig_object_path = os.getenv('KUBECONFIG_OBJECT_PATH')
+    kubeconfig_obj_path = os.getenv('KUBECONFIG_OBJECT_PATH')
 
     k8s_url = ''
     k8s_ws_url = ''
@@ -77,16 +72,18 @@ class Env:
     firewall_url = os.getenv('FIREWALL_URL')
 
     registry_domain = os.getenv('REGISTRY_DOMAIN', 'registry.osiriscloud.io')
+    registry_key_obj_path = os.getenv('REGISTRY_KEY_OBJECT_PATH')
+    registry_signing_key = ''
+    registry_kid = ''
+
     container_apps_domain = os.getenv('CONTAINER_APPS_DOMAIN', 'poweredge.dev')
 
     def __post_init__(self):
         kubeconfig_path = os.path.join(BASE_DIR, 'kubeconfig.yaml')
         if os.path.exists(kubeconfig_path):
-            with open(kubeconfig_path, 'r') as file:
-                kubeconfig = file.read()
+            kubeconfig = load_file(kubeconfig_path, 'r')
         else:
-            from .utils import get_s3_file_contents
-            kubeconfig = get_s3_file_contents(self.kubeconfig_object_path, self.aws_access_key, self.aws_secret_key)
+            kubeconfig = load_file_from_s3(self.kubeconfig_obj_path, self.aws_access_key, self.aws_secret_key)
 
         if kubeconfig:
             from kubernetes import config
@@ -98,15 +95,25 @@ class Env:
             url = urlparse(self.k8s_url)
             self.k8s_ws_url = 'ws://' if url.scheme == 'http' else 'wss://' + url.netloc + url.path
             self.k8s_api_client = config.new_client_from_config_dict(k8s_config)
-            print('# Initialized k8s client.')
+            print('# Initialized k8s client')
         else:
-            print('# kubeconfig not found. k8s client not initialized.')
+            print('# kubeconfig not found. k8s client not initialized')
+
+        registry_signing_key_path = os.path.join(BASE_DIR, 'registry.key')
+        if os.path.exists(registry_signing_key_path):
+            self.registry_signing_key = load_file(registry_signing_key_path, 'rb')
+        else:
+            self.registry_signing_key = load_file_from_s3(self.registry_key_obj_path, self.aws_access_key, self.aws_secret_key)
+
+        if self.registry_signing_key:
+            self.registry_kid = generate_kid(self.registry_signing_key, 'RSA')
+            print('# Generated keyid from registry signing key')
 
 
 env = Env()
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
-ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io', 'localhost']
+ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io', 'localhost', 'docker.for.win.localhost']
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://osiriscloud.io', 'https://staging.osiriscloud.io']
 
 with open('version.txt', 'r') as f:
