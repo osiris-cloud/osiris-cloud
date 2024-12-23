@@ -20,7 +20,7 @@ def root(request):
 @api_view(['GET', 'PUT', 'DELETE'])
 def tokens(request, key_id=None):
     if request.method == 'GET':
-        keys = AccessToken.objects.filter(user=request.user, system_use=False)
+        keys = AccessToken.objects.filter(user=request.user)
         return JsonResponse(success_message('Get access keys', {
             'keys': [key.info() for key in keys],
         }))
@@ -48,7 +48,7 @@ def tokens(request, key_id=None):
         if key_id is None:
             return JsonResponse(error_message('Key is required'), status=400)
 
-        token = AccessToken.objects.filter(user=request.user, keyid=key_id, system_use=False).first()
+        token = AccessToken.objects.filter(user=request.user, keyid=key_id).first()
         if token is None:
             return JsonResponse(error_message('Key not found'), status=404)
 
