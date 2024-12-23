@@ -5,6 +5,7 @@ R_STATES = (('creating', 'Resource is being created'),
             ('stopped', 'Resource is stopped'),
             ('error', 'Resource is in error'),
             ('zombie', 'Resource exists in database but in cluster'),
+            ('orphan', 'Resource exists in cluster but not in database'),
             )
 
 PVC_CONTAINER_MODES = (('', 'No Access'), ('ro', 'Read Only'), ('rw', 'Read Write'))
