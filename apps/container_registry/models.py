@@ -5,36 +5,34 @@ import httpx
 
 from asgiref.sync import async_to_sync
 from django.db import models
-from uuid import UUID
-from encrypted_model_fields.fields import EncryptedTextField
+from django.utils import timezone
 
+from core.model_fields import UUID7StringField
 from ..k8s.models import Namespace
+
 from core.settings import env
+from .utils import get_sub_repositories, get_tags, get_manifest, get_blob_digests, generate_auth_token, delete_blob
 
 from ..k8s.constants import R_STATES, DOCKER_HEADERS
 
-from .utils import get_repositories, get_tags, get_manifest, get_blob_digests
-
 
 class ContainerRegistry(models.Model):
-    crid = models.UUIDField(primary_key=True, default=UUID, editable=False)
+    crid = UUID7StringField()
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE, related_name='registries')
     name = models.CharField(max_length=64)
-    slug = models.SlugField(max_length=32)
+    repo = models.SlugField(max_length=50)
     public = models.BooleanField(default=False)
-    username = models.CharField(max_length=32)
-    password = EncryptedTextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    state = models.CharField(max_length=16, choices=[(state[0], state[1]) for state in R_STATES], default='creating')
+    last_pushed_at = models.DateTimeField(null=True, blank=True)
+    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
 
     @property
     def url(self):
-        return self.slug + '.' + env.registry_domain
+        return env.registry_domain + '/' + self.repo
 
-    @property
-    def http_url(self):
-        return 'https://' + self.url
+    def get_role(self, username):
+        return self.namespace.get_role(username)
 
     def info(self):
         return {
@@ -42,36 +40,35 @@ class ContainerRegistry(models.Model):
             'name': self.name,
             'url': self.url,
             'public': self.public,
+            'last_pushed_at': self.last_pushed_at,
             'created_at': self.created_at,
             'updated_at': self.updated_at,
             'state': self.state,
         }
 
-    def get_login(self):
-        return {
-            'username': self.username,
-            'password': self.password,
-        }
-
     def stat(self) -> list[dict]:
-        if not self.state == 'active':
+        if self.state != 'active':
             return []
 
         async def stat_async() -> list:
+            sub_repos = await get_sub_repositories(self.repo)
             result = []
-            async with httpx.AsyncClient(auth=(self.username, self.password), headers=DOCKER_HEADERS) as client:
+
+            for sub in sub_repos:
+                repo_path = f'{self.repo}/{sub}'
+                token, _ = RepoToken.get_or_create(path=repo_path)
+                headers = {**DOCKER_HEADERS, 'Authorization': f"Bearer {token.token}"}
                 try:
-                    repositories = await get_repositories(client, self.http_url)
-                    for repo in repositories:
+                    async with httpx.AsyncClient(headers=headers) as client:
                         item = {
-                            'repo': repo,
+                            'sub': sub,
                             'tags': [],
                             'size': 0
                         }
-                        tags = await get_tags(client, self.http_url, repo)
+                        tags = await get_tags(client, repo_path)
                         if tags:
                             for tag in tags:
-                                manifest = await get_manifest(client, self.http_url, repo, tag)
+                                manifest = await get_manifest(client, repo_path, tag)
                                 config = manifest.get('config', {})
                                 layers = manifest.get('layers', [])
                                 size = sum([layer.get('size', 0) for layer in layers]) + config.get('size', 0)
@@ -81,39 +78,40 @@ class ContainerRegistry(models.Model):
                                     'digest': config.get('digest', ''),
                                 })
                                 item['size'] += size
-                            result.append(item)
-                    return result
+                        result.append(item)
 
                 except Exception as e:
                     logging.exception(e)
                     return []
 
-        resp = async_to_sync(stat_async)()
-        return resp
+                return result
 
-    def delete_image(self, repo, tag) -> bool:
+            resp = async_to_sync(stat_async)()
+            return resp
+
+    def delete_image(self, sub_repo, tag) -> bool:
         if not self.state == 'active':
             return False
 
-        async def delete_blob(client: httpx.AsyncClient, digest) -> bool:
-            resp = await client.delete(f"{self.http_url}/v2/{repo}/blobs/{digest}")
-            return resp.status_code == 202
-
         async def delete_image_async() -> bool:
-            async with httpx.AsyncClient(auth=(self.username, self.password)) as client:
-                try:
-                    manifest = await get_manifest(client, self.http_url, repo, tag)
+            repo_path = f'{self.repo}/{sub_repo}'
+            token, _ = RepoToken.get_or_create(path=repo_path)
+            headers = {**DOCKER_HEADERS, 'Authorization': f"Bearer {token.token}"}
+            try:
+                async with httpx.AsyncClient(headers=headers) as client:
+                    manifest = await get_manifest(client, sub_repo, tag)
                     digests = get_blob_digests(manifest)
 
-                    blob_tasks = [delete_blob(client, digest) for digest in digests]
+                    blob_tasks = [delete_blob(client, sub_repo, digest) for digest in digests]
                     await asyncio.gather(*blob_tasks)
 
-                    response = await client.delete(f"{self.http_url}/v2/{repo}/manifests/{manifest.get('reference')}")
+                    response = await client.delete(
+                        f"https://{env.registry_domain}/v2/{sub_repo}/manifests/{manifest.get('reference')}")
 
                     return response.status_code == 202
-                except Exception as e:
-                    logging.exception(e)
-                    return False
+            except Exception as e:
+                logging.exception(e)
+                return False
 
         deleted = async_to_sync(delete_image_async)()
         return deleted
@@ -124,3 +122,29 @@ class ContainerRegistry(models.Model):
     class Meta:
         db_table = 'container_registry'
         ordering = ['-created_at']
+
+
+class RepoToken(models.Model):
+    path = models.TextField()
+    token = models.TextField()
+    expires_at = models.DateTimeField()
+
+    @classmethod
+    def get_or_create(cls, path):
+        token, created = cls.objects.get_or_create(path=path)
+        if token.expires_at <= timezone.now():
+            token.renew()
+        return token, created
+
+    def generate(self):
+        self.token = generate_auth_token('repository', self.path, ['pull', 'delete'], days=30)
+        self.expires_at = timezone.now() + timezone.timedelta(days=30)
+
+    def renew(self):
+        self.generate()
+        self.save()
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.generate()
+        return super().save(*args, **kwargs)
