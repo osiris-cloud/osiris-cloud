@@ -1,7 +1,5 @@
 from django.db import models
 from django.utils import timezone
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.conf import settings
 from os import urandom
 from binascii import hexlify
@@ -21,7 +19,7 @@ class AccessToken(models.Model):
     scopes = models.JSONField(default=list)
     can_write = models.BooleanField(default=False)
     expiration = models.DateTimeField(null=True, default=None)
-    system_use = models.BooleanField(default=False)
+    attributes = models.JSONField(default=dict)
 
     def info(self):
         return {
@@ -54,7 +52,6 @@ class AccessToken(models.Model):
         """
         Check if token has permission for the given URL and HTTP method
         """
-
         is_write_method = method in ('PUT', 'PATCH', 'DELETE')
         allowed = False
 
@@ -65,13 +62,3 @@ class AccessToken(models.Model):
 
     def is_expired(self):
         return self.expiration and self.expiration <= timezone.now()
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_auth_token(sender, instance=None, created=False, **kwargs):
-    if created:
-        AccessToken.objects.create(user=instance,
-                                   name='SYS_KEY',
-                                   scopes=['container_registry'],
-                                   can_write='True',
-                                   system_use=True)
