@@ -75,6 +75,7 @@ class Env:
     registry_key_obj_path = os.getenv('REGISTRY_KEY_OBJECT_PATH')
     registry_signing_key = ''
     registry_kid = ''
+    registry_webhook_secret = os.getenv('REGISTRY_WEBHOOK_SECRET')
 
     container_apps_domain = os.getenv('CONTAINER_APPS_DOMAIN', 'poweredge.dev')
 
