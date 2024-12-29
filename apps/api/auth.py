@@ -53,10 +53,15 @@ class AccessTokenAuthentication(authentication.BaseAuthentication):
 
 class AccessTokenOrIsAuthenticated(BasePermission):
     """
-    Permission class that allows access to authenticated users (session auth)
-    OR valid access tokens
+    Permission class that allows access to authenticated users (session auth) OR valid access tokens
     """
     def has_permission(self, request, view):
+        if request.user.role == 'blocked':
+            return False
+
+        if (request.user.role == 'guest') and (request.method in ('PUT', 'PATCH', 'DELETE')):
+            return False
+
         # Allow access if user is authenticated through session
         if request.user and request.user.is_authenticated and (not hasattr(request, 'auth') or request.auth is None):
             return True
