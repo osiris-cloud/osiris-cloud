@@ -39,7 +39,8 @@ class ContainerRegistry(models.Model):
 
     @property
     def last_pushed_at(self):
-        return self.webhooks.last().timestamp if self.webhooks.exists() else None
+        w_hook = self.webhooks.filter(action='push')
+        return w_hook.last().timestamp if w_hook.exists() else None
 
     def info(self):
         return {
