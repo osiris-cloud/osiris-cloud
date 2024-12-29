@@ -166,4 +166,5 @@ class RegistryWebhook(models.Model):
         repo, target = kwargs['repository'].split('/', 1)
         self.registry = ContainerRegistry.objects.get(repo=repo)
         self.target = target
+        del kwargs['repository']
         return super().save(*args, **kwargs)
