@@ -24,15 +24,22 @@ class ContainerRegistry(models.Model):
     public = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    last_pushed_at = models.DateTimeField(null=True, blank=True)
     state = models.CharField(max_length=16, choices=R_STATES, default='creating')
 
     @property
     def url(self):
         return env.registry_domain + '/' + self.repo
 
+    @property
+    def domain(self):
+        return env.registry_domain
+
     def get_role(self, username):
         return self.namespace.get_role(username)
+
+    @property
+    def last_pushed_at(self):
+        return self.webhooks.last().timestamp if self.webhooks.exists() else None
 
     def info(self):
         return {
@@ -47,9 +54,6 @@ class ContainerRegistry(models.Model):
         }
 
     def stat(self) -> list[dict]:
-        if self.state != 'active':
-            return []
-
         async def stat_async() -> list:
             sub_repos = await get_sub_repositories(self.repo)
             result = []
@@ -84,10 +88,10 @@ class ContainerRegistry(models.Model):
                     logging.exception(e)
                     return []
 
-                return result
+            return result
 
-            resp = async_to_sync(stat_async)()
-            return resp
+        resp = async_to_sync(stat_async)()
+        return resp
 
     def delete_image(self, sub_repo, tag) -> bool:
         if not self.state == 'active':
@@ -95,7 +99,7 @@ class ContainerRegistry(models.Model):
 
         async def delete_image_async() -> bool:
             repo_path = f'{self.repo}/{sub_repo}'
-            token, _ = RepoToken.get_or_create(path=repo_path)
+            token, _ = RepoToken.get_or_create(registry=self, path=repo_path)
             headers = {**DOCKER_HEADERS, 'Authorization': f"Bearer {token.token}"}
             try:
                 async with httpx.AsyncClient(headers=headers) as client:
@@ -125,13 +129,14 @@ class ContainerRegistry(models.Model):
 
 
 class RepoToken(models.Model):
+    registry = models.ForeignKey(ContainerRegistry, on_delete=models.CASCADE, related_name='tokens')
     path = models.TextField()
     token = models.TextField()
     expires_at = models.DateTimeField()
 
     @classmethod
-    def get_or_create(cls, path):
-        token, created = cls.objects.get_or_create(path=path)
+    def get_or_create(cls, registry, path):
+        token, created = cls.objects.get_or_create(registry=registry, path=path)
         if token.expires_at <= timezone.now():
             token.renew()
         return token, created
@@ -147,4 +152,18 @@ class RepoToken(models.Model):
     def save(self, *args, **kwargs):
         if not self.token:
             self.generate()
+        return super().save(*args, **kwargs)
+
+
+class RegistryWebhook(models.Model):
+    registry = models.ForeignKey(ContainerRegistry, on_delete=models.CASCADE, related_name='webhooks')
+    target = models.TextField()
+    action = models.CharField(max_length=16)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    content = models.JSONField()
+
+    def save(self, *args, **kwargs):
+        repo, target = kwargs['repository'].split('/', 1)
+        self.registry = ContainerRegistry.objects.get(repo=repo)
+        self.target = target
         return super().save(*args, **kwargs)
