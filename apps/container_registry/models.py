@@ -3,7 +3,7 @@ import logging
 
 import httpx
 
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from django.db import models
 from django.utils import timezone
 
@@ -39,8 +39,10 @@ class ContainerRegistry(models.Model):
 
     @property
     def last_pushed_at(self):
-        w_hook = self.webhooks.filter(action='push')
-        return w_hook.last().timestamp if w_hook.exists() else None
+        try:
+            return self.webhooks.filter(action='push').latest('timestamp').timestamp
+        except RegistryWebhook.DoesNotExist:
+            return None
 
     def info(self):
         return {
@@ -61,10 +63,10 @@ class ContainerRegistry(models.Model):
 
             for sub in sub_repos:
                 repo_path = f'{self.repo}/{sub}'
-                token, _ = RepoToken.get_or_create(path=repo_path)
+                token, _ = await sync_to_async(RepoToken.get_or_create)(registry=self, path=repo_path)
                 headers = {**DOCKER_HEADERS, 'Authorization': f"Bearer {token.token}"}
                 try:
-                    async with httpx.AsyncClient(headers=headers) as client:
+                    async with httpx.AsyncClient(headers=headers, verify=False) as client:
                         item = {
                             'sub': sub,
                             'tags': [],
@@ -83,7 +85,7 @@ class ContainerRegistry(models.Model):
                                     'digest': config.get('digest', ''),
                                 })
                                 item['size'] += size
-                        result.append(item)
+                            result.append(item)
 
                 except Exception as e:
                     logging.exception(e)
@@ -94,24 +96,24 @@ class ContainerRegistry(models.Model):
         resp = async_to_sync(stat_async)()
         return resp
 
-    def delete_image(self, sub_repo, tag) -> bool:
+    def delete_image(self, image, tag) -> bool:
         if not self.state == 'active':
             return False
 
         async def delete_image_async() -> bool:
-            repo_path = f'{self.repo}/{sub_repo}'
-            token, _ = RepoToken.get_or_create(registry=self, path=repo_path)
+            repo_path = f'{self.repo}/{image}'
+            token, _ = await sync_to_async(RepoToken.get_or_create)(registry=self, path=repo_path)
             headers = {**DOCKER_HEADERS, 'Authorization': f"Bearer {token.token}"}
             try:
-                async with httpx.AsyncClient(headers=headers) as client:
-                    manifest = await get_manifest(client, sub_repo, tag)
+                async with httpx.AsyncClient(headers=headers, verify=False) as client:
+                    manifest = await get_manifest(client, repo_path, tag)
                     digests = get_blob_digests(manifest)
 
-                    blob_tasks = [delete_blob(client, sub_repo, digest) for digest in digests]
+                    blob_tasks = [delete_blob(client, repo_path, digest) for digest in digests]
                     await asyncio.gather(*blob_tasks)
 
                     response = await client.delete(
-                        f"https://{env.registry_domain}/v2/{sub_repo}/manifests/{manifest.get('reference')}")
+                        f"https://{env.registry_domain}/v2/{repo_path}/manifests/{manifest.get('reference')}")
 
                     return response.status_code == 202
             except Exception as e:
@@ -162,10 +164,3 @@ class RegistryWebhook(models.Model):
     action = models.CharField(max_length=16)
     timestamp = models.DateTimeField(auto_now_add=True)
     content = models.JSONField()
-
-    def save(self, *args, **kwargs):
-        repo, target = kwargs['repository'].split('/', 1)
-        self.registry = ContainerRegistry.objects.get(repo=repo)
-        self.target = target
-        del kwargs['repository']
-        return super().save(*args, **kwargs)
