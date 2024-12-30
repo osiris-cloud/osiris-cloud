@@ -9,7 +9,6 @@ from .models import ContainerRegistry
 from ..k8s.models import Namespace
 
 from core.utils import success_message, error_message
-from core.utils import serialize_obj
 from .utils import validate_registry_spec, validate_registry_update_spec
 from ..users.utils import get_default_ns
 
@@ -24,7 +23,7 @@ def name_check(request):
     try:
         repo_name = request.data.get('repo', '').strip()
         if not repo_name:
-            return JsonResponse(error_message('Slug is required'), status=400)
+            return JsonResponse(error_message('Repo name is required'), status=400)
 
         return JsonResponse(
             success_message("Check availability", {
@@ -123,9 +122,12 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 if not valid:
                     return JsonResponse(error_message(err), status=400)
 
-                if name := cr_data.get('name'):
+                name = cr_data.get('name')
+                r_pub = cr_data.get('public')
+
+                if name is not None:
                     cr.name = name
-                if r_pub := cr_data.get('public'):
+                if r_pub is not None:
                     cr.public = r_pub
 
                 cr.save()
