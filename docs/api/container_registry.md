@@ -147,7 +147,7 @@ Parameters:
 Sample Request:
 
 ```bash
-curl -X DELETE "https://osiriscloud.io/api/container-registry/default/myapp2" -H "Authorization: Token <token>"
+curl -X DELETE "https://osiriscloud.io/api/container-registry/default/01941953-2761-7273-8d6f-d4c63b2c7609" -H "Authorization: Token <token>"
 ```
 
 Sample Output:
