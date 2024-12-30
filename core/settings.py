@@ -15,9 +15,9 @@ DEBUG = str2bool(os.environ.get('DEBUG'))
 if DEBUG is None:
     DEBUG = True
 
-print(f'# DEBUG MODE -> {DEBUG}')
+print(f'# APP MODE -> {'DEVELOPMENT' if DEBUG else "PRODUCTION"}')
 
-if DEBUG == False:
+if not DEBUG:
     import sentry_sdk
 
     sentry_sdk.init(
@@ -104,7 +104,8 @@ class Env:
         if os.path.exists(registry_signing_key_path):
             self.registry_signing_key = load_file(registry_signing_key_path, 'rb')
         else:
-            self.registry_signing_key = load_file_from_s3(self.registry_key_obj_path, self.aws_access_key, self.aws_secret_key)
+            self.registry_signing_key = load_file_from_s3(self.registry_key_obj_path, self.aws_access_key,
+                                                          self.aws_secret_key)
 
         if self.registry_signing_key:
             self.registry_kid = generate_kid(self.registry_signing_key, 'RSA')
@@ -114,8 +115,12 @@ class Env:
 env = Env()
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
-ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io', 'localhost', 'docker.for.win.localhost']
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://osiriscloud.io', 'https://staging.osiriscloud.io']
+
+ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io'] if not DEBUG else ['*']
+
+CSRF_TRUSTED_ORIGINS = ['https://osiriscloud.io', 'https://staging.osiriscloud.io']
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS.append('http://localhost:8000')
 
 with open('version.txt', 'r') as f:
     VER = f.read().strip()
@@ -210,7 +215,7 @@ TEMPLATES = [
 
 DATABASE_CONNECTION_POOLING = False
 
-if DEBUG == False:
+if not DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -219,6 +224,8 @@ if DEBUG == False:
             'PASSWORD': os.getenv('DB_PASS'),
             'HOST': os.getenv('DB_HOST'),
             'PORT': os.getenv('DB_PORT'),
+            'CONN_MAX_AGE': 300,
+            'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             },
@@ -254,7 +261,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-################# Celery Settings #######
+################# Celery Settings #################
 CELERY_BROKER_URL = env.rabbitmq_url
 CELERY_RESULT_BACKEND = "django-db"
 
@@ -270,17 +277,8 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'EST'
 CELERY_TASK_ALWAYS_EAGER = DEBUG  # Setting this to True will run tasks synchronously and block the main thread
-########################################
+###################################################
 
-
-# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', True)
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', )
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -296,8 +294,3 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'apps.api.exceptions.exception_processor',
 }
-
-# REST_FRAMEWORK = {
-#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-#     'PAGE_SIZE': 20
-# }
