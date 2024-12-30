@@ -6,7 +6,7 @@ from . import webhooks
 
 urlpatterns = [
     path('/authz', authz.registry_auth, name='registry_auth'),
-    path('/webhook', webhooks.registry_webhook, name='registry_webhook'),
+    path('/notify', webhooks.registry_webhook, name='registry_webhook'),
     re_path(r'^(/(?P<nsid>[0-9a-zA-Z_-]+))?$', views.container_registry, name='container_registry'),
     re_path(r'^(/(?P<nsid>[0-9a-zA-Z_-]+)/create)$', views.container_registry_create, name='container_registry_create'),
     re_path(r'^(/(?P<nsid>[0-9a-zA-Z_-]+)/(?P<crid>[0-9a-zA-Z_-]+))$', views.container_registry_view,
