@@ -1,7 +1,6 @@
 import logging
 
 from django.http import JsonResponse
-from django.http import HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from base64 import b64decode
@@ -21,9 +20,6 @@ def registry_auth(request):
     If public repo, it skips checking for authorization and generate a token with only pull permissions
     """
     auth_header = request.headers.get('Authorization', '')
-
-    if not auth_header.startswith('Basic '):
-        return HttpResponseRedirect('/')
 
     def decode_creds() -> tuple[str, str]:
         try:
@@ -60,11 +56,12 @@ def registry_auth(request):
 
             repo = ContainerRegistry.objects.get(repo=r_name)
 
-            if repo.public:
+            auth_valid, key, err = check_auth()
+
+            if repo.public and not auth_valid:
                 token = generate_auth_token('repository', repo_path, ['pull'])
             else:
-                valid, key, err = check_auth()
-                if not valid:
+                if not auth_valid:
                     return JsonResponse({'errors': [{'code': 'UNAUTHORIZED', 'message': err}]}, status=401)
 
                 ns_role = repo.get_role(key.user)
@@ -73,8 +70,8 @@ def registry_auth(request):
 
         # Authentication
         else:
-            valid, _, err = check_auth()
-            if not valid:
+            auth_valid, _, err = check_auth()
+            if not auth_valid:
                 return JsonResponse({'errors': [{'code': 'UNAUTHORIZED', 'message': err}]}, status=401)
 
             token = generate_auth_token()
@@ -86,9 +83,7 @@ def registry_auth(request):
         })
 
     except (AccessToken.DoesNotExist, ContainerRegistry.DoesNotExist):
-        return JsonResponse({
-            'errors': [{'code': 'UNAUTHORIZED', 'message': 'Permission denied'}]
-        }, status=401)
+        return JsonResponse({'errors': [{'code': 'UNAUTHORIZED', 'message': 'Permission denied'}]}, status=401)
 
     except Exception as e:
         logging.exception(e)
