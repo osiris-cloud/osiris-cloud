@@ -5,8 +5,6 @@ from django.http import HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from base64 import b64decode
-from datetime import datetime
-from datetime import UTC
 
 from core.utils import error_message
 from ..api.models import AccessToken
@@ -38,12 +36,12 @@ def registry_auth(request):
     def check_auth() -> tuple[bool, [AccessToken | None], [str | None]]:
         try:
             user, psw = decode_creds()
-            key_ = AccessToken.objects.get(token=psw)
-            if not key_ or user != 'osiris':
+            _key = AccessToken.objects.get(key=psw)
+            if not _key or user != 'osiris':
                 return False, None, 'Permission denied'
-            if not any(scope_ in ('container-registry', 'global') for scope_ in key.scopes):
-                return False, key_, 'Token has inadequate permissions'
-            return True, key_, None
+            if not any(_scope in ('container-registry', 'global') for _scope in _key.scopes):
+                return False, _key, 'Token has inadequate permissions'
+            return True, _key, None
         except AccessToken.DoesNotExist:
             return False, None, 'Permission denied'
 
@@ -51,8 +49,7 @@ def registry_auth(request):
         # Authorization
         if scope := request.GET.get('scope'):
             r_type, r_name, r_actions = scope.split(':')
-            r_name = r_name.split('/')[0]
-            sub_repo = r_name.split('/')[1] if '/' in r_name else None
+            r_name, sub_repo = r_name.split('/', 1)
             repo_path = f'{r_name}/{sub_repo}' if sub_repo else r_name
 
             if r_type not in ('repository', 'catalog'):
@@ -86,7 +83,6 @@ def registry_auth(request):
             'token': token,
             'access_token': token,
             'expires_in': 3600,
-            'issued_at': datetime.now(UTC).isoformat() + 'Z'
         })
 
     except (AccessToken.DoesNotExist, ContainerRegistry.DoesNotExist):
