@@ -21,6 +21,8 @@ kubeconfig
 kubeconfig.yaml
 seed/kubeconfig.yaml
 
+registry.key
+
 _testing
 
 db.sqlite3

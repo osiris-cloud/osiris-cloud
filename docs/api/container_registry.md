@@ -23,27 +23,20 @@ Sample Output:
 
 ```json
 {
-  "status": "success",
-  "message": "Get container registry",
-  "nsid": "fb123-ghn5",
-  "registries": [
-    {
-      "name": "CSAW Prod",
-      "crid": "b4342907-4bbc-4c92-b675-30d86bf6791e",
-      "created_at": "19:47:02, Thu 15 Aug 2024",
-      "updated_at": "19:47:02, Thu 15 Aug 2024",
-      "url": "csaw.registry.osiriscloud.io",
-      "state": "active"
-    },
-    {
-      "name": "CSAW Test",
-      "crid": "92680506-381a-4958-9f2e-a441b9379437",
-      "created_at": "19:17:09, Thu 15 Aug 2024",
-      "updated_at": "19:17:09, Thu 15 Aug 2024",
-      "url": "csaw-test.registry.osiriscloud.io",
-      "state": "active"
-    }
-  ]
+    "status": "success",
+    "registries": [
+        {
+            "crid": "019415d1-9a35-7ae1-9515-21c7531eb412",
+            "name": "Joe's Registry",
+            "url": "registry.osiriscloud.io/joe",
+            "public": false,
+            "last_pushed_at": "2024-12-30T20:28:25.040Z",
+            "created_at": "2024-12-30T04:27:25.621Z",
+            "updated_at": "2024-12-30T20:41:19.210Z",
+            "state": "active"
+        }
+    ],
+    "message": "Get registry"
 }
 ```
 
@@ -62,16 +55,16 @@ Parameters:
 Request body parameters:
 
 - `name` (string, required): Name of the container registry.
-- `slug` (string, required): unique identifier for the container registry. This will be used to generate the URL.
-- `password` (string, required): Password for the container registry.
+- `repo_name` (string, required): unique identifier for the container registry. This will be used to generate the URL.
+- `public` (bool, optional): If `true`, the registry will allow pulling images without authentication. Default is `false`.
 
 Sample Input:
 
 ```json
 {
-  "name": "CSAW Prod",
-  "slug": "csaw",
-  "password": "password"
+  "name": "CSAW",
+  "repo_name": "csaw",
+  "public": true
 }
 ```
 
@@ -79,13 +72,18 @@ Sample Output:
 
 ```json
 {
-  "status": "success",
-  "name": "CSAW Test",
-  "crid": "92680506-381a-4958-9f2e-a441b9379437",
-  "created_at": "19:17:09, Thu 15 Aug 2024",
-  "updated_at": "19:17:09, Thu 15 Aug 2024",
-  "url": "csaw-test.registry.osiriscloud.io",
-  "state": "creating"
+    "status": "success",
+    "registry": {
+        "crid": "01941953-2761-7273-8d6f-d4c63b2c7609",
+        "name": "CSAW",
+        "url": "registry.osiriscloud.io/csaw",
+        "public": true,
+        "last_pushed_at": null,
+        "created_at": "2024-12-30T20:47:47.552Z",
+        "updated_at": "2024-12-30T20:47:47.552Z",
+        "state": "active"
+    },
+    "message": "Create registry"
 }
 ```
 
@@ -105,14 +103,14 @@ Parameters:
 Request body parameters:
 
 - `name` (object, optional): Name of the container registry.
-- `password` (string, optional): Password for the container registry.
+- `public` (string, optional): Password for the container registry.
 
 Sample Input:
 
 ```json
 {
   "name": "CSAW",
-  "password": "password"
+  "public": false
 }
 ```
 
@@ -120,13 +118,18 @@ Sample Output:
 
 ```json
 {
-  "status": "success",
-  "name": "CSAW Test",
-  "crid": "92680506-381a-4958-9f2e-a441b9379437",
-  "created_at": "19:17:09, Thu 15 Aug 2024",
-  "updated_at": "19:20:05, Thu 15 Aug 2024",
-  "url": "csaw-test.registry.osiriscloud.io",
-  "state": "active"
+    "status": "success",
+    "registry": {
+        "crid": "01941953-2761-7273-8d6f-d4c63b2c7609",
+        "name": "CSAW",
+        "url": "registry.osiriscloud.io/csaw",
+        "public": false,
+        "last_pushed_at": null,
+        "created_at": "2024-12-30T20:47:47.552Z",
+        "updated_at": "2024-12-30T20:51:38.862Z",
+        "state": "active"
+    },
+    "message": "Update registry"
 }
 ```
 
@@ -144,7 +147,7 @@ Parameters:
 Sample Request:
 
 ```bash
-curl -X DELETE "https://osiriscloud.io/api/container-registry/default/myapp2" -H "Authorization: Token <token>"
+curl -X DELETE "https://osiriscloud.io/api/container-registry/default/01941953-2761-7273-8d6f-d4c63b2c7609" -H "Authorization: Token <token>"
 ```
 
 Sample Output:
@@ -152,8 +155,7 @@ Sample Output:
 ```json
 {
   "status": "success",
-  "message": "Delete container registry",
-  "crid": "92680506-381a-4958-9f2e-a441b9379437"
+  "message": "Delete registry"
 }
 ```
 
@@ -167,11 +169,11 @@ Returns: `application/json`
 
 Request body parameters:
 
-- `slug` (string, required): unique identifier for the container registry. This will be used to generate the URL.
+- `repo` (string, required): unique identifier for the container registry. This will be used to generate the URL.
 
 Response body parameters:
 
-- `available` (bool, required): If `true`, the slug is available.
+- `available` (bool): If `true`, the slug is available.
 
 ### Stat [/container-registry/{nsid}/{crid}/stat]
 
@@ -183,40 +185,32 @@ Sample Output:
 
 ```json
 {
-  "status": "success",
-  "stats": [
-    {
-      "repo": "ubuntu",
-      "tags": [
+    "status": "success",
+    "stats": [
         {
-          "name": "latest",
-          "size": 30613777,
-          "digest": "sha256:61b2756d6fa9d6242fafd5b29f674404779be561db2d0bd932aa3640ae67b9e1"
+            "sub": "alpine",
+            "tags": [
+                {
+                    "name": "latest",
+                    "size": 3645024,
+                    "digest": "sha256:4048db5d36726e313ab8f7ffccf2362a34cba69e4cdd49119713483a68641fce"
+                }
+            ],
+            "size": 3645024
+        },
+        {
+            "sub": "nginx",
+            "tags": [
+                {
+                    "name": "latest",
+                    "size": 72937963,
+                    "digest": "sha256:3b25b682ea82b2db3cc4fd48db818be788ee3f902ac7378090cf2624ec2442df"
+                }
+            ],
+            "size": 72937963
         }
-      ],
-      "size": 30613777
-    }
-  ],
-  "message": "Get registry stat"
-}
-```
-
-### Get Credentials [/container-registry/{nsid}/{crid}/creds]
-
-Method: `POST`
-
-Returns: `application/json`
-
-Sample Output:
-
-```json
-{
-  "status": "success",
-  "creds": {
-    "username": "osiris",
-    "password": "b4ozaBZeLbf1G8l1QYTKf1oEEvm68b7w"
-  },
-  "message": "Get login"
+    ],
+    "message": "Get registry stat"
 }
 ```
 

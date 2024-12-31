@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from datetime import datetime
 
 from .models import AccessToken
-from ..k8s.constants import ACCESS_SCOPES
+from ..k8s.constants import ACCESS_SUB_SCOPES
 
 from core.utils import success_message, error_message
 from .utils import validate_create_token
@@ -20,7 +20,7 @@ def root(request):
 @api_view(['GET', 'PUT', 'DELETE'])
 def tokens(request, key_id=None):
     if request.method == 'GET':
-        keys = AccessToken.objects.filter(user=request.user, system_use=False)
+        keys = AccessToken.objects.filter(user=request.user)
         return JsonResponse(success_message('Get access keys', {
             'keys': [key.info() for key in keys],
         }))
@@ -36,6 +36,7 @@ def tokens(request, key_id=None):
             user=request.user,
             name=request.data['name'],
             scopes=['global'] if 'global' in request.data['scopes'] else request.data['scopes'],
+            attributes=request.data.get('sub_scope', {}),
             can_write=request.data['can_write'],
             expiration=datetime.fromisoformat(exp) if exp is not None else None,
         )
@@ -48,7 +49,7 @@ def tokens(request, key_id=None):
         if key_id is None:
             return JsonResponse(error_message('Key is required'), status=400)
 
-        token = AccessToken.objects.filter(user=request.user, keyid=key_id, system_use=False).first()
+        token = AccessToken.objects.filter(user=request.user, keyid=key_id).first()
         if token is None:
             return JsonResponse(error_message('Key not found'), status=404)
 
@@ -60,5 +61,5 @@ def tokens(request, key_id=None):
 def access_key_scopes(request):
     return JsonResponse({
         'status': 'success',
-        'scopes': ACCESS_SCOPES,
+        'scopes': ACCESS_SUB_SCOPES,
     })

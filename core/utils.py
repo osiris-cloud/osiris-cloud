@@ -1,3 +1,4 @@
+import hashlib
 import random
 import string
 import boto3
@@ -6,6 +7,10 @@ from datetime import datetime
 from django.utils import timezone
 from django.core import serializers as django_serializers
 from pytz import timezone as pytz_timezone
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+from base64 import b32encode
 
 
 def success_message(message: str = '', data: dict | None = None) -> dict:
@@ -49,7 +54,7 @@ def deserialize_obj(obj):
     return list(django_serializers.deserialize('json', obj))[0].object
 
 
-def get_s3_file_contents(object_path, access_key, secret_key) -> str | None:
+def load_file_from_s3(object_path, access_key, secret_key) -> str | None:
     try:
         s3_client = boto3.client('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key)
         bucket_name, object_key = object_path.split('/', 1)
@@ -58,3 +63,54 @@ def get_s3_file_contents(object_path, access_key, secret_key) -> str | None:
         return file_contents
     except:
         return None
+
+
+def load_file(file_path, mode='r') -> str | None:
+    try:
+        with open(file_path, mode) as file:
+            return file.read()
+    except:
+        return None
+
+
+def generate_kid(private_key_data: bytes | str, key_type) -> str:
+    """
+    Generates a unique identifier (KID) from a private key file.
+    """
+
+    if isinstance(private_key_data, str):
+        private_key_data = bytes(private_key_data, encoding='utf-8')
+    public_key = None
+
+    try:
+        if key_type == 'EC':
+            private_key = serialization.load_pem_private_key(
+                private_key_data,
+                password=None,
+                backend=default_backend()
+            )
+            public_key = private_key.public_key().public_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+
+        elif key_type == 'RSA':
+            private_key = serialization.load_pem_private_key(
+                private_key_data,
+                password=None,
+                backend=default_backend()
+            )
+            public_key = private_key.public_key().public_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+
+        algorithm = hashlib.sha256()
+        algorithm.update(public_key)
+
+        encoded = b32encode(algorithm.digest()[:30]).decode('ascii').rstrip("=")
+
+        return ':'.join(encoded[i:i + 4] for i in range(0, len(encoded), 4))
+
+    except Exception as e:
+        raise ValueError(f"Failed to generate KID: {str(e)}")

@@ -18,7 +18,7 @@ def exception_processor(exc, context):
 
         response.data = {
             'status': 'error',
-            'message': str(detail)
+            'message': (str(detail)).rstrip('.'),
         }
 
     else:
@@ -31,7 +31,7 @@ def exception_processor(exc, context):
         else:
             response = Response({
                 'status': 'error',
-                'message': str(exc) if str(exc) else 'Internal server error'
+                'message': (str(exc)).rstrip('.') if str(exc) else 'Internal server error'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return response

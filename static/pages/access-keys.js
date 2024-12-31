@@ -2,12 +2,15 @@ let accessModal;
 let $accessKeyModal = $('#access-key-modal');
 let $keyName = $('#access-key-name');
 let $keyScopes = $('#key-scopes');
+let $subScopesTemplate = $('#sub-scopes');
 let $keyWrite = $('#access-key-write');
 let $keyExpiration = $('#key-expiration');
 let $keySubmitButton = $('#access-key-submit')
 
 let $keysTable = $('#keys-table');
 let $keysTableBody = $keysTable.find('tbody');
+
+let ACCESS_SUB_SCOPES;
 window.addEventListener('load', function () {
     accessModal = FlowbiteInstances.getInstance('Modal', 'access-key-modal');
     accessModal._options.onShow = function () {
@@ -33,10 +36,29 @@ $keySubmitButton.click(() => {
         Alert('Key name cannot be empty');
         return;
     }
-    if ($keyScopes.val().length === 0) {
+
+    const selectedScopes = $keyScopes.val();
+
+    if (selectedScopes.length === 0) {
         Alert('Scope cannot be empty');
         return;
     }
+
+    let scopesWithSubScopes = {};
+
+    for (const scope of selectedScopes) {
+        const subScopes = ACCESS_SUB_SCOPES[scope];
+        if (subScopes && subScopes.length > 0) {
+            const $subScopeSelect = $(`#${scope}-sub-scope`);
+            const selectedSubScopes = $subScopeSelect.val();
+            if (!selectedSubScopes || selectedSubScopes.length === 0) {
+                Alert(`Please select at least one sub scope for ${formatReadable(scope)}`);
+                return;
+            }
+            scopesWithSubScopes[scope] = selectedSubScopes;
+        }
+    }
+
     let keyExpiration = null
     if ($keyExpiration.val() !== 'null') {
         const currentDate = new Date();
@@ -53,10 +75,11 @@ $keySubmitButton.click(() => {
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
         data: JSON.stringify({
-            name: $keyName.val(),
-            scopes: $keyScopes.val(),
-            can_write: $keyWrite.is(':checked'),
-            expiration: keyExpiration
+            'name': $keyName.val(),
+            'scopes': $keyScopes.val(),
+            'sub_scope': scopesWithSubScopes,
+            'can_write': $keyWrite.is(':checked'),
+            'expiration': keyExpiration
         }),
         success: (resp) => {
             accessModal.hide();
@@ -95,18 +118,17 @@ function createKeyTableEntry(data) {
         scope: 'row', class: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white', text: data.name
     }));
     $row.append($('<td/>', {
-        class: 'px-6 py-4', text: normalizeTime(data.created_at)
+        class: 'px-6 py-4', text: normalizeTime(data.created_at, true)
     }));
     $row.append($('<td/>', {
         class: 'px-6 py-4', text: normalizeTime(data.expiration)
     }));
     $row.append($('<td/>', {
-        class: 'px-6 py-4', text: normalizeTime(data.last_used)
+        class: 'px-6 py-4', text: normalizeTime(data.last_used, true)
     }));
-
-    let scopes = data.scopes.map(scope => scope.replace('-', ' ').split(' ').map(word => capitalize(word)).join(' '));
-    let $scopes = scopes.map(scope => $('<div/>', {text: scope}));
-
+    let $scopes = data.scopes.map(scope => $('<div/>', {
+        text: formatReadable(scope + (data.sub_scope[scope] ? `: ${data.sub_scope[scope]}` : '')),
+    }));
     $row.append($('<td/>', {
         class: 'px-6 py-4',
     }).append($scopes));
@@ -173,9 +195,45 @@ function loadAccessScopes() {
         type: 'GET',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         success: function (data) {
-            data.scopes.forEach((scope) => {
-                let scopeReadable = scope.replace('-', ' ').split(' ').map(word => capitalize(word)).join(' ');
+            ACCESS_SUB_SCOPES = data.scopes;
+            Object.keys(ACCESS_SUB_SCOPES).forEach((scope) => {
+                let scopeReadable = formatReadable(scope);
                 $('#key-scopes').append(`<option value="${scope}">${scopeReadable}</option>`);
+            });
+
+            // Handle sub-scopes when main scope is selected
+            $('#key-scopes').on('change', function () {
+                $('.sub-scope-container').remove();
+                const selectedScopes = $(this).val();
+
+                selectedScopes.forEach((scope) => {
+                    const subScopes = ACCESS_SUB_SCOPES[scope];
+
+                    // Only create sub-scope selection if there are sub-scopes
+                    if (subScopes && subScopes.length > 0) {
+                        const clone = $subScopesTemplate.contents().clone(true);
+                        const scopeId = `${scope}-sub-scope`;
+                        const label = clone.find('label');
+                        const select = clone.find('select');
+
+                        label.attr('for', scopeId);
+                        label.text(`Sub Scope (${formatReadable(scope)})`);
+                        select.attr('id', scopeId);
+
+                        subScopes.forEach((subScope) => {
+                            $('<option>', {
+                                value: subScope,
+                                text: formatReadable(subScope)
+                            }).appendTo(select);
+                        });
+
+                        const container = $('<div>', {
+                            class: 'sub-scope-container mt-4'
+                        }).append(clone);
+
+                        $('#key-scopes').parent().after(container);
+                    }
+                });
             });
         }
     });
@@ -185,3 +243,8 @@ const tooltipHTML = `<div id="key-tooltip" role="tooltip" class="absolute z-10 i
                           text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm 
                           opacity-0 tooltip dark:bg-gray-700"><span>Click to Copy</span><div class="tooltip-arrow" 
                           data-popper-arrow></div></div>`
+
+const formatReadable = s => s.replaceAll('-', ' ')
+    .split(' ')
+    .map(word => capitalize(word))
+    .join(' ');

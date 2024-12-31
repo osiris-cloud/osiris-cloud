@@ -1,78 +1,63 @@
-<style>
-    .grid-con {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: auto;
-        grid-column-gap: 20px;
-        grid-row-gap: 35px;
-        justify-items: stretch;
-        align-items: stretch;
-        overflow: hidden;
-    }
+<div class="flex flex-col bg-gray-50 bg-white dark:bg-gray-800 p-6 rounded-lg space-y-7">
 
-    .grid-item {
-        display: grid;
-        min-width: 200px;
-        grid-template-columns: 16em 20em;
-        grid-template-rows: 30px;
-        grid-column-gap: 20px;
-    }
-</style>
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+        <label for="registry-name" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+         flex-shrink-0 w-full md:w-40"
+        >
+            Registry Name
+        </label>
 
-
-<div class="px-4 pt-6 pb-1.5 rounded-lg bg-gray-50 bg-white dark:bg-gray-800">
-    <div class="grid-con mt-0.5">
-        <div class="grid-item">
-            <label for="registry-name"
-                   class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">Registry Name</label>
-            <input type="text" id="registry-name"
-                   class="h-8 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        <div class="relative flex-shrink-0 w-full md:w-auto">
+            <input id="registry-name" type="text"
+                   class="h-8 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
+                       focus:ring-blue-500 focus:border-blue-500 block w-full md:w-[23em] p-2.5 dark:bg-gray-700 
+                       dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 
+                       dark:focus:border-blue-500 cursor-text"
                    placeholder="Enter a name" required maxlength="64" minlength="1"
-            />
+            >
         </div>
+    </div>
 
-        <div class="grid-item mb-1.5">
-            <label for="registry-slug"
-                   class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">Registry URL</label>
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+        <label for="registry-slug" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+         flex-shrink-0 w-full md:w-40"
+        >
+            Repo Name
+        </label>
+
+        <div class="relative flex-shrink-0 w-full md:w-auto">
             <div>
                 <input type="text" id="registry-slug"
-                       class="h-8 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                       placeholder="Enter a slug between 3 and 32 chars" required maxlength="32" minlength="3"
-                />
+                       class="h-8 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
+                       focus:ring-blue-500 focus:border-blue-500 block w-full md:w-[23em] p-2.5 dark:bg-gray-700 
+                       dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 
+                       dark:focus:border-blue-500 cursor-text"
+                       placeholder="Enter minimum 3 characters" required maxlength="64" minlength="3"
+                >
                 <span id="registry-slug-availability" class="mt-1 text-xs"></span>
             </div>
         </div>
-
-        {#        <div class="grid-item mt-1">#}
-        {#            <label for="registry-public" class="block pt-1 mb-2 text-sm font-medium text-gray-900 dark:text-white">#}
-        {#                Public Repo#}
-        {#            </label>#}
-        {#            <div class="flex items-center mb-4">#}
-        {#                <label for="registry-public"></label>#}
-        {#                <input id="registry-public" type="checkbox"#}
-        {#                       class="w-4 h-4 mt-3.5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">#}
-        {#                <div class="inline-block ml-2 mt-3.5 text-sm text-gray-900 dark:dark:text-gray-100">#}
-        {#                    Do not require authentication to pull#}
-        {#                </div>#}
-        {#            </div>#}
-        {#        </div>#}
-
-        <div class="grid-item">
-            <label for="registry-password-1"
-                   class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
-                Login Password
-            </label>
-            <div>
-                <input type="text" id="registry-password"
-                       class="h-8 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                       placeholder="•••••••••••••" required/>
-                <span class="text-xs mt-5 text-gray-500 dark:text-gray-400">Login info can be viewed after creation</span>
-            </div>
-            <span id="generate-password" style="left: 670px;"
-                  class="pt-1.5 absolute text-primary-400 text-sm cursor-pointer hover:text-primary-500">[ Generate ]</span>
-        </div>
-        <div></div>
     </div>
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+        <label for="registry-public" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+         flex-shrink-0 w-full md:w-40"
+        >
+            Public Access
+        </label>
+
+        <div class="relative flex-shrink-0 w-full md:w-auto">
+            <div class="flex items-center">
+                <label for="registry-public"></label>
+                <input id="registry-public" type="checkbox"
+                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                <div class="inline-block ml-2 text-sm text-gray-900 dark:dark:text-gray-100">
+                    Allow pulling images without authentication
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <button type="button" id="registry-create"

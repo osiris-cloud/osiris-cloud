@@ -1,4 +1,4 @@
-from ..k8s.constants import ACCESS_SCOPES
+from ..k8s.constants import ACCESS_SCOPES, ACCESS_SUB_SCOPES
 from datetime import datetime, timezone
 
 
@@ -38,6 +38,21 @@ def validate_create_token(data: dict) -> tuple[bool, str | None]:
                 return False, "Expiration must be in the future"
         except ValueError:
             return False, "Expiration must be a string in ISO format"
+
+    attributes = data.get('sub_scope')
+    if attributes is not None and not isinstance(attributes, dict):
+        return False, "Sub Scope must be an object"
+
+    if attributes:
+        for scope, sub_scope in attributes.items():
+            if scope not in ACCESS_SCOPES:
+                return False, f"Invalid scope: {scope}"
+            if not isinstance(sub_scope, list):
+                return False, f"sub-scopes for {scope} must be an array"
+
+            valid_sub_scopes = ACCESS_SUB_SCOPES.get(scope)
+            if not all([sub in valid_sub_scopes for sub in sub_scope]):
+                return False, f"Invalid sub-scopes for {scope}"
 
     return True, None
 
