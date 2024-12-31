@@ -56,9 +56,15 @@ RESTART_POLICIES = {
     'never': 'Never'
 }
 
-ACCESS_SCOPES = ('global',
-                 'container-registry',
-                 'container-apps',
-                 'namespace',
-                 'secret-store',
-                 )
+ACCESS_SUB_SCOPES = {
+    'global': [],
+    'container-registry': [
+        'all',
+        'registry-login',
+    ],
+    'container-apps': [],
+    'namespace': [],
+    'secret-store': [],
+}
+
+ACCESS_SCOPES = tuple(ACCESS_SUB_SCOPES.keys())
