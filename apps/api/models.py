@@ -7,6 +7,7 @@ from binascii import hexlify
 from core.model_fields import UUID7StringField
 
 from .utils import extract_app_name
+from ..k8s.constants import ACCESS_SUB_SCOPES
 
 
 class AccessToken(models.Model):
@@ -28,6 +29,7 @@ class AccessToken(models.Model):
             'created_at': self.created,
             'last_used': self.last_used,
             'scopes': self.scopes,
+            'sub_scope': self.attributes,
             'can_write': self.can_write,
             'expiration': self.expiration,
         }
@@ -55,8 +57,13 @@ class AccessToken(models.Model):
         is_write_method = method in ('PUT', 'PATCH', 'DELETE')
         allowed = False
 
-        if ('global' in self.scopes) or (extract_app_name(url_path) in self.scopes):
+        app = extract_app_name(url_path)
+
+        if ('global' in self.scopes) or (app in self.scopes):
             allowed = True
+
+        if sub_scopes := self.attributes.get(app):
+            allowed = 'all' in sub_scopes
 
         return (allowed and self.can_write) if is_write_method else allowed
 
