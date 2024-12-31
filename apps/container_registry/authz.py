@@ -66,6 +66,10 @@ def registry_auth(request):
 
                 ns_role = repo.get_role(key.user)
                 allowed_actions = get_registry_permissions(ns_role)
+
+                if not key.can_write:
+                    allowed_actions = [a for a in allowed_actions if a != 'push']
+
                 token = generate_auth_token(r_type, repo_path, allowed_actions)
 
         # Authentication
