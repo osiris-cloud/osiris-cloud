@@ -15,7 +15,7 @@ def init_app(_):
                                       first_name='Osiris',
                                       last_name='Admin',
                                       email='infra@osiriscloud.io',
-                                      password=getenv('ADMIN_PASSWORD', 'admin'))
+                                      password=getenv('ADMIN_PASSWORD', 'osirisadmin'))
         actions.append('Admin user created')
 
     if not AccessToken.objects.filter(user__username='osirisadmin').exists():
