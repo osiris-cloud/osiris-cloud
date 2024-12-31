@@ -3,6 +3,7 @@ import logging
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.utils import timezone
 from base64 import b64decode
 
 from core.utils import error_message
@@ -37,6 +38,8 @@ def registry_auth(request):
                 return False, None, 'Permission denied'
             if not any(_scope in ('container-registry', 'global') for _scope in _key.scopes):
                 return False, _key, 'Token has inadequate permissions'
+            _key.last_used = timezone.now()
+            _key.save()
             return True, _key, None
         except AccessToken.DoesNotExist:
             return False, None, 'Permission denied'
