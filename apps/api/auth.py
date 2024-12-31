@@ -64,7 +64,7 @@ class AccessTokenOrIsAuthenticated(BasePermission):
                 return False
 
         # Allow access if user is authenticated through session
-        if request.user and request.user.is_authenticated and (not hasattr(request, 'auth') or request.auth is None):
+        if request.user.is_authenticated and (not hasattr(request, 'auth') or request.auth is None):
             return True
 
         # For token auth, check token permissions
