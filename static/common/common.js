@@ -65,9 +65,26 @@ function showNoResource(show = true) {
     }
 }
 
-function normalizeTime(time) {
+function normalizeTime(time, pretty = false) {
     if (!time) return 'None';
     const date = new Date(time);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (pretty && diffHours < 24) {
+        if (diffMinutes < 1) return 'Just now';
+        if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+        const hours = Math.floor(diffHours);
+        const decimalPart = diffHours - hours;
+        if (decimalPart > 0) {
+            const roundedHours = Math.round(diffHours * 10) / 10;
+            return `${roundedHours} hours ago`;
+        }
+        return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    }
+
     return date.toLocaleString(undefined, {
         year: "2-digit",
         month: "2-digit",
