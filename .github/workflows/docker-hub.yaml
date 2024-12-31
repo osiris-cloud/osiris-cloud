@@ -3,8 +3,6 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 env:
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
@@ -37,7 +35,7 @@ jobs:
         context: .
         push: true
         tags: |
-          ${{ env.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
-          ${{ env.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          osiriscloud/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          osiriscloud/${{ env.IMAGE_NAME }}:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max

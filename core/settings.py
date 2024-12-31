@@ -1,18 +1,13 @@
-"""
-https://docs.djangoproject.com/en/4.2/topics/settings/
-https://docs.djangoproject.com/en/4.2/ref/settings/
-https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-"""
-
 import os
-from pathlib import Path
+import logging
 
+from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 from str2bool import str2bool
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-import logging
+from .utils import load_file_from_s3, load_file, generate_kid
 
 load_dotenv(override=True if os.environ.get('DEBUG') is None else False)
 
@@ -20,9 +15,9 @@ DEBUG = str2bool(os.environ.get('DEBUG'))
 if DEBUG is None:
     DEBUG = True
 
-print(f'# DEBUG MODE -> {DEBUG}')
+print(f'# APP MODE -> {'DEVELOPMENT' if DEBUG else "PRODUCTION"}')
 
-if DEBUG == False:
+if not DEBUG:
     import sentry_sdk
 
     sentry_sdk.init(
@@ -67,7 +62,7 @@ class Env:
 
     aws_access_key = os.getenv('AWS_ACCESS_KEY')
     aws_secret_key = os.getenv('AWS_SECRET_KEY')
-    kubeconfig_object_path = os.getenv('KUBECONFIG_OBJECT_PATH')
+    kubeconfig_obj_path = os.getenv('KUBECONFIG_OBJECT_PATH')
 
     k8s_url = ''
     k8s_ws_url = ''
@@ -77,16 +72,19 @@ class Env:
     firewall_url = os.getenv('FIREWALL_URL')
 
     registry_domain = os.getenv('REGISTRY_DOMAIN', 'registry.osiriscloud.io')
+    registry_key_obj_path = os.getenv('REGISTRY_KEY_OBJECT_PATH')
+    registry_signing_key = ''
+    registry_kid = ''
+    registry_webhook_secret = os.getenv('REGISTRY_WEBHOOK_SECRET')
+
     container_apps_domain = os.getenv('CONTAINER_APPS_DOMAIN', 'poweredge.dev')
 
     def __post_init__(self):
         kubeconfig_path = os.path.join(BASE_DIR, 'kubeconfig.yaml')
         if os.path.exists(kubeconfig_path):
-            with open(kubeconfig_path, 'r') as file:
-                kubeconfig = file.read()
+            kubeconfig = load_file(kubeconfig_path, 'r')
         else:
-            from .utils import get_s3_file_contents
-            kubeconfig = get_s3_file_contents(self.kubeconfig_object_path, self.aws_access_key, self.aws_secret_key)
+            kubeconfig = load_file_from_s3(self.kubeconfig_obj_path, self.aws_access_key, self.aws_secret_key)
 
         if kubeconfig:
             from kubernetes import config
@@ -98,16 +96,31 @@ class Env:
             url = urlparse(self.k8s_url)
             self.k8s_ws_url = 'ws://' if url.scheme == 'http' else 'wss://' + url.netloc + url.path
             self.k8s_api_client = config.new_client_from_config_dict(k8s_config)
-            print('# Initialized k8s client.')
+            print('# Initialized k8s client')
         else:
-            print('# kubeconfig not found. k8s client not initialized.')
+            print('# kubeconfig not found. k8s client not initialized')
+
+        registry_signing_key_path = os.path.join(BASE_DIR, 'registry.key')
+        if os.path.exists(registry_signing_key_path):
+            self.registry_signing_key = load_file(registry_signing_key_path, 'rb')
+        else:
+            self.registry_signing_key = load_file_from_s3(self.registry_key_obj_path, self.aws_access_key,
+                                                          self.aws_secret_key)
+
+        if self.registry_signing_key:
+            self.registry_kid = generate_kid(self.registry_signing_key, 'RSA')
+            print('# Generated keyid from registry signing key')
 
 
 env = Env()
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
-ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io', 'localhost']
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://osiriscloud.io', 'https://staging.osiriscloud.io']
+
+ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io'] if not DEBUG else ['*']
+
+CSRF_TRUSTED_ORIGINS = ['https://osiriscloud.io', 'https://staging.osiriscloud.io']
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS.append('http://localhost:8000')
 
 with open('version.txt', 'r') as f:
     VER = f.read().strip()
@@ -200,25 +213,19 @@ TEMPLATES = [
     },
 ]
 
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-DB_USERNAME = os.getenv('DB_USER')
-DB_PASS = os.getenv('DB_PASS')
-DB_HOST = os.getenv('DB_HOST')
-DB_PORT = os.getenv('DB_PORT')
-DB_NAME = os.getenv('DB_NAME')
-
 DATABASE_CONNECTION_POOLING = False
 
-if DEBUG == False:
+if not DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': DB_NAME,
-            'USER': DB_USERNAME,
-            'PASSWORD': DB_PASS,
-            'HOST': DB_HOST,
-            'PORT': DB_PORT,
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASS'),
+            'HOST': os.getenv('DB_HOST'),
+            'PORT': os.getenv('DB_PORT'),
+            'CONN_MAX_AGE': 300,
+            'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             },
@@ -252,12 +259,9 @@ STATICFILES_DIRS = (
 MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-################# Celery Settings #######
+################# Celery Settings #################
 CELERY_BROKER_URL = env.rabbitmq_url
 CELERY_RESULT_BACKEND = "django-db"
 
@@ -273,34 +277,20 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'EST'
 CELERY_TASK_ALWAYS_EAGER = DEBUG  # Setting this to True will run tasks synchronously and block the main thread
-########################################
+###################################################
 
-
-# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', True)
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', )
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+        'apps.api.auth.AccessTokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'apps.api.auth.AccessTokenOrIsAuthenticated',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
-    'EXCEPTION_HANDLER': 'apps.api.exceptions.exceptions',
+    'EXCEPTION_HANDLER': 'apps.api.exceptions.exception_processor',
 }
-
-# REST_FRAMEWORK = {
-#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-#     'PAGE_SIZE': 20
-# }

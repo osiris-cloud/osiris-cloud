@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: osiris-cloud
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: osiris-cloud
+  template:
+    metadata:
+      labels:
+        app: osiris-cloud
+    spec:
+      containers:
+      - image: osiriscloud/osiris-cloud:latest
+        name: web-app
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        envFrom:
+        - secretRef:
+            name: doppler
+            optional: false
+        securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate

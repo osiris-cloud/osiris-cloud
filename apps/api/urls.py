@@ -17,7 +17,9 @@ from ..container_apps import api as container_apps_api
 
 root_urlpatterns = [
     path('', routes.root),
-    path('/token', routes.get_token),
+    path('/access-key', routes.tokens),
+    re_path(r'^/access-key/(?P<key_id>[^/]+)$', routes.tokens),
+    path('/access-key-scopes', routes.access_key_scopes),
 ]
 
 admin_urlpatterns = [
@@ -56,7 +58,8 @@ container_registry_urlpatterns = [
     re_path(r'^/container-registry/name-check$', registry_api.name_check),
     re_path(r'^/container-registry/(?P<nsid>[^/]+)$', registry_api.container_registry),
     re_path(r'^/container-registry/(?P<nsid>[^/]+)/(?P<crid>[^/]+)$', registry_api.container_registry),
-    re_path(r'^/container-registry/(?P<nsid>[^/]+)/(?P<crid>[^/]+)/(?P<action>[^/]+)$', registry_api.container_registry),
+    re_path(r'^/container-registry/(?P<nsid>[^/]+)/(?P<crid>[^/]+)/(?P<action>[^/]+)$',
+            registry_api.container_registry),
 ]
 
 container_apps_urlpatterns = [

@@ -5,6 +5,7 @@ R_STATES = (('creating', 'Resource is being created'),
             ('stopped', 'Resource is stopped'),
             ('error', 'Resource is in error'),
             ('zombie', 'Resource exists in database but in cluster'),
+            ('orphan', 'Resource exists in cluster but not in database'),
             )
 
 PVC_CONTAINER_MODES = (('', 'No Access'), ('ro', 'Read Only'), ('rw', 'Read Write'))
@@ -54,3 +55,16 @@ RESTART_POLICIES = {
     'on_failure': 'OnFailure',
     'never': 'Never'
 }
+
+ACCESS_SUB_SCOPES = {
+    'global': [],
+    'container-registry': [
+        'all',
+        'registry-login',
+    ],
+    'container-apps': [],
+    'namespace': [],
+    'secret-store': [],
+}
+
+ACCESS_SCOPES = tuple(ACCESS_SUB_SCOPES.keys())

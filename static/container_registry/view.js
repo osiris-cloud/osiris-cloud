@@ -2,31 +2,12 @@ const $imageTable = $('#registry-image-table');
 const $imageTableContainer = $('#registry-image-table-container');
 const $deleteRegistry = $('#delete-registry');
 
-function copyToClip(value, defaultIconId, successIconId, tooltipId) {
-    navigator.clipboard.writeText(value.trim());
-
-    if (!defaultIconId || !successIconId || !tooltipId) return;
-
-    $(`#${defaultIconId}`).addClass('hidden');
-    $(`#${successIconId}`).removeClass('hidden');
-
-    setTimeout(() => {
-        $(`#${tooltipId}`).addClass('hidden');
-    }, 100);
-
-    setTimeout(() => {
-        $(`#${defaultIconId}`).removeClass('hidden');
-        $(`#${successIconId}`).addClass('hidden');
-        $(`#${tooltipId}`).removeClass('hidden');
-    }, 1000);
-}
-
 function createImageTableEntry(repo, tag) {
     const $row = $('<tr/>', {
         class: 'bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700',
     });
     $row.append($('<th/>', {
-        scope: 'row', class: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white', text: repo.repo,
+        scope: 'row', class: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white', text: repo.sub,
     })).append($('<td/>', {
         class: 'px-6 py-4', text: tag.name,
     })).append($('<td/>', {
@@ -36,7 +17,7 @@ function createImageTableEntry(repo, tag) {
     }));
     const $deleteButton = $('<button/>', {
         class: 'font-medium text-red-600 dark:text-red-500 hover:underline', text: 'Delete', click: () => {
-            deleteImage(repo.repo, tag.name);
+            deleteImage(repo.sub, tag.name);
         }
     });
     $row.append($('<td/>', {class: 'px-6 py-4'}).append($deleteButton));

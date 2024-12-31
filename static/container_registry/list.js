@@ -6,7 +6,8 @@ function createTableEntry(registry) {
     let $row = $('<tr/>', {
         class: 'bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600',
         click: function () {
-            window.location.href = `/container-registry/${currentURL.nsid}/${registry.crid}`;
+            if (registry.state !== 'deleting')
+                window.location.href = `/container-registry/${currentURL.nsid}/${registry.crid}`;
         }
     });
     $row.append($('<th/>', {
@@ -14,14 +15,20 @@ function createTableEntry(registry) {
         class: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white',
         text: registry.name,
     })).append($('<td/>', {
-        class: 'px-6 py-4 dark:text-gray-50',
-    }).append(createStateBadge(registry.state)))
-        .append($('<td/>', {
-            class: 'px-6 py-4 dark:text-gray-50', text: normalizeTime(registry.created_at),
+            class: 'px-6 py-4 dark:text-gray-50', text: (registry.public) ? 'Public' : 'Private',
         }))
         .append($('<td/>', {
-        class: 'px-6 py-4 dark:text-gray-50', text: registry.url,
-    }));
+            class: 'px-6 py-4 dark:text-gray-50', text: normalizeTime(registry.created_at, true),
+        }))
+        .append($('<td/>', {
+            class: 'px-6 py-4 dark:text-gray-50', text: normalizeTime(registry.last_pushed_at, true),
+        }))
+        .append($('<td/>', {
+            class: 'px-6 py-4 dark:text-gray-50'
+        }).append($('<code/>', {
+            text: registry.url
+        }))
+        );
     return $row;
 }
 

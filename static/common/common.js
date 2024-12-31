@@ -1,6 +1,31 @@
+let $popupModal = $('#popup-modal');
+let $alertModal = $('#alert-modal');
+
 window.addEventListener('load', function () {
-    window.popupModal = FlowbiteInstances.getInstance('Modal', 'popup-modal');
-    window.alertModal = FlowbiteInstances.getInstance('Modal', 'alert-modal');
+    if ($('#popup-modal').length > 0)
+        window.popupModal = FlowbiteInstances.getInstance('Modal', 'popup-modal');
+    if ($('#alert-modal').length > 0)
+        window.alertModal = FlowbiteInstances.getInstance('Modal', 'alert-modal');
+    if (window.popupModal) {
+        popupModal._options.onShow = () => {
+            setTimeout(() => {
+                $popupModal.addClass('show');
+            }, 10);
+        }
+        popupModal._options.onHide = () => {
+            $popupModal.removeClass('show');
+        }
+    }
+    if (window.alertModal) {
+        alertModal._options.onShow = function () {
+            setTimeout(() => {
+                $alertModal.addClass('show');
+            }, 10);
+        };
+        alertModal._options.onHide = function () {
+            $alertModal.removeClass('show');
+        }
+    }
 });
 
 function parseURL() {
@@ -40,10 +65,28 @@ function showNoResource(show = true) {
     }
 }
 
-function normalizeTime(time) {
+function normalizeTime(time, pretty = false) {
+    if (!time) return 'None';
     const date = new Date(time);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (pretty && diffHours < 24) {
+        if (diffMinutes < 1) return 'Just now';
+        if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+        const hours = Math.floor(diffHours);
+        const decimalPart = diffHours - hours;
+        if (decimalPart > 0) {
+            const roundedHours = Math.round(diffHours * 10) / 10;
+            return `${roundedHours} hours ago`;
+        }
+        return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    }
+
     return date.toLocaleString(undefined, {
-        year: "numeric",
+        year: "2-digit",
         month: "2-digit",
         day: "2-digit",
         hour: "2-digit",
@@ -124,7 +167,7 @@ function Alert(message, callback = null, options = {}) {
     let $ok = $("#alert-ok");
     $ok.text(options.ok);
 
-    $("#alert-message").text(message);
+    $("#alert-message").html(message);
 
     if (options.icon === 'info') {
         $('#alert-icon-info').removeClass('hidden');
@@ -140,4 +183,23 @@ function Alert(message, callback = null, options = {}) {
         alertModal.hide();
         if (callback) callback();
     });
+}
+
+function copyToClip(value, defaultIconId, successIconId, tooltipId) {
+    navigator.clipboard.writeText(value.trim());
+
+    if (!defaultIconId || !successIconId || !tooltipId) return;
+
+    $(`#${defaultIconId}`).addClass('hidden');
+    $(`#${successIconId}`).removeClass('hidden');
+
+    setTimeout(() => {
+        $(`#${tooltipId}`).addClass('hidden');
+    }, 100);
+
+    setTimeout(() => {
+        $(`#${defaultIconId}`).removeClass('hidden');
+        $(`#${successIconId}`).addClass('hidden');
+        $(`#${tooltipId}`).removeClass('hidden');
+    }, 1000);
 }
