@@ -7,7 +7,6 @@ from binascii import hexlify
 from core.model_fields import UUID7StringField
 
 from .utils import extract_app_name
-from ..k8s.constants import ACCESS_SUB_SCOPES
 
 
 class AccessToken(models.Model):
