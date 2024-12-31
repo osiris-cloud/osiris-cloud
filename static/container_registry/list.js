@@ -18,10 +18,10 @@ function createTableEntry(registry) {
             class: 'px-6 py-4 dark:text-gray-50', text: (registry.public) ? 'Public' : 'Private',
         }))
         .append($('<td/>', {
-            class: 'px-6 py-4 dark:text-gray-50', text: normalizeTime(registry.created_at),
+            class: 'px-6 py-4 dark:text-gray-50', text: normalizeTime(registry.created_at, true),
         }))
         .append($('<td/>', {
-            class: 'px-6 py-4 dark:text-gray-50', text: normalizeTime(registry.last_pushed_at),
+            class: 'px-6 py-4 dark:text-gray-50', text: normalizeTime(registry.last_pushed_at, true),
         }))
         .append($('<td/>', {
             class: 'px-6 py-4 dark:text-gray-50'
