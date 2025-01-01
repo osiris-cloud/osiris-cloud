@@ -30,14 +30,14 @@ def container_apps_edit(request, nsid, appid):
     try:
         crid = UUID(appid)
     except ValueError:
-        return render(request, "404-app.html", status=404)
+        return render(request, "pages/404-app.html", status=404)
 
     cr = ContainerApp.objects.filter(crid=crid).first()
     if not cr:
-        return render(request, "404-app.html", status=404)
+        return render(request, "pages/404-app.html", status=404)
 
     if request.ns_role == 'viewer':
-        return render(request, "403-app.html", status=403)
+        return render(request, "pages/403-app.html", status=403)
 
     context = {
         'segment': ['container_apps', 'edit'],
@@ -53,11 +53,11 @@ def container_apps_view(request, nsid, appid):
     try:
         crid = UUID(appid)
     except ValueError:
-        return render(request, "404-app.html", status=404)
+        return render(request, "pages/404-app.html", status=404)
 
     cr = ContainerApp.objects.filter(crid=crid).first()
     if not cr:
-        return render(request, "404-app.html", status=404)
+        return render(request, "pages/404-app.html", status=404)
 
     context = {
         'segment': ['container_apps', 'view'],

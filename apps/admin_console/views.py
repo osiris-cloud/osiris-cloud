@@ -35,7 +35,7 @@ def dashboard(request):
             'segment': ['dashboard'],
         })
 
-    return render(request, '403-admin.html')
+    return render(request, 'pages/403-admin.html')
 
 
 @login_required
@@ -50,4 +50,4 @@ def users(request):
             'segment': ['users'],
             'page_obj': page_obj,
         })
-    return render(request, '403-admin.html')
+    return render(request, 'pages/403-admin.html')
