@@ -44,8 +44,9 @@ def namespaced(view_func):
             else:
                 return render(request, "pages/404-app.html", status=404)
 
-        ns = Namespace.objects.filter(nsid=nsid).first()
-        if not ns:
+        try:
+            ns = Namespace.objects.get(nsid=nsid)
+        except Namespace.DoesNotExist:
             return render(request, "pages/404-app.html", status=404)  # Render 404 if namespace is not found
 
         role = ns.get_role(request.user)
