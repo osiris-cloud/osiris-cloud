@@ -95,6 +95,13 @@ function normalizeTime(time, pretty = false) {
     });
 }
 
+function timeIsSimilar(time1, time2) {
+    const date1 = new Date(time1);
+    const date2 = new Date(time2);
+    const diffInMs = Math.abs(date1.getTime() - date2.getTime());
+    return diffInMs <= 500;
+}
+
 function capitalize(string) {
     return string && String(string[0]).toUpperCase() + String(string).slice(1);
 }
