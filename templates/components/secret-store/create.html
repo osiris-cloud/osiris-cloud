@@ -1,0 +1,112 @@
+<div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+    <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" data-tabs-toggle="#create-secret" role="tablist">
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg" data-tabs-target="#general" type="button"
+                    role="tab">
+                General
+            </button>
+        </li>
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    data-tabs-target="#values" type="button" role="tab"
+            >
+                Values
+            </button>
+        </li>
+    </ul>
+</div>
+
+<div id="create-secret">
+    <div class="flex flex-col bg-gray-50 bg-white dark:bg-gray-800 p-6 rounded-lg space-y-7" id="general"
+         role="tabpanel">
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+            <label for="secret-name"
+                   class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0 flex-shrink-0 w-full md:w-40">
+                Secret Name
+            </label>
+            <div class="relative flex-shrink-0 w-full md:w-auto">
+                <input id="secret-name" type="text"
+                       class="h-8 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
+                       focus:ring-blue-500 focus:border-blue-500 block w-full md:w-[23em] p-2.5 dark:bg-gray-700 
+                       dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 
+                       dark:focus:border-blue-500 cursor-text"
+                       placeholder="Enter a name" required maxlength="64" minlength="1"
+                >
+            </div>
+        </div>
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+            <label for="secret-type"
+                   class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0 flex-shrink-0 w-full md:w-40">
+                Type
+            </label>
+            <div class="relative flex-shrink-0 w-full md:w-auto">
+                <select id="secret-type" class="block py-2.5 px-0 w-full text-sm text-gray-500
+                    bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                    dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"
+                >
+                    <option class="dark:bg-gray-700" value="opaque" selected>Opaque</option>
+                    <option class="dark:bg-gray-700" value="dockerconfig">Docker Config</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="hidden bg-gray-50 bg-white dark:bg-gray-800 p-6 rounded-lg" id="values" role="tabpanel">
+        <div class="flex gap-2 w-full">
+            <button type="button" id="add-secret"
+                    class="text-gray-900 w-20 h-9 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 
+                    focus:ring-gray-100 font-medium rounded-full text-sm dark:bg-gray-800 
+                    dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+            >
+                Add
+            </button>
+            <button type="button" id="import-secret"
+                    class="text-gray-900 w-36 h-9 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 
+                    focus:ring-gray-100 font-medium rounded-full text-sm dark:bg-gray-800 
+                    dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+            >
+                Import from file
+            </button>
+        </div>
+
+        <div id="secrets" class="flex flex-col space-y-6">
+            <template id="secret-item">
+                <div class="flex flex-col md:flex-row w-full gap-3">
+                    <div class="w-full md:w-[35%] flex items-center gap-2">
+                        <input type="text" placeholder="Key"
+                               class="h-10 w-full bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
+                               focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 
+                               dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-100 dark:focus:ring-blue-500 
+                               dark:focus:border-blue-500 cursor-text"
+                        >
+                        <div class="w-6 h-6 md:hidden lg:hidden"></div>
+                    </div>
+                    <div class="w-full md:w-[65%] flex items-center gap-2">
+                        <textarea rows="1" placeholder="Value"
+                                  class="h-10 flex-1 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
+                                  focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 scrollbar-hide overflow-hidden
+                                  dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-100 dark:focus:ring-blue-500 
+                                  dark:focus:border-blue-500 cursor-text"></textarea>
+                        <svg class="w-6 h-6 text-gray-800 text-red-500 hover:text-red-600 hover:cursor-pointer"
+                             xmlns="http://www.w3.org/2000/svg"
+                             width="20" height="20" fill="none" viewBox="0 0 24 24"
+                        >
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+</div>
+
+<button type="button" id="secret-create-button"
+        class="mt-4 text-white bg-primary-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg
+        text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+>
+    Create
+</button>
