@@ -1,7 +1,6 @@
 $secretsTable = $('#secrets-table');
 $secretsTableContainer = $('#secrets-table-container');
 
-
 function createTableEntry(secret) {
     let $row = $('<tr/>', {
         class: 'bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600',
@@ -31,6 +30,7 @@ function loadSecrets() {
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         success: (data) => {
             if (data.secrets.length === 0) {
+                $secretsTableContainer.addClass('hidden');
                 showNoResource();
             } else {
                 $secretsTable.empty();
