@@ -7,6 +7,7 @@ window.addEventListener('load', function () {
     if ($('#alert-modal').length > 0)
         window.alertModal = FlowbiteInstances.getInstance('Modal', 'alert-modal');
     if (window.popupModal) {
+        popupModal._options.closable = false;
         popupModal._options.onShow = () => {
             setTimeout(() => {
                 $popupModal.addClass('show');
@@ -17,6 +18,7 @@ window.addEventListener('load', function () {
         }
     }
     if (window.alertModal) {
+        alertModal._options.closable = false;
         alertModal._options.onShow = function () {
             setTimeout(() => {
                 $alertModal.addClass('show');
