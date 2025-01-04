@@ -46,14 +46,21 @@
                     dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"
                 >
                     <option class="dark:bg-gray-700" value="opaque" selected>Opaque</option>
-                    <option class="dark:bg-gray-700" value="dockerconfig">Docker Config</option>
+                    <option class="dark:bg-gray-700" value="dockerconfig">Dockerconfig</option>
                 </select>
             </div>
         </div>
     </div>
 
     <div class="hidden bg-gray-50 bg-white dark:bg-gray-800 p-6 rounded-lg" id="values" role="tabpanel">
-        <div class="flex gap-2 w-full">
+        <p id="dockerconfig-header" class="text-sm text-gray-500 dark:text-gray-300">
+            Please paste the base64 encoded Docker config JSON file
+            (<code>~/.docker/config.json</code>). You can encode the file by running
+            <code class="p-1 mr-4 text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded">base64
+                ~/.docker/config.json
+            </code>
+        </p>
+        <div class="flex gap-2 w-full" id="button-group">
             <button type="button" id="add-secret"
                     class="text-gray-900 w-20 h-9 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 
                     focus:ring-gray-100 font-medium rounded-full text-sm dark:bg-gray-800 
@@ -100,6 +107,7 @@
                 </div>
             </template>
         </div>
+        
     </div>
 
 </div>
