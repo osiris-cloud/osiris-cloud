@@ -1,0 +1,138 @@
+<button id="add-volume"
+        class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 mt-6">
+    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+    Add Volume
+</button>
+
+<!-- Volumes Container -->
+<div id="volumes-container"></div>
+
+<!-- Volume Entry Template (hidden) -->
+<template id="volume-template">
+    <div class="volume-entry border border-gray-500 rounded-md p-3 mb-4 mt-4">
+        <div class="flex justify-between items-center mb-3">
+            <span class="text-sm font-medium volume-number">Volume 1</span>
+            <button class="remove-volume h-8 px-2 text-red-500 hover:text-red-700">
+                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                     width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-12 gap-3">
+            <div class="col-span-4">
+                <label class="block text-xs mb-1">Name</label>
+                <input type="text"
+                       class="volume-name bg-gray-50 h-8 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 
+                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="Volume name" minlength="1" required
+                />
+            </div>
+
+            <div class="col-span-2">
+                <label class="block text-xs mb-1">Size (GiB)</label>
+                <input type="number"
+                       class="volume-size bg-gray-50 h-8 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 
+                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="Size" minlength="1" required
+                />
+            </div>
+
+            <div class="col-span-6">
+                <label class="block text-xs mb-1">Container Mount Path</label>
+                <input type="text"
+                       class="volume-mount bg-gray-50 h-8 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 
+                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="/path/to/mount" minlength="1" required
+                />
+            </div>
+
+            <div class="col-span-12 block text-sm mt-2">Access Mode</div>
+
+            <div class="col-span-12 grid grid-cols-3 gap-3">
+                <div class="flex items-center gap-2">
+                    <label class="text-xs">Main Container</label>
+                    <select class="block volume-mode-main p-1.5 w-48 text-sm text-gray-500 dark:text-white rounded-md border-gray-300
+                     bg-transparent dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-8 ml-1"
+                    >
+                        <option class="dark:bg-gray-700" value="">No access</option>
+                        <option class="dark:bg-gray-700" value="rw">Read & Write</option>
+                        <option class="dark:bg-gray-700" value="ro">Read Only</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <label class="text-xs">Sidecar Container</label>
+                    <select class="block volume-mode-sidecar p-1.5 w-48 text-sm text-gray-500 dark:text-white rounded-md border-gray-300
+                     bg-transparent dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-8 ml-1"
+                    >
+                        <option class="dark:bg-gray-700" value="">No access</option>
+                        <option class="dark:bg-gray-700" value="rw">Read & Write</option>
+                        <option class="dark:bg-gray-700" value="ro">Read Only</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <label class="text-xs">Init Container</label>
+                    <select class="block volume-mode-init p-1.5 w-48 text-sm text-gray-500 dark:text-white rounded-md border-gray-300
+                     bg-transparent dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-8 ml-1"
+                    >
+                        <option class="dark:bg-gray-700" value="">No access</option>
+                        <option class="dark:bg-gray-700" value="rw">Read & Write</option>
+                        <option class="dark:bg-gray-700" value="ro">Read Only</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    $('#add-volume').click(function () {
+        addVolume();
+    });
+
+    $('#volumes-container').on('click', '.remove-volume', function () {
+        $(this).closest('.volume-entry').remove();
+        updateVolumeNumbers();
+    });
+
+    function addVolume() {
+        const template = document.getElementById('volume-template');
+        const clone = template.content.cloneNode(true);
+        $('#volumes-container').append(clone);
+        updateVolumeNumbers();
+    }
+
+    function updateVolumeNumbers() {
+        $('.volume-number').each(function (index) {
+            $(this).text(`Volume ${index + 1}`);
+        });
+    }
+
+    function getVolumeData() {
+        let volumes = [];
+        $('.volume-entry').each(function () {
+            const volume = {
+                name: $(this).find('.volume-name').val(),
+                size: parseInt($(this).find('.volume-size').val()),
+                mount_path: $(this).find('.volume-mount').val(),
+                mode: {
+                    init: $(this).find('.volume-mode-init').val(),
+                    main: $(this).find('.volume-mode-main').val(),
+                    sidecar: $(this).find('.volume-mode-sidecar').val()
+                }
+            };
+            volumes.push(volume);
+        });
+        return volumes;
+    }
+</script>
