@@ -16,8 +16,7 @@ Parameters:
 GET parameters:
 
 - `type` (string, optional): The type of the secret to get. If not provided, all secrets in the namespace will be
-  returned. Possible values are `opaque` and `auth`.
-
+  returned. Possible values are `opaque` and `dockerconfig`.
 
 Sample Request:
 
@@ -30,25 +29,23 @@ Sample Response:
 ```json
 {
   "status": "success",
-  "message": "Get secret",
   "secrets": [
     {
-      "secretid": "0192d47c-264c-7f11-980a-018916d83ed0",
-      "name": "My App 1",
+      "secretid": "01942f7d-8c9b-7a30-8b0a-48ae2b1c4533",
+      "name": "My secret",
       "type": "opaque",
-      "created_at": "2024-10-28T18:05:38.496Z",
-      "updated_at": "2024-10-28T18:05:38.496Z",
-      "state": "active"
+      "created_at": "2025-01-04T04:05:44.731Z",
+      "updated_at": "2025-01-04T04:07:44.756Z"
     },
     {
-      "secretid": "0192d47c-4ef6-75f2-82a6-b5a697525509",
-      "name": "My App 2",
-      "type": "opaque",
-      "created_at": "2024-10-28T18:05:58.799Z",
-      "updated_at": "2024-10-28T18:05:58.799Z",
-      "state": "active"
+      "secretid": "01942f80-c2bd-7f41-acb5-cc5c1c49e57d",
+      "name": "ECR Pull Secret",
+      "type": "dockerconfig",
+      "created_at": "2025-01-04T04:09:15.196Z",
+      "updated_at": "2025-01-04T04:09:15.207Z"
     }
-  ]
+  ],
+  "message": "Get secrets"
 }
 ```
 
@@ -69,19 +66,19 @@ Request body parameters:
 - `name` (string, required): Name of the secret.
 - `type` (string, required): Osiris Cloud supports two types of secrets:
     - `opaque`: Secret composed of key-value pairs.
-    - `auth`: Secret for authentication. Contains `username`, `password` , and/or `token` fields only. This type of
-      secret is used for registry authentication.
-- `values` (object, required): Each secret as key-value pairs. keys and values should be strings.
+    - `dockerconfig`: This type of secret is used for external registry authentication.
+- `values` (object, optional): Each secret as key-value pairs. keys and values should be strings. You may also create a
+  secret with an empty object.
 
 Sample Request:
 
 ```json
 {
-  "name": "Oauth Config",
+  "name": "My secret",
   "type": "opaque",
   "values": {
-    "CLIENT_ID": "231432487692",
-    "CLIENT_SECRET": "fvbrk3vrer@e43v43rkv"
+    "PROD": "True",
+    "API_KEY": "dingdongbingbongbangbangpfchangs"
   }
 }
 ```
@@ -91,9 +88,14 @@ Sample Response:
 ```json
 {
   "status": "success",
-  "message": "Create secret",
-  "secretid": "0192d4d4-cebe-7aa1-8785-d20d6d9f026b",
-  "state": "creating"
+  "secret": {
+    "secretid": "01942f7d-8c9b-7a30-8b0a-48ae2b1c4533",
+    "name": "My secret",
+    "type": "opaque",
+    "created_at": "2025-01-04T04:05:44.731Z",
+    "updated_at": "2025-01-04T04:05:44.739Z"
+  },
+  "message": "Create Secret"
 }
 ```
 
@@ -112,15 +114,16 @@ Parameters:
 
 Request body parameters:
 
-- `values` (object, required): Each secret as key-value pairs.
+- `name` (string, optional): Name of the secret.
+- `values` (object, optional): Each secret as key-value pairs.
 
 Sample Request:
 
 ```json
 {
   "values": {
-    "CLIENT_ID": "231432432",
-    "CLIENT_SECRET": "updated123"
+    "PROD": "False",
+    "API_KEY": "dingdongbingbongbangbangpfchangs"
   }
 }
 ```
@@ -130,7 +133,14 @@ Sample Response:
 ```json
 {
   "status": "success",
-  "message": "Update secret"
+  "secret": {
+    "secretid": "01942f7d-8c9b-7a30-8b0a-48ae2b1c4533",
+    "name": "My secret",
+    "type": "opaque",
+    "created_at": "2025-01-04T04:05:44.731Z",
+    "updated_at": "2025-01-04T04:07:44.756Z"
+  },
+  "message": "Update Secret"
 }
 ```
 
@@ -144,7 +154,6 @@ Parameters:
 
 - `nsid` (string, required): The id of the namespace in which the secret belongs.
 - `secretid` (string, required): Unique id of the secret.
-
 
 Sample Response:
 
@@ -169,8 +178,8 @@ Sample Response:
 {
   "status": "success",
   "values": {
-    "PROD": "true",
-    "API_KEY": "dingdongbingbongbangbangpfchangs4f"
+    "PROD": "True",
+    "API_KEY": "dingdongbingbongbangbangpfchangs"
   }
 }
 ```
