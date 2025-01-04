@@ -42,16 +42,17 @@ def namespaced(view_func):
             elif valid_app:
                 return redirect(f'/{app}/{nsid}')
             else:
-                return render(request, "404-app.html", status=404)
+                return render(request, "pages/404-app.html", status=404)
 
-        ns = Namespace.objects.filter(nsid=nsid).first()
-        if not ns:
-            return render(request, "404-app.html", status=404)  # Render 404 if namespace is not found
+        try:
+            ns = Namespace.objects.get(nsid=nsid)
+        except Namespace.DoesNotExist:
+            return render(request, "pages/404-app.html", status=404)  # Render 404 if namespace is not found
 
         role = ns.get_role(request.user)
 
         if role is None:
-            return render(request, "404-app.html", status=404)  # If the user has no role, render 404
+            return render(request, "pages/404-app.html", status=404)  # If the user has no role, render 404
 
         request.nsid = nsid  # Attach the namespace info to the request
         request.namespace = ns

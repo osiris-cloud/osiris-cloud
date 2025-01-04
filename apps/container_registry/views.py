@@ -28,10 +28,10 @@ def container_registry_create(request, nsid):
 def container_registry_edit(request, nsid, crid):
     cr = ContainerRegistry.objects.filter(crid=crid).first()
     if not cr:
-        return render(request, "404-app.html", status=404)
+        return render(request, "pages/404-app.html", status=404)
 
     if request.ns_role == 'viewer':
-        return render(request, "403-app.html", status=403)
+        return render(request, "pages/403-app.html", status=403)
 
     context = {
         'segment': ['container_registry', 'edit'],
@@ -46,7 +46,7 @@ def container_registry_edit(request, nsid, crid):
 def container_registry_view(request, nsid, crid):
     cr = ContainerRegistry.objects.filter(crid=crid).first()
     if not cr:
-        return render(request, "404-app.html", status=404)
+        return render(request, "pages/404-app.html", status=404)
 
     context = {
         'segment': ['container_registry', 'view'],

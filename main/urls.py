@@ -20,6 +20,7 @@ urlpatterns = [
     path("vm", include("apps.vm.urls")),
     path("container-registry", include("apps.container_registry.urls")),
     path("container-apps", include("apps.container_apps.urls")),
+    path("secret-store", include("apps.secret_store.urls")),
 ]
 
 if DEBUG:
