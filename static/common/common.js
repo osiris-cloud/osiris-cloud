@@ -7,6 +7,7 @@ window.addEventListener('load', function () {
     if ($('#alert-modal').length > 0)
         window.alertModal = FlowbiteInstances.getInstance('Modal', 'alert-modal');
     if (window.popupModal) {
+        popupModal._options.closable = false;
         popupModal._options.onShow = () => {
             setTimeout(() => {
                 $popupModal.addClass('show');
@@ -17,6 +18,7 @@ window.addEventListener('load', function () {
         }
     }
     if (window.alertModal) {
+        alertModal._options.closable = false;
         alertModal._options.onShow = function () {
             setTimeout(() => {
                 $alertModal.addClass('show');
@@ -93,6 +95,13 @@ function normalizeTime(time, pretty = false) {
         minute: "2-digit",
         hour12: true
     });
+}
+
+function timeIsSimilar(time1, time2) {
+    const date1 = new Date(time1);
+    const date2 = new Date(time2);
+    const diffInMs = Math.abs(date1.getTime() - date2.getTime());
+    return diffInMs <= 500;
 }
 
 function capitalize(string) {

@@ -36,8 +36,8 @@ DEFAULT_LIMIT = {
 
 DEFAULT_ROLE = 'guest'
 
-SECRET_TYPES = (('opaque', 'Key value pair secret'),
-                ('auth', 'Auth secret'),
+SECRET_TYPES = (('opaque', 'Key value pair secrets'),
+                ('dockerconfig', 'Docker config'),
                 )
 
 DEFAULT_HPA_SPEC = {

@@ -7,7 +7,7 @@ from ..users.utils import get_default_ns
 def profile(request):
     default_ns = get_default_ns(request.user)
     if default_ns is None:
-        return render(request, '404-app.html')
+        return render(request, 'pages/404-app.html')
 
     return render(request, 'apps/pages/profile.html', context={
         'github': request.user.github.username if hasattr(request.user, 'github') else None,

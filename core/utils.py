@@ -3,7 +3,7 @@ import random
 import string
 import boto3
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.utils import timezone
 from django.core import serializers as django_serializers
 from pytz import timezone as pytz_timezone
@@ -44,6 +44,10 @@ def random_str(length: int = 4) -> str:
 def eastern_time(dt: datetime) -> str:
     dt_eastern = timezone.localtime(dt, pytz_timezone('US/Eastern'))
     return dt_eastern.strftime('%H:%M:%S, %a %d %b %Y')
+
+
+def similar_time(t1: datetime, t2: datetime) -> bool:
+    return abs(t1 - t2) < timedelta(seconds=0.5)
 
 
 def serialize_obj(obj):

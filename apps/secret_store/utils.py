@@ -2,7 +2,7 @@ def validate_secret_creation(secret_data: dict) -> tuple[bool, [str | None]]:
     """
     Validate the data for creating a secret
     """
-    if secret_data is None:
+    if not secret_data:
         return False, 'Missing data'
 
     secret_name = secret_data.get('name', '').strip()
@@ -13,7 +13,7 @@ def validate_secret_creation(secret_data: dict) -> tuple[bool, [str | None]]:
         return False, 'Secret name must be a string'
 
     secret_type = secret_data.get('type')
-    if secret_type not in ['opaque', 'auth']:
+    if secret_type not in ['opaque', 'dockerconfig']:
         return False, 'Invalid secret type'
 
     secret_values = secret_data.get('values', {})
