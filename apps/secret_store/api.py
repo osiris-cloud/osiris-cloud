@@ -41,7 +41,15 @@ def secret_store(request, nsid=None, secretid=None, action=None):
         secret_data = request.data
         match request.method:
             case 'GET':
+                if s_type := request.GET.get('type'):
+                    print(s_type)
+                    if s_type not in ('opaque', 'dockerconfig'):
+                        return JsonResponse(error_message('Invalid secret type'), status=400)
+
                 secrets_filter = {'secretid': secretid} if secretid else {}
+                if s_type:
+                    secrets_filter['type'] = s_type
+
                 secrets = Secret.objects.filter(namespace=ns, **secrets_filter)
                 result = [sec.info() for sec in secrets]
                 if secretid:
