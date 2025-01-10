@@ -111,10 +111,10 @@ def secret_store(request, nsid=None, secretid=None, action=None):
     except Namespace.DoesNotExist:
         return JsonResponse(error_message('Namespace not found or no permission to access'), status=404)
 
-    except (Secret.DoesNotExist, ValueError):
+    except Secret.DoesNotExist:
         return JsonResponse(error_message('Secret not found'), status=404)
 
-    except JSONDecodeError:
+    except (JSONDecodeError, ValueError):
         return JsonResponse(error_message('Invalid JSON data'), status=400)
 
     except Exception as e:
