@@ -1,10 +1,14 @@
 from django.db import models
 from django.contrib import admin
 from core.model_fields import UUID7StringField
+from base64 import b64encode
 
-from ..k8s.models import Namespace, PVC
-from ..k8s.constants import R_STATES, DEFAULT_HPA_SPEC
+from ..infra.models import Namespace, Volume
+from ..infra.constants import R_STATES
 from ..secret_store.models import Secret
+from ..container_registry.models import ContainerRegistry
+
+from ..container_registry.utils import generate_auth_token
 
 from core.settings import env
 
@@ -24,10 +28,9 @@ class Container(models.Model):
     port_protocol = models.CharField(max_length=16, choices=(('tcp', 'TCP'), ('udp', 'UDP')), null=True, default=None)
     command = models.JSONField(null=True, default=list)
     args = models.JSONField(null=True, default=list)
-    cpu_request = models.FloatField()
-    memory_request = models.IntegerField()
-    cpu_limit = models.IntegerField()
-    memory_limit = models.FloatField()
+    cpu = models.FloatField()
+    memory = models.IntegerField()
+    metadata = models.JSONField(default=dict)
 
     def info(self):
         return {
@@ -39,62 +42,78 @@ class Container(models.Model):
             'port_protocol': self.port_protocol,
             'command': self.command,
             'args': self.args,
-            'cpu_request': self.cpu_request,
-            'memory_request': self.memory_request,
-            'cpu_limit': self.cpu_limit,
-            'memory_limit': self.memory_limit,
+            'cpu': self.cpu,
+            'memory': self.memory,
         }
+
+    def gen_oc_auth_data(self) -> str | None:
+        if self.pull_secret:
+            return None
+
+        auth_token = generate_auth_token(r_type='repository',
+                                         r_name=f"{self.metadata['repo']}/{self.metadata['image']}",
+                                         actions=['pull'],
+                                         years=25)
+        auth_str = b64encode(f"osiris:{auth_token}".encode()).decode()
+        docker_config = {
+            "auths": {
+                env.registry_domain: {
+                    "auth": auth_str
+                }
+            }
+        }
+        return b64encode(str(docker_config).encode()).decode()
 
 
 @admin.register(Container)
 class ContainerAdmin(admin.ModelAdmin):
-    list_display = ('image', 'cpu_request', 'memory_request', 'cpu_limit', 'memory_limit')
+    list_display = ('image', 'cpu', 'memory',)
     search_fields = ('containerid',)
     list_filter = ('port_protocol',)
 
 
 class CustomDomain(models.Model):
     name = models.CharField(max_length=253)
-    gen_tls_cert = models.BooleanField()
+    gen_cert = models.BooleanField()
 
     def info(self):
         return {
             'name': self.name,
-            'gen_cert': self.gen_tls_cert,
+            'gen_cert': self.gen_cert,
         }
 
 
 @admin.register(CustomDomain)
 class CustomDomainAdmin(admin.ModelAdmin):
-    list_display = ('name', 'gen_tls_cert')
+    list_display = ('name', 'gen_cert')
     search_fields = ('name',)
 
 
-class HPA(models.Model):
-    enable = models.BooleanField(default=False)
+class Scaler(models.Model):
     min_replicas = models.IntegerField(default=1)
     max_replicas = models.IntegerField(default=1)
-    scaleup_stb_window = models.IntegerField(default=300)
     scaledown_stb_window = models.IntegerField(default=300)
-    cpu_trigger = models.IntegerField(null=True, default=90)
-    memory_trigger = models.IntegerField(null=True, default=90)
+    scalers = models.JSONField(default=dict)
 
     def info(self):
         return {
-            'enable': self.enable,
             'min_replicas': self.min_replicas,
             'max_replicas': self.max_replicas,
-            'scaleup_stb_window': self.scaleup_stb_window,
             'scaledown_stb_window': self.scaledown_stb_window,
-            'cpu_trigger': self.cpu_trigger,
-            'memory_trigger': self.memory_trigger,
+            'scalers': self.scalers,
         }
 
 
-@admin.register(HPA)
-class HPAAdmin(admin.ModelAdmin):
-    list_display = ('enable', 'min_replicas', 'max_replicas', 'cpu_trigger', 'memory_trigger')
-    list_filter = ('enable',)
+class IPRule(models.Model):
+    deny_list = models.JSONField(default=list)
+    allow_list = models.JSONField(default=list)
+    nyu_only = models.BooleanField(default=False)
+
+    def info(self):
+        return {
+            'deny_list': self.deny_list,
+            'allow_list': self.allow_list,
+        }
 
 
 class ContainerApp(models.Model):
@@ -105,9 +124,9 @@ class ContainerApp(models.Model):
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     containers = models.ManyToManyField(Container, blank=True)
     custom_domains = models.ManyToManyField(CustomDomain, blank=True)
-    pvcs = models.ManyToManyField(PVC, blank=True)
-    hpa = models.ForeignKey(HPA, on_delete=models.SET_NULL, null=True, default=None)
-    connection_port = models.IntegerField(null=True, default=None)
+    volumes = models.ManyToManyField(Volume, blank=True)
+    scaler = models.OneToOneField(Scaler, on_delete=models.SET_NULL, null=True, default=None)
+    connection_port = models.IntegerField()
     connection_protocol = models.CharField(max_length=16,
                                            choices=(('http', 'Web app'),
                                                     ('tcp', 'TCP on random port'),
@@ -116,18 +135,16 @@ class ContainerApp(models.Model):
                                                                                 ('on_failure', 'On Failure'),
                                                                                 ('never', 'Never')))
     state = models.CharField(max_length=16, choices=R_STATES, default='creating')
-    exposed_public = models.BooleanField(default=True)
+    ip_rules = models.OneToOneField(IPRule, on_delete=models.SET_NULL, null=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    metadata = models.JSONField(default=dict)
 
     def volume_info(self):
         result = []
-        for pvc in self.pvcs.all():
+        for pvc in self.volumes.all():
             result.append({
-                'volid': pvc.pvcid,
-                'name': pvc.name,
-                'size': pvc.size,
-                'mount_path': pvc.mount_path,
+                **(pvc.info()),
                 'modes': {
                     'main': pvc.container_app_mode.main,
                     'init': pvc.container_app_mode.init,
@@ -171,16 +188,10 @@ class ContainerApp(models.Model):
             'custom_domains': [custom_domain.info() for custom_domain in self.custom_domains.all()],
             **container_types,
             'volumes': self.volume_info(),
-            'autoscale': self.hpa.info() if self.hpa else {},
-            'exposed_public': self.exposed_public,
+            'scaling': self.scaler.info(),
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }
-
-    def save(self, *args, **kwargs):
-        if not self.hpa:
-            self.container_app_mode = HPA.objects.create(**DEFAULT_HPA_SPEC)
-        super().save(*args, **kwargs)
 
 
 @admin.register(ContainerApp)
