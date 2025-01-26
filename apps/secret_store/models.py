@@ -3,8 +3,8 @@ from encrypted_model_fields.fields import EncryptedTextField
 
 from json import loads as json_loads
 
-from ..k8s.models import Namespace
-from ..k8s.constants import R_STATES, SECRET_TYPES
+from ..infra.models import Namespace
+from ..infra.constants import SECRET_TYPES
 
 from core.model_fields import UUID7StringField
 from core.utils import similar_time
@@ -29,7 +29,10 @@ class Secret(models.Model):
         }
 
     def values(self):
-        return json_loads(self.data) if self.data else {}
+        try:
+            return json_loads(self.data) if self.data else {}
+        except Exception:
+            return {}
 
     @property
     def updated_at_pretty(self):
