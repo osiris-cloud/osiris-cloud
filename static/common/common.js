@@ -170,13 +170,16 @@ function Confirm(message, callback, options = {}) {
     });
 }
 
-function Alert(message, callback = null, options = {}) {
+function Alert(message, callback = null, options = {}, allow_html = false) {
     if (!options.ok) options.ok = 'OK';
     if (!options.icon) options.icon = 'info';
     let $ok = $("#alert-ok");
     $ok.text(options.ok);
 
-    $("#alert-message").html(message);
+    if (allow_html)
+        $("#alert-message").html(message);
+     else
+        $("#alert-message").text(message);
 
     if (options.icon === 'info') {
         $('#alert-icon-info').removeClass('hidden');
