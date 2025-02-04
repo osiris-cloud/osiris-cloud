@@ -9,7 +9,7 @@ from time import time, sleep
 
 from apps.users.models import User
 
-with open('apps/k8s/charts/vm.json') as f:
+with open('apps/infra/charts/vm.json') as f:
     VM_TEMPLATE = json.load(f)
 
 # Distro -> Image tag
@@ -196,7 +196,7 @@ def get_affinity(*, n_name: str) -> dict:
 def fill_vm_template(*, ns: str, name: str, memory: int, disk: int, distro: str, vmid: str,
                      create_time: timezone, cpu: int, network_name: str, mac_address: str, hostname: str,
                      cloudinit_secret: str, pvc_name: str) -> dict:
-    with open('apps/k8s/charts/vm.json') as f:
+    with open('apps/infra/charts/vm.json') as f:
         vm_template = json.load(f)
 
     # vm_template = deepcopy(VM_TEMPLATE)

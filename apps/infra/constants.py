@@ -8,7 +8,9 @@ R_STATES = (('creating', 'Resource is being created'),
             ('orphan', 'Resource exists in cluster but not in database'),
             )
 
-PVC_CONTAINER_MODES = (('', 'No Access'), ('ro', 'Read Only'), ('rw', 'Read Write'))
+VOLUME_MODES = (('', 'No Access'), ('ro', 'Read Only'), ('rw', 'Read Write'))
+
+VOLUME_TYPES = (('temp', 'Temporary Storage'), ('fs', 'File System'), ('block', 'Block Device'), ('secret', 'Secret'))
 
 DOCKER_HEADERS = {
     "Accept": "application/vnd.docker.distribution.manifest.v2+json"
@@ -68,3 +70,38 @@ ACCESS_SUB_SCOPES = {
 }
 
 ACCESS_SCOPES = tuple(ACCESS_SUB_SCOPES.keys())
+
+DOMAIN_REGEX = r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.(?:[A-Za-z]{2,6}|[A-Za-z0-9-]{2,}\.[A-Za-z]{2,6})$'
+
+SLUG_REGEX = r'^[a-z0-9]+(-[a-z0-9]+)*$'
+
+NYU_SUBNETS = [
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.0.0/16",
+    "59.79.127.0/24",
+    "91.230.41.0/24",
+    "94.56.130.144/28",
+    "94.200.220.160/27",
+    "101.231.120.128/27",
+    "103.242.128.0/22",
+    "128.122.0.0/16",
+    "128.238.0.0/16",
+    "176.74.48.32/27",
+    "192.76.177.0/24",
+    "192.86.139.0/24",
+    "195.113.94.0/24",
+    "192.114.110.0/24",
+    "193.146.139.0/25",
+    "193.175.54.0/24",
+    "193.205.158.0/25",
+    "193.206.104.0/24",
+    "194.214.81.0/24",
+    "195.229.110.0/25",
+    "195.229.110.128/26",
+    "202.66.60.160/27",
+    "203.174.165.128/25",
+    "212.219.93.0/24",
+    "213.42.147.0/26",
+    "216.165.0.0/17",
+]

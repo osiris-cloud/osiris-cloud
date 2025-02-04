@@ -5,7 +5,7 @@ from core.model_fields import UUID7StringField
 from django.contrib import admin
 
 from ..users.models import User
-from .constants import PVC_CONTAINER_MODES
+from .constants import VOLUME_TYPES
 from .constants import LB_PROTOCOLS, NS_ROLES, R_STATES
 
 
@@ -73,35 +73,37 @@ class NamespaceRoles(models.Model):
         db_table = 'namespace_roles'
 
 
-class PVCContainerMode(models.Model):
-    init = models.CharField(max_length=2, blank=True, default='', choices=PVC_CONTAINER_MODES)
-    main = models.CharField(max_length=2, blank=True, default='', choices=PVC_CONTAINER_MODES)
-    sidecar = models.CharField(max_length=2, blank=True, default='', choices=PVC_CONTAINER_MODES)
-
-
-class PVC(models.Model):
-    pvcid = UUID7StringField(auto_created=True)
+class Volume(models.Model):
+    volid = UUID7StringField(auto_created=True)
     name = models.CharField(max_length=100)
+    type = models.CharField(max_length=16, choices=VOLUME_TYPES)
     size = models.FloatField()
-    mount_path = models.TextField(default='')
+    mount_path = models.TextField()
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
-    container_app_mode = models.ForeignKey(PVCContainerMode, on_delete=models.SET_NULL, null=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    metadata = models.JSONField(default=dict)
 
-    def save(self, *args, **kwargs):
-        if not self.container_app_mode:
-            self.container_app_mode = PVCContainerMode.objects.create()
-        super().save(*args, **kwargs)
+    def info(self):
+        return {
+            'volid': self.volid,
+            'type': self.type,
+            'name': self.name,
+            'size': self.size,
+            'mount_path': self.mount_path,
+        }
+
+    def mode_info(self):
+        return self.metadata.get('ca_mode', {})
 
     class Meta:
-        db_table = 'pvcs'
+        db_table = 'volumes'
         ordering = ['-created_at']
 
 
-@admin.register(PVC)
-class PVCAdmin(admin.ModelAdmin):
-    list_display = ('name', 'size', 'namespace', 'pvcid')
+@admin.register(Volume)
+class VolumeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'size', 'namespace', 'volid')
     search_fields = ('namespace',)
 
 
@@ -132,22 +134,22 @@ class EventAdmin(admin.ModelAdmin):
     search_fields = ('namespace',)
 
 
-class LBEndpoint(models.Model):
-    name = models.CharField(max_length=64)
-    description = models.CharField(max_length=256, blank=True, null=True)
-    ip = models.GenericIPAddressField()
-    port = models.IntegerField()
-    protocol = models.CharField(max_length=4, choices=LB_PROTOCOLS, default='tcp')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
-
-    class Meta:
-        db_table = 'lb_endpoints'
-        ordering = ['-created_at']
-
-
-@admin.register(LBEndpoint)
-class LBAdmin(admin.ModelAdmin):
-    list_display = ('name', 'ip', 'port', 'protocol', 'state')
-    search_fields = ('ip', 'port')
+# class LBEndpoint(models.Model):
+#     name = models.CharField(max_length=64)
+#     description = models.CharField(max_length=256, blank=True, null=True)
+#     ip = models.GenericIPAddressField()
+#     port = models.IntegerField()
+#     protocol = models.CharField(max_length=4, choices=LB_PROTOCOLS, default='tcp')
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#     state = models.CharField(max_length=16, choices=R_STATES, default='creating')
+#
+#     class Meta:
+#         db_table = 'lb_endpoints'
+#         ordering = ['-created_at']
+#
+#
+# @admin.register(LBEndpoint)
+# class LBAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'ip', 'port', 'protocol', 'state')
+#     search_fields = ('ip', 'port')

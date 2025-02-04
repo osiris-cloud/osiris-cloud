@@ -4,7 +4,7 @@ from django.http import JsonResponse
 
 from core.utils import success_message, error_message
 
-from ..k8s.models import Namespace, Event
+from ..infra.models import Namespace, Event
 
 
 @api_view(['GET', 'POST'])
