@@ -73,83 +73,85 @@ class ContainerAdmin(admin.ModelAdmin):
 
 
 class CustomDomain(models.Model):
-    name = models.CharField(max_length=253)
-    gen_cert = models.BooleanField()
-
-    def info(self):
-        return {
-            'name': self.name,
-            'gen_cert': self.gen_cert,
-        }
+    name = models.CharField(max_length=253, unique=True)
 
 
 @admin.register(CustomDomain)
 class CustomDomainAdmin(admin.ModelAdmin):
-    list_display = ('name', 'gen_cert')
+    list_display = ('name',)
     search_fields = ('name',)
 
 
 class Scaler(models.Model):
     min_replicas = models.IntegerField(default=1)
     max_replicas = models.IntegerField(default=1)
-    scaledown_stb_window = models.IntegerField(default=300)
-    scalers = models.JSONField(default=dict)
+    scaleup_stb_window = models.IntegerField(default=0)
+    scaledown_stb_window = models.IntegerField(default=150)
+    scalers = models.JSONField(default=list)
+
+    def default(self):
+        self.min_replicas = 1
+        self.max_replicas = 1
+        self.scaleup_stb_window = 0
+        self.scaledown_stb_window = 150
+        self.scalers = []
+        self.save()
 
     def info(self):
         return {
             'min_replicas': self.min_replicas,
             'max_replicas': self.max_replicas,
+            'scaleup_stb_window': self.scaleup_stb_window,
             'scaledown_stb_window': self.scaledown_stb_window,
             'scalers': self.scalers,
         }
 
 
-class IPRule(models.Model):
-    deny_list = models.JSONField(default=list)
-    allow_list = models.JSONField(default=list)
+class AppFW(models.Model):
+    deny = models.JSONField(default=list)
+    allow = models.JSONField(default=list)
+    precedence = models.CharField(max_length=16, choices=(('deny', 'Deny'), ('allow', 'Allow')))
     nyu_only = models.BooleanField(default=False)
 
     def info(self):
         return {
-            'deny_list': self.deny_list,
-            'allow_list': self.allow_list,
+            'deny': self.deny,
+            'allow': self.allow,
+            'precedence': self.precedence,
+            'nyu_only': self.nyu_only,
         }
 
 
 class ContainerApp(models.Model):
     appid = UUID7StringField(auto_created=True)
+    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     name = models.CharField(max_length=64)
     slug = models.CharField(max_length=64)
-    replicas = models.IntegerField(default=1)
-    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     containers = models.ManyToManyField(Container, blank=True)
     custom_domains = models.ManyToManyField(CustomDomain, blank=True)
     volumes = models.ManyToManyField(Volume, blank=True)
-    scaler = models.OneToOneField(Scaler, on_delete=models.SET_NULL, null=True, default=None)
+    scaler = models.OneToOneField(Scaler, on_delete=models.CASCADE)
     connection_port = models.IntegerField()
     connection_protocol = models.CharField(max_length=16,
                                            choices=(('http', 'Web app'),
                                                     ('tcp', 'TCP on random port'),
                                                     ('udp', 'UDP on random port')))
+    pass_tls = models.BooleanField(default=False)
     restart_policy = models.CharField(max_length=16, default='always', choices=(('always', 'Always'),
                                                                                 ('on_failure', 'On Failure'),
                                                                                 ('never', 'Never')))
-    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
-    ip_rules = models.OneToOneField(IPRule, on_delete=models.SET_NULL, null=True, default=None)
+    ip_rule = models.OneToOneField(AppFW, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
     metadata = models.JSONField(default=dict)
 
     def volume_info(self):
         result = []
-        for pvc in self.volumes.all():
+        for vol in self.volumes.all():
             result.append({
-                **(pvc.info()),
-                'modes': {
-                    'main': pvc.container_app_mode.main,
-                    'init': pvc.container_app_mode.init,
-                    'sidecar': pvc.container_app_mode.sidecar,
-                }
+                **(vol.info()),
+                'mode': vol.mode_info()
             })
         return result
 
@@ -180,12 +182,11 @@ class ContainerApp(models.Model):
             'appid': self.appid,
             'name': self.name,
             'url': self.url,
-            'replicas': self.replicas,
             'connection_port': 443 if self.connection_protocol == 'http' else self.connection_port,
             'connection_protocol': self.connection_protocol,
             'state': self.state,
             'restart_policy': self.restart_policy,
-            'custom_domains': [custom_domain.info() for custom_domain in self.custom_domains.all()],
+            'custom_domains': [custom_domain.name for custom_domain in self.custom_domains.all()],
             **container_types,
             'volumes': self.volume_info(),
             'scaling': self.scaler.info(),
