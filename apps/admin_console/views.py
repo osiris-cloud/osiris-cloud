@@ -18,13 +18,6 @@ def init_app(_):
                                       password=getenv('ADMIN_PASSWORD', 'osirisadmin'))
         actions.append('Admin user created')
 
-    if not AccessToken.objects.filter(user__username='osirisadmin').exists():
-        AccessToken.objects.create(user=User.objects.get(username='osirisadmin'),
-                                   name='SYS_KEY',
-                                   scopes=['global'],
-                                   )
-        actions.append('System key created')
-
     return HttpResponse({", ".join(actions) if actions else "No actions taken"})
 
 
