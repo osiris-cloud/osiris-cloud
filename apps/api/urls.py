@@ -8,7 +8,7 @@ from . import routes
 from ..users import api as user_api
 from ..users import consumers as user_consumers
 
-from ..k8s import api as k8s_api
+from ..infra import api as k8s_api
 
 from ..secret_store import api as secret_store_api
 from ..admin_console import api as admin_api

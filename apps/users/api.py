@@ -6,7 +6,7 @@ from json.decoder import JSONDecodeError
 
 from core.utils import success_message, error_message, random_str
 from .models import User, Limit
-from ..k8s.models import Namespace, NamespaceRoles
+from ..infra.models import Namespace, NamespaceRoles
 from ..users.utils import (schedule_ns_deletion, sanitize_nsid, validate_ns_creation, validate_ns_update,
                            validate_user_update, delete_owner_resources, notify_new_owner)
 

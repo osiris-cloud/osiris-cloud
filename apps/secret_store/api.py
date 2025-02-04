@@ -7,7 +7,7 @@ from json import dumps as json_dumps
 from json import JSONDecodeError
 
 from .models import Secret
-from ..k8s.models import Namespace
+from ..infra.models import Namespace
 
 from core.utils import success_message, error_message
 from ..users.utils import get_default_ns

@@ -1,7 +1,7 @@
 from django.db.models import Sum
 
 from ..container_registry.models import ContainerRegistry
-from ..k8s.models import Namespace
+from ..infra.models import Namespace
 # from ..vm.models import VM
 
 

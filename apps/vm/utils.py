@@ -2,7 +2,7 @@ from random import random, randint
 
 from core.utils import error_message, success_message
 import string
-from ..k8s.utils import IMAGE_TAGS
+from ..infra.utils import IMAGE_TAGS
 
 VALID_NAME_CHARLIST = list(string.ascii_lowercase + string.digits + '_' + '-')
 

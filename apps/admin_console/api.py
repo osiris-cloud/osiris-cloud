@@ -10,8 +10,8 @@ from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view
 from asgiref.sync import async_to_sync
 
-from ..k8s.constants import DEFAULT_LIMIT
-from ..k8s.models import Namespace, NamespaceRoles
+from ..infra.constants import DEFAULT_LIMIT
+from ..infra.models import Namespace, NamespaceRoles
 from ..users.models import Limit, Usage
 from ..oauth.models import GithubUser
 

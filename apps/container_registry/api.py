@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view
 from django.core.exceptions import ValidationError
 
 from .models import ContainerRegistry
-from ..k8s.models import Namespace
+from ..infra.models import Namespace
 
 from core.utils import success_message, error_message
 from .utils import validate_registry_spec, validate_registry_update_spec

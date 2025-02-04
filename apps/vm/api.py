@@ -8,7 +8,7 @@ from json import loads as json_loads
 
 from .utils import validate_vm_spec, sanitize_vm_name, gen_mac_address
 from .values import VM_TYPES
-from ..k8s.utils import create_vm
+from ..infra.utils import create_vm
 
 from .models import VM
 

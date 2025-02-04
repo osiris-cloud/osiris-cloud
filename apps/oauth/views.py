@@ -12,7 +12,7 @@ from django.utils import timezone
 from core.settings import env
 from core.utils import random_str, serialize_obj
 
-from ..k8s.models import Namespace, NamespaceRoles
+from ..infra.models import Namespace, NamespaceRoles
 from ..users.models import Limit, Usage
 
 from ..oauth.models import GithubUser, NYUUser
@@ -20,7 +20,7 @@ from ..users.models import User
 
 from .tasks import set_profile_avatar
 
-from ..k8s.constants import DEFAULT_LIMIT, DEFAULT_ROLE
+from ..infra.constants import DEFAULT_LIMIT, DEFAULT_ROLE
 
 nyu_oauth = OAuth()
 github_oauth = OAuth()

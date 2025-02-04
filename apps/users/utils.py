@@ -6,7 +6,7 @@ from core.utils import error_message, success_message
 from core.settings import env
 
 from apps.users.models import User
-from apps.k8s.models import NamespaceRoles, Namespace
+from apps.infra.models import NamespaceRoles, Namespace
 
 VALID_NAME_CHARLIST = list(string.ascii_lowercase + string.digits + '_' + '-')
 MAILGUN_API_KEY = env.mailgun_api_key
