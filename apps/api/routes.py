@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from datetime import datetime
 
 from .models import AccessToken
-from ..k8s.constants import ACCESS_SUB_SCOPES
+from ..infra.constants import ACCESS_SUB_SCOPES
 
 from core.utils import success_message, error_message
 from .utils import validate_create_token
