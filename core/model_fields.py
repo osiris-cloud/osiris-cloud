@@ -21,7 +21,7 @@ class UUID7StringField(models.CharField):
                 return str(UUID(value))
             except ValueError:
                 pass
-            raise ValueError(f"{value} is not a valid UUID7.")
+            raise self.model.DoesNotExist("UUID7 value not found")
         return value
 
     def from_db_value(self, value, expression, connection):
@@ -29,4 +29,4 @@ class UUID7StringField(models.CharField):
             return value
         if isinstance(value, str):
             return value
-        raise ValueError(f"{value} is not a valid UUID7.")
+        raise self.model.DoesNotExist("UUID7 value not found")
