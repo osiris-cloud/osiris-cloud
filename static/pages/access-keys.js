@@ -91,9 +91,7 @@ $keySubmitButton.click(() => {
                       ${resp.key}
                     </code>`;
 
-            Alert(msg, () => {
-                loadAccessKeys();
-            }, {'icon': 'check'});
+            Alert(msg, loadAccessKeys, {'icon': 'check'}, true);
 
             $('#key-token').unbind('click').click(() => {
                 copyToClip(resp.key);
