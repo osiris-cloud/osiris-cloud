@@ -6,6 +6,7 @@ from dotenv import load_dotenv, find_dotenv
 from str2bool import str2bool
 from dataclasses import dataclass
 from urllib.parse import urlparse
+from yaml import safe_load
 
 from .utils import load_file_from_s3, load_file, generate_kid
 
@@ -19,7 +20,6 @@ print(f'# APP MODE -> {'DEVELOPMENT' if DEBUG else "PRODUCTION"}')
 
 if not DEBUG:
     import sentry_sdk
-
     sentry_sdk.init(
         dsn=os.environ.get('SENTRY_DSN'),
         traces_sample_rate=1.0,  # Set to 1.0 to capture 100% of transactions for performance monitoring
@@ -69,7 +69,7 @@ class Env:
     k8s_token = ''
     k8s_api_client = None
 
-    firewall_url = os.getenv('FIREWALL_URL')
+    loxi_url = os.getenv('FIREWALL_URL')
 
     registry_domain = os.getenv('REGISTRY_DOMAIN', 'registry.osiriscloud.io')
     registry_key_obj_path = os.getenv('REGISTRY_KEY_OBJECT_PATH')
@@ -88,11 +88,10 @@ class Env:
 
         if kubeconfig:
             from kubernetes import config
-            from yaml import safe_load
 
             k8s_config = safe_load(kubeconfig)
             self.k8s_url = k8s_config['clusters'][0]['cluster']['server']
-            self.k8s_token = k8s_config['users'][0]['user']['token']
+            # self.k8s_token = k8s_config['users'][0]['user']['token']
             url = urlparse(self.k8s_url)
             self.k8s_ws_url = 'ws://' if url.scheme == 'http' else 'wss://' + url.netloc + url.path
             self.k8s_api_client = config.new_client_from_config_dict(k8s_config)
@@ -144,7 +143,7 @@ INSTALLED_APPS = [
     "main",
     "apps.api",
     # "apps.ip_manager",
-    "apps.k8s",
+    "apps.infra",
     "apps.oauth",
     "apps.users",
     "apps.admin_console",
