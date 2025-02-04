@@ -8,12 +8,12 @@ from django.db import models
 from django.utils import timezone
 
 from core.model_fields import UUID7StringField
-from ..k8s.models import Namespace
+from ..infra.models import Namespace
 
 from core.settings import env
 from .utils import get_sub_repositories, get_tags, get_manifest, get_blob_digests, generate_auth_token, delete_blob
 
-from ..k8s.constants import R_STATES, DOCKER_HEADERS
+from ..infra.constants import R_STATES, DOCKER_HEADERS
 
 
 class ContainerRegistry(models.Model):
@@ -97,9 +97,6 @@ class ContainerRegistry(models.Model):
         return resp
 
     def delete_image(self, image, tag) -> bool:
-        if not self.state == 'active':
-            return False
-
         async def delete_image_async() -> bool:
             repo_path = f'{self.repo}/{image}'
             token, _ = await sync_to_async(RepoToken.get_or_create)(registry=self, path=repo_path)
