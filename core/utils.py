@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.core import serializers as django_serializers
 from pytz import timezone as pytz_timezone
+from hashlib import sha256
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
@@ -58,15 +59,15 @@ def deserialize_obj(obj):
     return list(django_serializers.deserialize('json', obj))[0].object
 
 
-def load_file_from_s3(object_path, access_key, secret_key) -> str | None:
+def load_file_from_s3(object_path, access_key, secret_key, default=None) -> str | None:
     try:
         s3_client = boto3.client('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key)
         bucket_name, object_key = object_path.split('/', 1)
         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
         file_contents = response['Body'].read().decode('utf-8')
         return file_contents
-    except:
-        return None
+    except Exception:
+        return default
 
 
 def load_file(file_path, mode='r') -> str | None:
@@ -118,3 +119,9 @@ def generate_kid(private_key_data: bytes | str, key_type) -> str:
 
     except Exception as e:
         raise ValueError(f"Failed to generate KID: {str(e)}")
+
+
+def sponge_string(long_string: str, n=32) -> str:
+    hash_obj = sha256(long_string.encode())
+    hash_hex = hash_obj.hexdigest()
+    return hash_hex[:n]
