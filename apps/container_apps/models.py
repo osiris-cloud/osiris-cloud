@@ -140,6 +140,8 @@ class ContainerApp(models.Model):
     restart_policy = models.CharField(max_length=16, default='always', choices=(('always', 'Always'),
                                                                                 ('on_failure', 'On Failure'),
                                                                                 ('never', 'Never')))
+    update_strategy = models.CharField(max_length=16, default='recreate', choices=(('rolling', 'Rolling'),
+                                                                                   ('recreate', 'Recreate')))
     ip_rule = models.OneToOneField(AppFW, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -160,6 +162,16 @@ class ContainerApp(models.Model):
         if self.connection_protocol == 'http':
             return f'https://{self.slug}.{env.container_apps_domain}'
         return f'{self.slug}.{env.container_apps_domain}'
+
+    @property
+    def connect_url(self):
+        return f'{self.url}:{self.connection_port}' if self.connection_protocol != 'http' else self.url
+
+    @property
+    def display_url(self):
+        if self.connection_protocol == 'http':
+            return f'{self.url}'
+        return f'{self.connection_protocol}://{self.url}:{self.connection_port}'
 
     @property
     def cpu_limit(self):
