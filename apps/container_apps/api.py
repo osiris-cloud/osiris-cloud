@@ -20,33 +20,6 @@ from ..users.utils import get_default_ns
 from .tasks import apply_deployment, delete_deployment, redeploy
 
 
-@api_view(['POST'])
-def name_check(request):
-    """
-    Check if container-app slug name is available
-    """
-    try:
-        slug = request.data.get('slug')
-        if not isinstance(slug, str):
-            return JsonResponse(error_message('slug must be a string'), status=400)
-        slug = slug.strip()
-        if not slug:
-            return JsonResponse(error_message('Slug is required'), status=400)
-
-        return JsonResponse(
-            success_message("Check availability", {
-                'available': not bool(ContainerApp.objects.filter(slug=slug).exists())
-            })
-        )
-
-    except JSONDecodeError:
-        return JsonResponse(error_message('Invalid JSON data'), status=400)
-
-    except Exception as e:
-        logging.exception(e)
-        return JsonResponse(error_message('Internal server error'), status=500)
-
-
 @api_view(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
 def container_apps(request, nsid=None, appid=None, action=None):
     """
@@ -88,19 +61,15 @@ def container_apps(request, nsid=None, appid=None, action=None):
             if appid:
                 if not result:
                     return JsonResponse(error_message('Container app not found'), status=404)
-                return JsonResponse(success_message('Get container app', {'app': result}), status=200)
+                return JsonResponse(success_message('Get container app', {'app': result[0]}), status=200)
 
             return JsonResponse(success_message('Get container apps', {'apps': result}), status=200)
 
         elif request.method == 'POST':
+            app = ContainerApp.objects.get(appid=appid, namespace=ns)
             if action == 'redeploy':
-                app = ContainerApp.objects.get(appid=appid, namespace=ns)
                 redeploy.delay(app.appid)
                 return JsonResponse(success_message('Redeploy container app'), status=202)
-
-            elif action == 'logs':
-                return JsonResponse(error_message('Not implemented'), status=501)
-
             else:
                 return JsonResponse(error_message('Invalid action'), status=400)
 
@@ -391,6 +360,32 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
     except ValueError as e:
         return JsonResponse(error_message(str(e)), status=400)
+
+    except Exception as e:
+        logging.exception(e)
+        return JsonResponse(error_message('Internal server error'), status=500)
+
+@api_view(['POST'])
+def name_check(request):
+    """
+    Check if container-app slug name is available
+    """
+    try:
+        slug = request.data.get('slug')
+        if not isinstance(slug, str):
+            return JsonResponse(error_message('slug must be a string'), status=400)
+        slug = slug.strip()
+        if not slug:
+            return JsonResponse(error_message('Slug is required'), status=400)
+
+        return JsonResponse(
+            success_message("Check availability", {
+                'available': not bool(ContainerApp.objects.filter(slug=slug).exists())
+            })
+        )
+
+    except JSONDecodeError:
+        return JsonResponse(error_message('Invalid JSON data'), status=400)
 
     except Exception as e:
         logging.exception(e)
