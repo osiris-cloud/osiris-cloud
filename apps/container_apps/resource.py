@@ -1,19 +1,24 @@
 import kubernetes
+import httpx
 import logging
 
 from base64 import b64encode
 from datetime import datetime
+from asgiref.sync import sync_to_async
 
 from core.settings import env
 
 from .models import Container, ContainerApp
 from ..secret_store.models import Secret
 
-from ..infra.constants import RESTART_POLICIES, NYU_SUBNETS
+from ..infra.constants import RESTART_POLICIES, NYU_SUBNETS, CONTAINER_STATES
+
+from .utils import process_container_status, process_init_container_status, process_events, process_conditions
 
 
 class AppResource:
-    def __init__(self, app: ContainerApp):
+    def __init__(self, app: ContainerApp, request=None):
+        self.k8s_config = env.k8s_api_client.configuration
         self.apps_v1 = kubernetes.client.AppsV1Api(env.k8s_api_client)
         self.core_v1 = kubernetes.client.CoreV1Api(env.k8s_api_client)
         self.networking_v1 = kubernetes.client.NetworkingV1Api(env.k8s_api_client)
@@ -26,6 +31,7 @@ class AppResource:
         self.ip_rule = app.ip_rule
 
         self.pull_secrets = set()
+        self.request = request
 
     def apply(self):
         self.create_pull_secrets()
@@ -249,14 +255,17 @@ class AppResource:
                     raise e
 
     def gen_container_resource_spec(self, container: Container) -> kubernetes.client.V1ResourceRequirements:
+        cpu_pretty = lambda cpu: f"{cpu:.2f}"
+        mem_pretty = lambda mem: f"{int(mem * 1024)}M"
+
         return kubernetes.client.V1ResourceRequirements(
             requests={
-                'cpu': "{:.2f}".format(container.cpu / 2),
-                'memory': "{:.2f}G".format(container.memory / 2)
+                'cpu': cpu_pretty(container.cpu / 2),
+                'memory': mem_pretty(container.memory / 2)
             },
             limits={
-                'cpu': "{:.2f}".format(container.cpu),
-                'memory': "{:.2f}G".format(container.memory)
+                'cpu': cpu_pretty(container.cpu),
+                'memory': mem_pretty(container.memory)
             }
         )
 
@@ -368,6 +377,21 @@ class AppResource:
     def gen_pull_secret_spec(self) -> list[kubernetes.client.V1LocalObjectReference]:
         return [kubernetes.client.V1LocalObjectReference(name=secretid) for secretid in self.pull_secrets]
 
+    def gen_update_strategy(self) -> kubernetes.client.V1DeploymentStrategy:
+        if self.app.update_strategy == 'recreate':
+            return kubernetes.client.V1DeploymentStrategy(
+                type='Recreate'
+            )
+
+        elif self.app.update_strategy == 'rolling':
+            return kubernetes.client.V1DeploymentStrategy(
+                type='RollingUpdate',
+                rolling_update=kubernetes.client.V1RollingUpdateDeployment(
+                    max_surge="25%",
+                    max_unavailable="50%"
+                )
+            )
+
     def create_deployment(self) -> kubernetes.client.V1Deployment:
         main_containers = [self.main_container]
         sidecar_containers = [c for c in self.containers if c.type == 'sidecar']
@@ -386,6 +410,7 @@ class AppResource:
                 selector=kubernetes.client.V1LabelSelector(
                     match_labels={'appid': self.app.appid}
                 ),
+                strategy=self.gen_update_strategy(),
                 template=kubernetes.client.V1PodTemplateSpec(
                     metadata=kubernetes.client.V1ObjectMeta(
                         labels={'appid': self.app.appid}
@@ -396,7 +421,8 @@ class AppResource:
                         init_containers=[self.create_container_spec(c) for c in init_containers],
                         containers=[self.create_container_spec(c) for c in main_containers + sidecar_containers],
                         volumes=self.gen_volume_spec(),
-                        image_pull_secrets=self.gen_pull_secret_spec()
+                        image_pull_secrets=self.gen_pull_secret_spec(),
+                        termination_grace_period_seconds=15
                     )
                 )
             )
@@ -687,3 +713,153 @@ class AppResource:
         except kubernetes.client.exceptions.ApiException as e:
             logging.error(f"Failed to redeploy app {self.app.appid}", exc_info=True)
             raise e
+
+    async def get_metrics_for_pod(self, pod_name):
+        """
+        Get current CPU and memory metrics for a pod
+        """
+        metrics_api = f"{self.k8s_config.host}/apis/metrics.k8s.io/v1beta1/namespaces/{self.nsid}/pods/{pod_name}"
+
+        headers = {'Accept': 'application/json'}
+
+        if token := env.k8s_auth.get('token'):
+            headers['Authorization'] = f"Bearer {token}"
+            httpx_kwargs = {'headers': headers, 'verify': False}
+        else:
+            httpx_kwargs = {
+                'verify': env.k8s_auth['ca_cert'].name,
+                'cert': (env.k8s_auth['client_cert'].name, env.k8s_auth['client_key'].name)
+            }
+
+        try:
+            async with httpx.AsyncClient(**httpx_kwargs, headers=headers) as client:
+                response = await client.get(metrics_api)
+                metrics = response.json()
+
+                result = {
+                    'main': {},
+                    'sidecar': {},
+                }
+
+                if metrics.get('containers') is None:
+                    return result
+
+                for container in metrics['containers']:
+                    if container['name'].startswith('main'):
+                        result['main'] = {
+                            'cpu': container['usage']['cpu'],
+                            'memory': container['usage']['memory']
+                        }
+                    elif container['name'].startswith('sidecar'):
+                        result['sidecar'] = {
+                            'cpu': container['usage']['cpu'],
+                            'memory': container['usage']['memory']
+                        }
+
+                return result
+
+        except Exception:
+            logging.error(f"Failed to get metrics for pod {pod_name}", exc_info=True)
+            return {}
+
+    async def stat(self):
+        try:
+            get_deployment = sync_to_async(self.apps_v1.read_namespaced_deployment)
+            get_events = sync_to_async(self.core_v1.list_namespaced_event)
+            get_pods = sync_to_async(self.core_v1.list_namespaced_pod)
+
+            deployment = await get_deployment(name=f'app-{self.app.appid}', namespace=self.nsid)
+            pods = await get_pods(namespace=self.nsid, label_selector=f'appid={self.app.appid}')
+            events = await get_events(
+                namespace=self.nsid,
+                field_selector=f'involvedObject.name=app-{self.app.appid}',
+                timeout_seconds=10
+            )
+
+            pod_infos = []
+            err = False
+            app_state = ''
+
+            for i, pod in enumerate(pods.items):
+                is_terminating = pod.metadata.deletion_timestamp is not None
+
+                pod_info = {
+                    'name': f'Instance {i + 1}',
+                    'iref': pod.metadata.name,
+                    'state': 'terminating' if is_terminating else CONTAINER_STATES.get(pod.status.phase,
+                                                                                       pod.status.phase),
+                    'main': {},
+                    'sidecar': {},
+                    'init': {},
+                }
+
+                metrics = await self.get_metrics_for_pod(pod.metadata.name)
+
+                for container in pod.status.container_statuses:
+                    container_info = process_container_status(container)
+
+                    # If pod is terminating, override container state
+                    if is_terminating:
+                        container_info['state'] = 'terminating'
+
+                    if container_info['image_pull_status'] in ('ImagePullBackOff', 'ErrImagePull'):
+                        err = True
+                        container_info['image_pull_status'] = 'Image pull error'
+
+                    if container.name.startswith('main'):
+                        pod_info['main'] = container_info
+                        pod_info['main']['cpu'] = metrics['main'].get('cpu')
+                        pod_info['main']['memory'] = metrics['main'].get('memory')
+                    elif container.name.startswith('sidecar'):
+                        pod_info['sidecar'] = container_info
+                        pod_info['sidecar']['cpu'] = metrics['sidecar'].get('cpu')
+                        pod_info['sidecar']['memory'] = metrics['sidecar'].get('memory')
+
+                if pod.status.init_container_statuses:
+                    init_container = pod.status.init_container_statuses[0]
+                    pod_info['init'] = process_init_container_status(init_container)
+                    if is_terminating:
+                        pod_info['init']['state'] = 'terminating'
+
+                pod_infos.append(pod_info)
+
+            conditions = process_conditions(deployment)
+            event_messages = process_events(events)
+
+            if err:
+                app_state = 'error'
+            else:
+                for condition in reversed(conditions):
+                    if condition['status'] == 'True':
+                        app_state = CONTAINER_STATES.get(condition['type'], condition['type'])
+                        break
+
+            return {
+                'stat': {
+                    'app_state': app_state,
+                    'running': deployment.status.available_replicas or 0,
+                    'pending': deployment.status.unavailable_replicas or 0,
+                    'desired': deployment.status.updated_replicas,
+                    'total': deployment.status.replicas,
+                },
+                'instances': pod_infos,
+                'events': event_messages,
+                'conditions': conditions,
+            }
+
+        except Exception as e:
+            logging.error(f"Failed to get app stat {self.app.appid}", exc_info=True)
+            raise e
+
+    async def get_logs(self, pod_name, container_name):
+
+        logs = await sync_to_async(self.core_v1.read_namespaced_pod_log)(
+            name=pod_name,
+            namespace=self.nsid,
+            container=container_name,
+            tail_lines=500,
+            timestamps=True,
+            previous=False
+        )
+
+        return {'logs': logs}
