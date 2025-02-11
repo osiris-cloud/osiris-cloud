@@ -41,7 +41,7 @@ class AccessTokenAuthentication(authentication.BaseAuthentication):
             raise exceptions.AuthenticationFailed('Token expired')
 
         if not token.has_permission(request.path, request.method):
-            raise exceptions.AuthenticationFailed('Token does not have permission for this request')
+            raise exceptions.AuthenticationFailed('Token does not have permission to perform this action')
 
         token.update_last_used()  # Update last used timestamp
 
@@ -60,7 +60,7 @@ class AccessTokenOrIsAuthenticated(BasePermission):
             if request.user.role == 'blocked':
                 return False
 
-            if (request.user.role == 'guest') and (request.method in ('PUT', 'PATCH', 'DELETE')):
+            if (request.user.role == 'guest') and (request.method in ('PUT', 'PATCH', 'DELETE', 'WS:W')):
                 return False
 
         # Allow access if user is authenticated through session
