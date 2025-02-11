@@ -515,17 +515,135 @@ def under_limits(spec: dict, user) -> bool:
     agg_memory = 0
     agg_disk = 0
     scaling = spec.get('scaling', {})
+    count = scaling.get('max_replicas', scaling.get('min_replicas', 1))
 
-    for cont in (spec.get('main'), spec.get('sidecar'), spec.get('init')):
+    for cont in (spec.get('main'), spec.get('sidecar')):
         if cont:
-            agg_cpu += cont['cpu'] * scaling.get('max_replicas', 1)
-            agg_memory += cont['memory'] * scaling.get('max_replicas', 1)
+            agg_cpu += cont['cpu'] * count
+            agg_memory += cont['memory'] * count
 
     for vol in spec.get('volumes', []):
         agg_disk += vol['size']
 
+    main_sidecar_ok = True
+    init_ok = True
+
     if user.limit.limit_reached(cpu=agg_cpu, memory=agg_memory, disk=agg_disk):
-        return False
+        main_sidecar_ok = False
 
-    return True
+    if init := spec.get('init'):
+        if user.limit.limit_reached(cpu=init['cpu'] * count, memory=init['memory'] * count):
+            init_ok = False
 
+    return main_sidecar_ok and init_ok
+
+
+def process_events(events):
+    """
+    Process kubernetes events
+    """
+    event_messages = []
+    for e in reversed(events.items):
+        if e.reason == 'ScalingReplicaSet':
+            msg = e.message.split()
+            event_messages.append({
+                'message': ' '.join(msg[:2] + ['instances'] + msg[5:]),
+                'time': e.last_timestamp.isoformat() if e.last_timestamp else None
+            })
+        else:
+            event_messages.append({
+                'reason': e.reason,
+                'message': e.message,
+                'time': e.last_timestamp.isoformat() if e.last_timestamp else None
+            })
+    return event_messages
+
+
+def process_conditions(deployment):
+    """
+    Process deployment conditions
+    """
+    conditions = []
+    for condition in deployment.status.conditions:
+        last_transition_time = condition.last_transition_time
+        last_update_time = condition.last_update_time
+
+        conditions.append({
+            'type': condition.type,
+            'status': condition.status,
+            'reason': condition.reason if hasattr(condition, 'reason') else None,
+            'message': condition.message if hasattr(condition, 'message') else None,
+            'last_transition_time': last_transition_time.isoformat() if last_transition_time else None,
+            'last_update_time': last_update_time.isoformat() if last_update_time else None
+        })
+    return conditions
+
+
+def process_container_status(container):
+    """
+    Process container status information
+    """
+    container_info = {
+        'ref': container.name,
+        'state': None,
+        'image': container.image,
+        'ready': container.ready,
+        'restart_count': container.restart_count,
+        'started': container.started,
+        'image_pull_status': None,
+        'last_state': {
+            'reason': None,
+            'exit_code': None,
+            'finished_at': None
+        },
+        'started_at': None
+    }
+
+    if container.state.waiting:
+        container_info['state'] = 'creating'
+        container_info['image_pull_status'] = container.state.waiting.reason
+        if container.state.waiting.message:
+            container_info['message'] = container.state.waiting.message
+    elif container.state.running:
+        container_info['state'] = 'active'
+        container_info['image_pull_status'] = 'Pulled'
+        started_at = container.state.running.started_at
+        container_info['started_at'] = started_at.isoformat() if started_at else None
+    elif container.state.terminated:
+        container_info['state'] = 'terminated'
+        container_info['image_pull_status'] = container.state.terminated.reason
+
+    if container.last_state.terminated:
+        finished_at = container.last_state.terminated.finished_at
+        container_info['last_state'] = {
+            'reason': container.last_state.terminated.reason,
+            'exit_code': container.last_state.terminated.exit_code,
+            'finished_at': finished_at.isoformat() if finished_at else None
+        }
+
+    return container_info
+
+
+def process_init_container_status(init_container):
+    """
+    Process init container status
+    """
+    init_container_info = {
+        'name': init_container.name,
+        'image': init_container.image,
+        'ready': init_container.ready,
+        'restart_count': init_container.restart_count,
+        'started': init_container.started,
+        'state': None
+    }
+
+    if init_container.state.waiting:
+        init_container_info['state'] = 'waiting'
+        init_container_info['reason'] = init_container.state.waiting.reason
+    elif init_container.state.running:
+        init_container_info['state'] = 'running'
+    elif init_container.state.terminated:
+        init_container_info['state'] = 'terminated'
+        init_container_info['exit_code'] = init_container.state.terminated.exit_code
+
+    return init_container_info
