@@ -1,4 +1,5 @@
 import hashlib
+import os
 import random
 import string
 import boto3
@@ -125,3 +126,25 @@ def sponge_string(long_string: str, n=32) -> str:
     hash_obj = sha256(long_string.encode())
     hash_hex = hash_obj.hexdigest()
     return hash_hex[:n]
+
+
+def cleanup():
+    """
+    Clean up temporary files
+    """
+    from .settings import env
+    for temp_file in (env.k8s_auth['ca_cert'], env.k8s_auth['client_cert'], env.k8s_auth['client_key']):
+        try:
+            temp_file.close()
+            if os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
+        except Exception as e:
+            print(f"Error cleaning up temp file: {e}")
+
+
+def make_hashable(obj: dict | list | tuple) -> frozenset | tuple:
+    if isinstance(obj, dict):
+        return frozenset((k, make_hashable(v)) for k, v in obj.items())
+    elif isinstance(obj, (list, tuple)):
+        return tuple(make_hashable(i) for i in obj)
+    return obj
