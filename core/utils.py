@@ -16,6 +16,7 @@ from base64 import b32encode
 
 from kubernetes_asyncio import config as k8s_aio_config
 from kubernetes_asyncio.client.api_client import ApiClient as k8s_aio_ApiClient, Configuration as k8s_aio_Configuration
+from kubernetes_asyncio.stream import WsApiClient as k8s_aio_WsApiClient
 
 
 def success_message(message: str = '', data: dict | None = None) -> dict:
@@ -153,8 +154,9 @@ def make_hashable(obj: dict | list | tuple) -> frozenset | tuple:
     return obj
 
 
-async def get_k8s_api_client() -> k8s_aio_ApiClient:
+async def get_k8s_api_client(ws=False) -> k8s_aio_ApiClient:
     """
+    :param ws: Whether to return a websocket client
     Returns a Kubernetes async API client. Should call client.close() when done
     """
     from .settings import env
@@ -163,5 +165,10 @@ async def get_k8s_api_client() -> k8s_aio_ApiClient:
         config_dict=env.k8s_config_dict,
         client_configuration=k8s_config
     )
-    api_client = k8s_aio_ApiClient(configuration=k8s_config)
+
+    if ws:
+        api_client = k8s_aio_WsApiClient(configuration=k8s_config)
+    else:
+        api_client = k8s_aio_ApiClient(configuration=k8s_config)
+
     return api_client
