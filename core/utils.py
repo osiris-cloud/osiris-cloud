@@ -14,6 +14,9 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from base64 import b32encode
 
+from kubernetes_asyncio import config as k8s_aio_config
+from kubernetes_asyncio.client.api_client import ApiClient as k8s_aio_ApiClient, Configuration as k8s_aio_Configuration
+
 
 def success_message(message: str = '', data: dict | None = None) -> dict:
     if data is None:
@@ -148,3 +151,17 @@ def make_hashable(obj: dict | list | tuple) -> frozenset | tuple:
     elif isinstance(obj, (list, tuple)):
         return tuple(make_hashable(i) for i in obj)
     return obj
+
+
+async def get_k8s_api_client() -> k8s_aio_ApiClient:
+    """
+    Returns a Kubernetes async API client. Should call client.close() when done
+    """
+    from .settings import env
+    k8s_config = k8s_aio_Configuration()
+    await k8s_aio_config.load_kube_config_from_dict(
+        config_dict=env.k8s_config_dict,
+        client_configuration=k8s_config
+    )
+    api_client = k8s_aio_ApiClient(configuration=k8s_config)
+    return api_client
