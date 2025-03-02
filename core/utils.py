@@ -154,7 +154,7 @@ def make_hashable(obj: dict | list | tuple) -> frozenset | tuple:
     return obj
 
 
-async def get_k8s_api_client(ws=False) -> k8s_aio_ApiClient:
+async def get_k8s_api_client(ws=False) -> k8s_aio_ApiClient | k8s_aio_WsApiClient:
     """
     :param ws: Whether to return a websocket client
     Returns a Kubernetes async API client. Should call client.close() when done
