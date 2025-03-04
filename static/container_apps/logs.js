@@ -457,9 +457,11 @@ function connectLogWebSocket(tabId, iref, cref) {
             socket.onopen = () => {
                 if (tabInfo.tailLines) {
                     socket.send(JSON.stringify({
-                        tail_lines: tabInfo.tailLines
+                        'tail_lines': tabInfo.tailLines
                     }));
                 }
+
+                tabInfo.terminal.writeln('\x1b[32mConnected\x1b[0m');
             };
 
             socket.onmessage = (event) => {
@@ -494,7 +496,7 @@ function connectLogWebSocket(tabId, iref, cref) {
 
             socket.onclose = (event) => {
                 if (event.wasClean === false) {
-                    tabInfo.terminal.writeln('\x1b[33mLog connection closed unexpectedly\x1b[0m');
+                    tabInfo.terminal.writeln('\x1b[33mConnection closed\x1b[0m');
                 }
 
                 inactiveTabsMap.set(tabId, true);
