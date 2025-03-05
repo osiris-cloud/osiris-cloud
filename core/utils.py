@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import random
 import string
@@ -143,7 +144,7 @@ def cleanup():
             if os.path.exists(temp_file.name):
                 os.unlink(temp_file.name)
         except Exception as e:
-            print(f"Error cleaning up temp file: {e}")
+            logging.error(f"Error cleaning up temp file: {e}")
 
 
 def make_hashable(obj: dict | list | tuple) -> frozenset | tuple:
@@ -154,21 +155,26 @@ def make_hashable(obj: dict | list | tuple) -> frozenset | tuple:
     return obj
 
 
-async def get_k8s_api_client(ws=False) -> k8s_aio_ApiClient | k8s_aio_WsApiClient:
+async def get_k8s_api_client(ws=False) -> k8s_aio_ApiClient | k8s_aio_WsApiClient | None:
     """
     :param ws: Whether to return a websocket client
     Returns a Kubernetes async API client. Should call client.close() when done
     """
-    from .settings import env
-    k8s_config = k8s_aio_Configuration()
-    await k8s_aio_config.load_kube_config_from_dict(
-        config_dict=env.k8s_config_dict,
-        client_configuration=k8s_config
-    )
+    try:
+        from .settings import env
+        k8s_config = k8s_aio_Configuration()
+        await k8s_aio_config.load_kube_config_from_dict(
+            config_dict=env.k8s_config_dict,
+            client_configuration=k8s_config
+        )
 
-    if ws:
-        api_client = k8s_aio_WsApiClient(configuration=k8s_config)
-    else:
-        api_client = k8s_aio_ApiClient(configuration=k8s_config)
+        if ws:
+            api_client = k8s_aio_WsApiClient(configuration=k8s_config)
+        else:
+            api_client = k8s_aio_ApiClient(configuration=k8s_config)
 
-    return api_client
+        return api_client
+
+    except Exception as e:
+        logging.exception(e)
+        return None
