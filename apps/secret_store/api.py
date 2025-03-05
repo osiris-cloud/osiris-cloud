@@ -42,7 +42,6 @@ def secret_store(request, nsid=None, secretid=None, action=None):
         match request.method:
             case 'GET':
                 if s_type := request.GET.get('type'):
-                    print(s_type)
                     if s_type not in ('opaque', 'dockerconfig'):
                         return JsonResponse(error_message('Invalid secret type'), status=400)
 
