@@ -2,7 +2,7 @@ let logsModal;
 let inactiveTabsMap = new Map();
 let isInitializingLogView = false;
 let activeLogTabId = null;
-let logsTabsMap = new Map(); // {name, iref, cref, terminal, fitAddon, socket, pendingConnection, sessionTimeout, autoScrollEnabled, tailLines}
+let logsTabsMap = new Map(); // {name, iref, cref, terminal, fitAddon, socket, pendingConnection, sessionTimeout, autoScrollEnabled, tailLines, showTimestamps, logContent}
 
 const LOG_SESSION_TIMEOUT = 60000;
 const TAIL_LINE_OPTIONS = [50, 100, 200, 500, 1000];
@@ -100,6 +100,30 @@ function checkTabsScroll() {
     }
 }
 
+// Function to strip timestamp from log message
+function stripTimestamp(logMessage) {
+    // If the message is empty or only whitespace, return as is
+    if (!logMessage.trim()) {
+        return logMessage;
+    }
+
+    // Find the first space after the timestamp (ISO8601 format ends with Z followed by a space)
+    const timestampEndPos = logMessage.indexOf('Z ');
+
+    // If we found the timestamp end, return everything after it
+    if (timestampEndPos > 0) {
+        // +2 to skip the 'Z ' part
+        return logMessage.substring(timestampEndPos + 2);
+    }
+
+    // If the line only contains a timestamp (ends with Z without trailing content)
+    if (logMessage.trim().endsWith('Z')) {
+        return '';
+    }
+
+    // If no timestamp format was found, return the original message
+    return logMessage;
+}
 
 function initializeLogView(tabId, logElementId, tabInfo) {
     const $logElement = $(`#${logElementId}`);
@@ -155,15 +179,16 @@ function initializeLogView(tabId, logElementId, tabInfo) {
 
     $tailLinesContainer.append($tailLinesLabel, $tailLinesDropdown);
 
-    const checkboxId = `autoscroll-${tabId}-${Date.now()}`;
-    const $checkbox = $('<input/>', {
+    // Auto-scroll checkbox
+    const autoScrollCheckboxId = `autoscroll-${tabId}-${Date.now()}`;
+    const $autoScrollCheckbox = $('<input/>', {
         type: 'checkbox',
-        id: checkboxId,
+        id: autoScrollCheckboxId,
         class: 'w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600',
         checked: true
     });
 
-    $checkbox.on('change', function () {
+    $autoScrollCheckbox.on('change', function () {
         tabInfo.autoScrollEnabled = this.checked;
         if (this.checked && tabInfo.terminal) {
             setTimeout(() => tabInfo.terminal.scrollToBottom(), 0);
@@ -173,18 +198,68 @@ function initializeLogView(tabId, logElementId, tabInfo) {
     const $autoScrollToggle = $('<div/>', {
         class: 'flex items-center'
     }).append(
-        $checkbox,
+        $autoScrollCheckbox,
         $('<label/>', {
-            for: checkboxId,
+            for: autoScrollCheckboxId,
             text: 'Auto scroll',
             class: 'ms-2 text-sm font-medium text-gray-300 cursor-pointer'
         }).on('click', function () {
-            $checkbox.prop('checked', !$checkbox.prop('checked')).trigger('change');
+            $autoScrollCheckbox.prop('checked', !$autoScrollCheckbox.prop('checked')).trigger('change');
             return false;
         })
     );
 
-    $controlsLeft.append($tailLinesContainer, $autoScrollToggle);
+    // Timestamp checkbox
+    const timestampCheckboxId = `timestamps-${tabId}-${Date.now()}`;
+    const $timestampCheckbox = $('<input/>', {
+        type: 'checkbox',
+        id: timestampCheckboxId,
+        class: 'w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600',
+        checked: tabInfo.showTimestamps || false
+    });
+
+    $timestampCheckbox.on('change', function () {
+        tabInfo.showTimestamps = this.checked;
+
+        // Reprocess and display logs with or without timestamps
+        if (tabInfo.terminal) {
+            tabInfo.terminal.clear();
+
+            // Split the raw logs by newline
+            const rawLogs = tabInfo.logContent.split('\n');
+
+            // Process each line according to the timestamp setting
+            rawLogs.forEach(logLine => {
+                if (logLine.trim()) {
+                    if (tabInfo.showTimestamps) {
+                        tabInfo.terminal.writeln(logLine);
+                    } else {
+                        tabInfo.terminal.writeln(stripTimestamp(logLine));
+                    }
+                }
+            });
+
+            if (tabInfo.autoScrollEnabled) {
+                setTimeout(() => tabInfo.terminal.scrollToBottom(), 0);
+            }
+        }
+    });
+
+    const $timestampToggle = $('<div/>', {
+        class: 'flex items-center ml-4'
+    }).append(
+        $timestampCheckbox,
+        $('<label/>', {
+            for: timestampCheckboxId,
+            text: 'Show timestamps',
+            class: 'ms-2 text-sm font-medium text-gray-300 cursor-pointer'
+        }).on('click', function () {
+            $timestampCheckbox.prop('checked', !$timestampCheckbox.prop('checked')).trigger('change');
+            return false;
+        })
+    );
+
+    $controlsLeft.append($tailLinesContainer, $autoScrollToggle, $timestampToggle);
 
     const $controlsRight = $('<div/>', {
         class: 'flex items-center'
@@ -469,8 +544,16 @@ function connectLogWebSocket(tabId, iref, cref) {
                     const data = JSON.parse(event.data);
                     if (data.log !== undefined) {
                         const logLine = data.log;
-                        tabInfo.terminal.writeln(logLine);
+
+                        // Always store the full log content with timestamps
                         tabInfo.logContent += logLine + '\n';
+
+                        // Display according to timestamp preference
+                        if (tabInfo.showTimestamps) {
+                            tabInfo.terminal.writeln(logLine);
+                        } else {
+                            tabInfo.terminal.writeln(stripTimestamp(logLine));
+                        }
 
                         if (tabInfo.autoScrollEnabled) {
                             setTimeout(() => {
@@ -484,8 +567,15 @@ function connectLogWebSocket(tabId, iref, cref) {
                     }
                 } catch (e) {
                     if (typeof event.data === 'string') {
-                        tabInfo.terminal.write(event.data);
+                        // Store the raw data
                         tabInfo.logContent += event.data;
+
+                        // Display according to timestamp preference
+                        if (tabInfo.showTimestamps) {
+                            tabInfo.terminal.write(event.data);
+                        } else {
+                            tabInfo.terminal.write(stripTimestamp(event.data));
+                        }
 
                         if (tabInfo.autoScrollEnabled) {
                             tabInfo.terminal.scrollToBottom();
@@ -583,6 +673,7 @@ window.addLogsTab = function addLogsTab(name, iref, cref) {
         pendingConnection: null,
         sessionTimeout: null,
         autoScrollEnabled: true,
+        showTimestamps: false, // Timestamps off by default
         tailLines: 100,
         logContent: ''
     });
