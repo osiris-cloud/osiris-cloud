@@ -1,0 +1,76 @@
+<style>
+    .instance-container {
+        transition: all 0.2s ease;
+    }
+
+    .instance-container:hover {
+        transform: translateX(3px);
+    }
+
+    .instance-container.selected {
+        border-left: 3px solid #3b82f6;
+    }
+</style>
+
+<div class="flex gap-x-4 mt-0">
+    <div id="instances-list" class="space-y-2 w-56">
+        <div id="instance-list-placeholder"
+             class="flex flex-1 bg-white dark:bg-gray-800 border dark:border-gray-600 rounded-lg shadow p-4 items-center justify-center">
+            <p class="text-gray-500 dark:text-gray-400 text-center">Loading...</p>
+        </div>
+    </div>
+
+    <div id="instance-details-placeholder"
+         class="flex flex-1 bg-white dark:bg-gray-800 border dark:border-gray-600 rounded-lg shadow p-4 items-center justify-center">
+        <p class="text-gray-500 dark:text-gray-400 text-center">Loading...</p>
+    </div>
+
+    <div id="instance-details"
+         class="flex-1 bg-white dark:bg-gray-800 border dark:border-gray-600 rounded-lg shadow p-4 hidden">
+        <h3 id="instance-heading" class="text-xl font-bold"></h3>
+        <template id="container-alert-template">
+            <div class="mt-1.5 flex p-2 text-sm items-center text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-700 dark:text-yellow-300"
+                 role="alert">
+                <div class="inline-flex items-center justify-center shrink-0 w-8 h-8 mr-2 text-orange-500 bg-orange-100 rounded-lg dark:bg-orange-700 dark:text-orange-200">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM10 15a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm1-4a1 1 0 0 1-2 0V6a1 1 0 0 1 2 0v5Z"></path>
+                    </svg>
+                </div>
+                <span class="font-medium">Message</span>
+            </div>
+        </template>
+
+        <div id="container-alerts" class="flex flex-col gap-y-2"></div>
+
+        <div id="containers-info" class="space-y-4 mt-4">
+            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">
+                            Container
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                            State
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                            Image
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                            Restarts
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                            Started
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                            Options
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody id="containers-table">
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
