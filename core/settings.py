@@ -71,8 +71,9 @@ class Env:
 
     k8s_url = ''
     k8s_ws_url = ''
-
+    k8s_config_dict = {}
     k8s_api_client = None
+    k8s_aio_client = None
     k8s_auth = {
         'client_key': tempfile.NamedTemporaryFile(delete=False),
         'client_cert': tempfile.NamedTemporaryFile(delete=False),
@@ -98,6 +99,7 @@ class Env:
 
         if kubeconfig:
             kube_config = safe_load(kubeconfig)
+            self.k8s_config_dict = kube_config
 
             url = urlparse(self.k8s_url)
             self.k8s_ws_url = 'ws://' if url.scheme == 'http' else 'wss://' + url.netloc + url.path
