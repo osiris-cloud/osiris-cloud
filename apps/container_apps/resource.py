@@ -1,35 +1,39 @@
 import kubernetes
-import httpx
 import logging
 
 from base64 import b64encode
 from datetime import datetime
-from asgiref.sync import sync_to_async
 
 from core.settings import env
 
 from .models import Container, ContainerApp
+from ..infra.models import Volume
 from ..secret_store.models import Secret
 
-from ..infra.constants import RESTART_POLICIES, NYU_SUBNETS, CONTAINER_STATES
+from ..infra.constants import RESTART_POLICIES, NYU_SUBNETS
 
-from .utils import process_container_status, process_init_container_status, process_events, process_conditions
+
+class AppResourceError(Exception):
+    def __init__(self, message="", code=-1):
+        self.message = message
+        if code == 404:
+            self.message = "The app no longer exits or you don't have permission to access it"
+        super().__init__(self.message)
 
 
 class AppResource:
+    apps_v1 = kubernetes.client.AppsV1Api(env.k8s_api_client)
+    core_v1 = kubernetes.client.CoreV1Api(env.k8s_api_client)
+    networking_v1 = kubernetes.client.NetworkingV1Api(env.k8s_api_client)
+    custom_objects = kubernetes.client.CustomObjectsApi(env.k8s_api_client)
+
     def __init__(self, app: ContainerApp, request=None):
-        self.k8s_config = env.k8s_api_client.configuration
-        self.apps_v1 = kubernetes.client.AppsV1Api(env.k8s_api_client)
-        self.core_v1 = kubernetes.client.CoreV1Api(env.k8s_api_client)
-        self.networking_v1 = kubernetes.client.NetworkingV1Api(env.k8s_api_client)
-        self.custom_objects = kubernetes.client.CustomObjectsApi(env.k8s_api_client)
         self.app = app
         self.containers = app.containers.all()
         self.main_container = app.containers.get(type='main')
         self.volumes = app.volumes.all()
         self.nsid = app.namespace.nsid
         self.ip_rule = app.ip_rule
-
         self.pull_secrets = set()
         self.request = request
 
@@ -41,44 +45,14 @@ class AppResource:
         self.create_deployment()
         self.create_service()
         self.create_fw_rules()
-        self.create_ingress()
+        self.create_route()
         self.create_autoscaler()
         self.app.state = 'active'
         self.app.save()
 
     def delete(self):
-        try:
-            self.app.state = 'deleting'
-            self.app.save()
-
-            self.delete_pvc(del_all=True)
-            self.core_v1.delete_namespaced_service(name=f'svc-{self.app.appid}', namespace=self.nsid)
-            self.custom_objects.delete_namespaced_custom_object(name=f"ingress-{self.app.appid}",
-                                                                group="traefik.io",
-                                                                version="v1alpha1",
-                                                                namespace=self.nsid,
-                                                                plural="ingressroutes")
-            self.custom_objects.delete_namespaced_custom_object(name=f"scaler-{self.app.appid}",
-                                                                group="keda.sh",
-                                                                version="v1alpha1",
-                                                                namespace=self.nsid,
-                                                                plural="scaledobjects")
-            self.custom_objects.delete_namespaced_custom_object(name=f"fw-rules-{self.app.appid}",
-                                                                group="traefik.io",
-                                                                version="v1alpha1",
-                                                                namespace=self.nsid,
-                                                                plural="middlewares")
-            self.apps_v1.delete_namespaced_deployment(name=f'app-{self.app.appid}', namespace=self.nsid)
-
-            for container in self.app.containers.all():
-                container.delete()
-            for custom_domain in self.app.custom_domains.all():
-                custom_domain.delete()
+        if self.delete_deployment():
             self.app.delete()
-
-        except kubernetes.client.exceptions.ApiException as e:
-            logging.error(f"Failed to delete app {self.app.appid}", exc_info=True)
-            raise e
 
     def create_pull_secrets(self):
         secrets = set()
@@ -94,6 +68,7 @@ class AppResource:
 
         def create(name, data=None):
             secret_spec = None
+
             try:
                 secret_spec = kubernetes.client.V1Secret(
                     metadata=kubernetes.client.V1ObjectMeta(
@@ -103,18 +78,18 @@ class AppResource:
                     type='kubernetes.io/dockerconfigjson',
                     data=data,
                 )
-                self.core_v1.create_namespaced_secret(namespace=self.nsid, body=secret_spec)
+                AppResource.core_v1.create_namespaced_secret(namespace=self.nsid, body=secret_spec)
 
             except kubernetes.client.exceptions.ApiException as e:
                 if e.status == 409:
-                    self.core_v1.replace_namespaced_secret(
+                    AppResource.core_v1.replace_namespaced_secret(
                         name=name,
                         namespace=self.nsid,
                         body=secret_spec
                     )
                 else:
                     logging.error(f"Failed to create secret {name}", exc_info=True)
-                    raise e
+
             finally:
                 self.pull_secrets.add(name)
 
@@ -154,11 +129,11 @@ class AppResource:
             )
 
             try:
-                secret = self.core_v1.create_namespaced_secret(namespace=self.nsid, body=secret_spec)
+                secret = AppResource.core_v1.create_namespaced_secret(namespace=self.nsid, body=secret_spec)
                 secrets.add(secret)
             except kubernetes.client.exceptions.ApiException as e:
                 if e.status == 409:
-                    secret = self.core_v1.replace_namespaced_secret(
+                    secret = AppResource.core_v1.replace_namespaced_secret(
                         name='secret-' + user_secret.secretid,
                         namespace=self.nsid,
                         body=secret_spec
@@ -166,7 +141,6 @@ class AppResource:
                     secrets.add(secret)
                 else:
                     logging.error(f"Failed to create secret secret-{user_secret.secretid}", exc_info=True)
-                    raise e
 
         # Create env secrets
         for container in self.app.containers.all():
@@ -186,11 +160,11 @@ class AppResource:
                 )
 
                 try:
-                    secret = self.core_v1.create_namespaced_secret(namespace=self.nsid, body=secret_spec)
+                    secret = AppResource.core_v1.create_namespaced_secret(namespace=self.nsid, body=secret_spec)
                     secrets.add(secret)
                 except kubernetes.client.exceptions.ApiException as e:
                     if e.status == 409:
-                        secret = self.core_v1.replace_namespaced_secret(
+                        secret = AppResource.core_v1.replace_namespaced_secret(
                             name='secret-' + container.env_secret.secretid,
                             namespace=self.nsid,
                             body=secret_spec
@@ -198,7 +172,6 @@ class AppResource:
                         secrets.add(secret)
                     else:
                         logging.error(f"Failed to create secret secret-{container.env_secret.secretid}", exc_info=True)
-                        raise e
 
         return list(secrets)
 
@@ -223,14 +196,13 @@ class AppResource:
                 )
             )
             try:
-                pvc = self.core_v1.create_namespaced_persistent_volume_claim(namespace=self.nsid, body=pvc_spec)
+                pvc = AppResource.core_v1.create_namespaced_persistent_volume_claim(namespace=self.nsid, body=pvc_spec)
                 pvcs.append(pvc)
             except kubernetes.client.exceptions.ApiException as e:
                 if e.status == 409:
                     pass
                 else:
                     logging.error(f"Failed to create pvc vol-{vol.volid}", exc_info=True)
-                    raise e
 
         return pvcs
 
@@ -244,7 +216,8 @@ class AppResource:
             try:
                 vol = self.volumes.get(volid=volid)
                 if vol.type in ('block', 'fs'):
-                    self.core_v1.delete_namespaced_persistent_volume_claim(name='vol-' + volid, namespace=self.nsid)
+                    AppResource.core_v1.delete_namespaced_persistent_volume_claim(name='vol-' + volid,
+                                                                                  namespace=self.nsid)
 
                 vol.delete()
             except kubernetes.client.exceptions.ApiException as e:
@@ -252,11 +225,10 @@ class AppResource:
                     continue
                 else:
                     logging.error(f"Failed to delete pvc vol-{volid}", exc_info=True)
-                    raise e
 
     def gen_container_resource_spec(self, container: Container) -> kubernetes.client.V1ResourceRequirements:
-        cpu_pretty = lambda cpu: f"{cpu:.2f}"
-        mem_pretty = lambda mem: f"{int(mem * 1024)}M"
+        cpu_pretty = lambda cpu: f"{int(cpu * 1000)}m"
+        mem_pretty = lambda mem: f"{int(mem * 1024)}Mi"
 
         return kubernetes.client.V1ResourceRequirements(
             requests={
@@ -339,7 +311,7 @@ class AppResource:
 
     def create_container_spec(self, container: Container) -> kubernetes.client.V1Container:
         container_spec = kubernetes.client.V1Container(
-            name=f"{container.type}-{container.containerid}",
+            name=container.type,
             image=container.image,
             image_pull_policy='Always',
             resources=self.gen_container_resource_spec(container),
@@ -422,23 +394,24 @@ class AppResource:
                         containers=[self.create_container_spec(c) for c in main_containers + sidecar_containers],
                         volumes=self.gen_volume_spec(),
                         image_pull_secrets=self.gen_pull_secret_spec(),
-                        termination_grace_period_seconds=15
+                        termination_grace_period_seconds=15,
+                        automount_service_account_token=False,
+                        enable_service_links=False,
                     )
                 )
             )
         )
 
         try:
-            return self.apps_v1.create_namespaced_deployment(namespace=self.nsid, body=deployment)
+            return AppResource.apps_v1.create_namespaced_deployment(namespace=self.nsid, body=deployment)
         except kubernetes.client.exceptions.ApiException as e:
             if e.status == 409:
-                return self.apps_v1.replace_namespaced_deployment(name='app-' + self.app.appid,
-                                                                  namespace=self.nsid,
-                                                                  body=deployment
-                                                                  )
+                return AppResource.apps_v1.replace_namespaced_deployment(name='app-' + self.app.appid,
+                                                                         namespace=self.nsid,
+                                                                         body=deployment
+                                                                         )
             else:
                 logging.error(f"Failed to create deployment app-{self.app.appid}", exc_info=True)
-                raise e
 
     def create_service(self):
         port_config = {
@@ -465,16 +438,15 @@ class AppResource:
         )
 
         try:
-            self.core_v1.create_namespaced_service(namespace=self.nsid, body=service_spec)
+            AppResource.core_v1.create_namespaced_service(namespace=self.nsid, body=service_spec)
         except kubernetes.client.exceptions.ApiException as e:
             if e.status == 409:
-                self.core_v1.replace_namespaced_service(name=f'svc-{self.app.appid}',
-                                                        namespace=self.nsid,
-                                                        body=service_spec
-                                                        )
+                AppResource.core_v1.replace_namespaced_service(name=f'svc-{self.app.appid}',
+                                                               namespace=self.nsid,
+                                                               body=service_spec
+                                                               )
             else:
                 logging.error(f"Failed to create service svc-{self.app.appid}", exc_info=True)
-                raise e
 
     def create_fw_rules(self):
         if self.app.connection_protocol == 'http':
@@ -517,27 +489,26 @@ class AppResource:
 
             for middleware in middlewares:
                 try:
-                    self.custom_objects.create_namespaced_custom_object(group="traefik.io",
-                                                                        version="v1alpha1",
-                                                                        namespace=self.nsid,
-                                                                        plural="middlewares",
-                                                                        body=middleware)
+                    AppResource.custom_objects.create_namespaced_custom_object(group="traefik.io",
+                                                                               version="v1alpha1",
+                                                                               namespace=self.nsid,
+                                                                               plural="middlewares",
+                                                                               body=middleware)
                 except kubernetes.client.exceptions.ApiException as e:
                     if e.status == 409:
-                        self.custom_objects.replace_namespaced_custom_object(name="fw-rules-" + self.app.appid,
-                                                                             group="traefik.io",
-                                                                             version="v1alpha1",
-                                                                             namespace=self.nsid,
-                                                                             plural="middlewares",
-                                                                             body=middleware)
+                        AppResource.custom_objects.replace_namespaced_custom_object(name="fw-rules-" + self.app.appid,
+                                                                                    group="traefik.io",
+                                                                                    version="v1alpha1",
+                                                                                    namespace=self.nsid,
+                                                                                    plural="middlewares",
+                                                                                    body=middleware)
                     else:
                         logging.error(f"Failed to create middleware {middleware['metadata']['name']}", exc_info=True)
-                        raise e
 
         else:  # TODO TCP/UDP LB rules
             pass
 
-    def create_ingress(self):
+    def create_route(self):
         if self.app.connection_protocol != 'http':
             return None
 
@@ -563,7 +534,7 @@ class AppResource:
             "apiVersion": "traefik.io/v1alpha1",
             "kind": "IngressRoute",
             "metadata": {
-                "name": f"ingress-{self.app.appid}",
+                "name": f"route-{self.app.appid}",
                 "namespace": self.nsid
             },
             "spec": {
@@ -581,119 +552,111 @@ class AppResource:
             ingress_route['spec']['tls'] = {"certResolver": "letsencrypt"}
 
         try:
-            self.custom_objects.create_namespaced_custom_object(group="traefik.io",
-                                                                version="v1alpha1",
-                                                                namespace=self.nsid,
-                                                                plural="ingressroutes",
-                                                                body=ingress_route)
+            AppResource.custom_objects.create_namespaced_custom_object(group="traefik.io",
+                                                                       version="v1alpha1",
+                                                                       namespace=self.nsid,
+                                                                       plural="ingressroutes",
+                                                                       body=ingress_route)
         except kubernetes.client.exceptions.ApiException as e:
             if e.status == 409:
-                self.custom_objects.replace_namespaced_custom_object(
-                    name=f"ingress-{self.app.appid}",
-                    group="traefik.io",
-                    version="v1alpha1",
-                    namespace=self.nsid,
-                    plural="ingressroutes",
-                    body=ingress_route)
+                AppResource.custom_objects.replace_namespaced_custom_object(name=f"route-{self.app.appid}",
+                                                                            group="traefik.io",
+                                                                            version="v1alpha1",
+                                                                            namespace=self.nsid,
+                                                                            plural="ingressroutes",
+                                                                            body=ingress_route)
             else:
-                logging.error(f"Failed to create ingress ingress-{self.app.appid}", exc_info=True)
-                raise e
+                logging.error(f"Failed to create route-{self.app.appid}", exc_info=True)
 
     def create_autoscaler(self):
         scalers = self.app.scaler.scalers
 
-        if scalers == []:  # Delete autoscaler if no scalers are defined
+        if not scalers:  # Delete autoscaler if no scalers are defined
             try:
-                self.custom_objects.delete_namespaced_custom_object(name="scaler-" + self.app.appid,
-                                                                    group="keda.sh",
-                                                                    version="v1alpha1",
-                                                                    namespace=self.nsid,
-                                                                    plural="scaledobjects")
+                AppResource.custom_objects.delete_namespaced_custom_object(name="scaler-" + self.app.appid,
+                                                                           group="keda.sh",
+                                                                           version="v1alpha1",
+                                                                           namespace=self.nsid,
+                                                                           plural="scaledobjects")
             except kubernetes.client.exceptions.ApiException as e:
                 if e.status == 404:
-                    return None
+                    pass
                 else:
                     logging.error(f"Failed to delete autoscaler scaler-{self.app.appid}", exc_info=True)
-                    raise e
 
-            return None
-
-        triggers = lambda t, v: {
-            "type": t,
-            "metadata": {
-                "type": "Utilization",
-                "value": v,
-                "scalingModifiers": {
-                    "formula": "avg * 2"
+        else:
+            triggers = lambda t, v: {
+                "type": t,
+                "metadata": {
+                    "type": "Utilization",
+                    "value": v,
                 }
             }
-        }
 
-        scaled_object = {
-            "apiVersion": "keda.sh/v1alpha1",
-            "kind": "ScaledObject",
-            "metadata": {
-                "name": "scaler-" + self.app.appid,
-                "namespace": self.nsid
-            },
-            "spec": {
-                "scaleTargetRef": {
-                    "name": "app-" + self.app.appid,
-                    "kind": "Deployment"
+            scaled_object = {
+                "apiVersion": "keda.sh/v1alpha1",
+                "kind": "ScaledObject",
+                "metadata": {
+                    "name": "scaler-" + self.app.appid,
+                    "namespace": self.nsid
                 },
-                "minReplicaCount": self.app.scaler.min_replicas,
-                "maxReplicaCount": self.app.scaler.max_replicas,
-                "pollingInterval": 15,
-                "cooldownPeriod": 60,
-                "triggers": [triggers(scaler['type'], scaler['target']) for scaler in scalers],
-                "advanced": {
-                    "restoreToOriginalReplicaCount": True,
-                    "horizontalPodAutoscalerConfig": {
-                        "behavior": {
-                            "scaleDown": {
-                                "stabilizationWindowSeconds": self.app.scaler.scaledown_stb_window,
-                                "policies": [
-                                    {
-                                        "type": "Percent",
-                                        "value": 100,
-                                        "periodSeconds": 10
-                                    }
-                                ]
-                            },
-                            "scaleUp": {
-                                "stabilizationWindowSeconds": self.app.scaler.scaleup_stb_window,
-                                "policies": [
-                                    {
-                                        "type": "Percent",
-                                        "value": 100,
-                                        "periodSeconds": 10
-                                    }
-                                ]
+                "spec": {
+                    "scaleTargetRef": {
+                        "name": "app-" + self.app.appid,
+                        "kind": "Deployment"
+                    },
+                    "minReplicaCount": self.app.scaler.min_replicas,
+                    "maxReplicaCount": self.app.scaler.max_replicas,
+                    "pollingInterval": 15,
+                    "cooldownPeriod": 60,
+                    "triggers": [triggers(scaler['type'], round(scaler['target'] / 2, 1)) for scaler in scalers],
+                    "advanced": {
+                        "restoreToOriginalReplicaCount": True,
+                        "horizontalPodAutoscalerConfig": {
+                            "behavior": {
+                                "scaleDown": {
+                                    "stabilizationWindowSeconds": self.app.scaler.scaledown_stb_window,
+                                    "policies": [
+                                        {
+                                            "type": "Percent",
+                                            "value": 100,
+                                            "periodSeconds": 10
+                                        }
+                                    ]
+                                },
+                                "scaleUp": {
+                                    "stabilizationWindowSeconds": self.app.scaler.scaleup_stb_window,
+                                    "policies": [
+                                        {
+                                            "type": "Percent",
+                                            "value": 100,
+                                            "periodSeconds": 10
+                                        }
+                                    ]
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        try:
-            self.custom_objects.create_namespaced_custom_object(group="keda.sh",
-                                                                version="v1alpha1",
-                                                                namespace=self.nsid,
-                                                                plural="scaledobjects",
-                                                                body=scaled_object)
+            try:
+                AppResource.custom_objects.create_namespaced_custom_object(group="keda.sh",
+                                                                           version="v1alpha1",
+                                                                           namespace=self.nsid,
+                                                                           plural="scaledobjects",
+                                                                           body=scaled_object)
 
-        except kubernetes.client.exceptions.ApiException as e:
-            if e.status == 409:
-                self.custom_objects.replace_namespaced_custom_object(name="scaler-" + self.app.appid,
-                                                                     group="keda.sh",
-                                                                     version="v1alpha1",
-                                                                     namespace=self.nsid,
-                                                                     plural="scaledobjects",
-                                                                     body=scaled_object)
-            else:
-                logging.error(f"Failed to create autoscaler scaler-{self.app.appid}", exc_info=True)
-                raise e
+            except kubernetes.client.exceptions.ApiException as e:
+                if e.status == 409:
+                    AppResource.custom_objects.replace_namespaced_custom_object(name="scaler-" + self.app.appid,
+                                                                                group="keda.sh",
+                                                                                version="v1alpha1",
+                                                                                namespace=self.nsid,
+                                                                                plural="scaledobjects",
+                                                                                body=scaled_object)
+                else:
+                    logging.error(f"Failed to create autoscaler scaler-{self.app.appid}", exc_info=True)
 
     def redeploy(self):
         try:
@@ -708,158 +671,155 @@ class AppResource:
                     }
                 }
             }
-            self.apps_v1.patch_namespaced_deployment(name='app-' + self.app.appid, namespace=self.nsid, body=patch)
+
+            AppResource.apps_v1.patch_namespaced_deployment(name='app-' + self.app.appid, namespace=self.nsid,
+                                                            body=patch)
 
         except kubernetes.client.exceptions.ApiException as e:
             logging.error(f"Failed to redeploy app {self.app.appid}", exc_info=True)
-            raise e
 
-    async def get_metrics_for_pod(self, pod_name):
-        """
-        Get current CPU and memory metrics for a pod
-        """
-        metrics_api = f"{self.k8s_config.host}/apis/metrics.k8s.io/v1beta1/namespaces/{self.nsid}/pods/{pod_name}"
-
-        headers = {'Accept': 'application/json'}
-
-        if token := env.k8s_auth.get('token'):
-            headers['Authorization'] = f"Bearer {token}"
-            httpx_kwargs = {'headers': headers, 'verify': False}
-        else:
-            httpx_kwargs = {
-                'verify': env.k8s_auth['ca_cert'].name,
-                'cert': (env.k8s_auth['client_cert'].name, env.k8s_auth['client_key'].name)
-            }
-
+    def delete_deployment(self) -> bool:
         try:
-            async with httpx.AsyncClient(**httpx_kwargs, headers=headers) as client:
-                response = await client.get(metrics_api)
-                metrics = response.json()
+            # Delete autoscaler
 
-                result = {
-                    'main': {},
-                    'sidecar': {},
-                }
+            try:
+                AppResource.custom_objects.delete_namespaced_custom_object(name=f"scaler-{self.app.appid}",
+                                                                           group="keda.sh",
+                                                                           version="v1alpha1",
+                                                                           namespace=self.nsid,
+                                                                           plural="scaledobjects")
+            except kubernetes.client.exceptions.ApiException as e:
+                if e.status != 404:
+                    logging.warning(f"Failed to delete autoscaler for {self.app.appid}: {e}")
+                    raise e
 
-                if metrics.get('containers') is None:
-                    return result
+            # Delete route
 
-                for container in metrics['containers']:
-                    if container['name'].startswith('main'):
-                        result['main'] = {
-                            'cpu': container['usage']['cpu'],
-                            'memory': container['usage']['memory']
-                        }
-                    elif container['name'].startswith('sidecar'):
-                        result['sidecar'] = {
-                            'cpu': container['usage']['cpu'],
-                            'memory': container['usage']['memory']
-                        }
+            try:
+                AppResource.custom_objects.delete_namespaced_custom_object(name=f"route-{self.app.appid}",
+                                                                           group="traefik.io",
+                                                                           version="v1alpha1",
+                                                                           namespace=self.nsid,
+                                                                           plural="ingressroutes")
+            except kubernetes.client.exceptions.ApiException as e:
+                if e.status != 404:
+                    logging.warning(f"Failed to delete route for {self.app.appid}: {e}")
+                    raise e
 
-                return result
+            # Delete firewall rules/middlewares
+
+            middleware_names = [f"iprules-{self.app.appid}"]
+            if self.ip_rule.nyu_only:
+                middleware_names.append(f"nyu-only-{self.app.appid}")
+
+            for name in middleware_names:
+                try:
+                    AppResource.custom_objects.delete_namespaced_custom_object(name=name,
+                                                                               group="traefik.io",
+                                                                               version="v1alpha1",
+                                                                               namespace=self.nsid,
+                                                                               plural="middlewares")
+                except kubernetes.client.exceptions.ApiException as e:
+                    if e.status != 404:
+                        logging.warning(f"Failed to delete middleware {name}: {e}")
+                        raise e
+
+            # Delete service
+
+            try:
+                AppResource.core_v1.delete_namespaced_service(name=f'svc-{self.app.appid}',
+                                                              namespace=self.nsid)
+
+            except kubernetes.client.exceptions.ApiException as e:
+                if e.status != 404:
+                    logging.warning(f"Failed to delete service for {self.app.appid}: {e}")
+                    raise e
+
+            # Delete deployment
+
+            try:
+                AppResource.apps_v1.delete_namespaced_deployment(name=f'app-{self.app.appid}',
+                                                                 namespace=self.nsid)
+
+            except kubernetes.client.exceptions.ApiException as e:
+                if e.status != 404:
+                    logging.warning(f"Failed to delete deployment for {self.app.appid}: {e}")
+                    raise e
+
+            #  Delete secrets
+
+            secret_ids_to_check = set()
+
+            for container in self.containers:
+                if container.pull_secret:
+                    secret_ids_to_check.add(container.pull_secret.secretid)
+
+            for container in self.containers:
+                if container.env_secret:
+                    secret_ids_to_check.add(container.env_secret.secretid)
+
+            for vol in self.volumes:
+                if vol.type == 'secret' and 'secretid' in vol.metadata:
+                    secret_ids_to_check.add(vol.metadata.get('secretid'))
+
+            # Check and delete secrets that aren't used elsewhere
+
+            for secret_id in secret_ids_to_check:
+
+                other_pull_secret_usages = (Container.objects.filter(pull_secret__secretid=secret_id)
+                                            .exclude(app=self.app).count())
+
+                other_env_secret_usages = (Container.objects.filter(env_secret__secretid=secret_id)
+                                           .exclude(app=self.app).count())
+
+                other_volume_usages = (Volume.objects.filter(type='secret', metadata__secretid=secret_id)
+                                       .exclude(app=self.app).count())
+
+                if other_pull_secret_usages == 0 and other_env_secret_usages == 0 and other_volume_usages == 0:
+                    try:
+                        AppResource.core_v1.delete_namespaced_secret(name=f'secret-{secret_id}',
+                                                                     namespace=self.nsid)
+
+                    except kubernetes.client.exceptions.ApiException as e:
+                        if e.status != 404:
+                            logging.warning(f"Failed to delete secret-{secret_id}: {e}")
+
+                    # For registry pull secrets
+                    try:
+                        AppResource.core_v1.delete_namespaced_secret(name=f'pull-secret-{secret_id}',
+                                                                     namespace=self.nsid)
+
+                    except kubernetes.client.exceptions.ApiException as e:
+                        if e.status != 404:
+                            logging.warning(f"Failed to delete pull-secret-{secret_id}: {e}")
+
+            # 7. Delete volume secrets
+
+            for vol in self.volumes:
+                if vol.type == 'secret':
+                    try:
+                        AppResource.core_v1.delete_namespaced_secret(name=f"secret-{vol.metadata.get('secretid')}",
+                                                                     namespace=self.nsid)
+
+                    except kubernetes.client.exceptions.ApiException as e:
+                        if e.status != 404:
+                            logging.warning(f"Failed to delete volume secret for volume {vol.volid}: {e}")
+                            raise e
+
+            # Delete PVC
+
+            for vol in self.volumes:
+                if vol.type in ('block', 'fs'):
+                    try:
+                        AppResource.core_v1.delete_namespaced_persistent_volume_claim(name=f'vol-{vol.volid}',
+                                                                                      namespace=self.nsid)
+
+                    except kubernetes.client.exceptions.ApiException as e:
+                        if e.status != 404:
+                            logging.warning(f"Failed to delete PVC for volume {vol.volid}: {e}")
+                            raise e
+
+            return True
 
         except Exception:
-            logging.error(f"Failed to get metrics for pod {pod_name}", exc_info=True)
-            return {}
-
-    async def stat(self):
-        try:
-            get_deployment = sync_to_async(self.apps_v1.read_namespaced_deployment)
-            get_events = sync_to_async(self.core_v1.list_namespaced_event)
-            get_pods = sync_to_async(self.core_v1.list_namespaced_pod)
-
-            deployment = await get_deployment(name=f'app-{self.app.appid}', namespace=self.nsid)
-            pods = await get_pods(namespace=self.nsid, label_selector=f'appid={self.app.appid}')
-            events = await get_events(
-                namespace=self.nsid,
-                field_selector=f'involvedObject.name=app-{self.app.appid}',
-                timeout_seconds=10
-            )
-
-            pod_infos = []
-            err = False
-            app_state = ''
-
-            for i, pod in enumerate(pods.items):
-                is_terminating = pod.metadata.deletion_timestamp is not None
-
-                pod_info = {
-                    'name': f'Instance {i + 1}',
-                    'iref': pod.metadata.name,
-                    'state': 'terminating' if is_terminating else CONTAINER_STATES.get(pod.status.phase,
-                                                                                       pod.status.phase),
-                    'main': {},
-                    'sidecar': {},
-                    'init': {},
-                }
-
-                metrics = await self.get_metrics_for_pod(pod.metadata.name)
-
-                for container in pod.status.container_statuses:
-                    container_info = process_container_status(container)
-
-                    # If pod is terminating, override container state
-                    if is_terminating:
-                        container_info['state'] = 'terminating'
-
-                    if container_info['image_pull_status'] in ('ImagePullBackOff', 'ErrImagePull'):
-                        err = True
-                        container_info['image_pull_status'] = 'Image pull error'
-
-                    if container.name.startswith('main'):
-                        pod_info['main'] = container_info
-                        pod_info['main']['cpu'] = metrics['main'].get('cpu')
-                        pod_info['main']['memory'] = metrics['main'].get('memory')
-                    elif container.name.startswith('sidecar'):
-                        pod_info['sidecar'] = container_info
-                        pod_info['sidecar']['cpu'] = metrics['sidecar'].get('cpu')
-                        pod_info['sidecar']['memory'] = metrics['sidecar'].get('memory')
-
-                if pod.status.init_container_statuses:
-                    init_container = pod.status.init_container_statuses[0]
-                    pod_info['init'] = process_init_container_status(init_container)
-                    if is_terminating:
-                        pod_info['init']['state'] = 'terminating'
-
-                pod_infos.append(pod_info)
-
-            conditions = process_conditions(deployment)
-            event_messages = process_events(events)
-
-            if err:
-                app_state = 'error'
-            else:
-                for condition in reversed(conditions):
-                    if condition['status'] == 'True':
-                        app_state = CONTAINER_STATES.get(condition['type'], condition['type'])
-                        break
-
-            return {
-                'stat': {
-                    'app_state': app_state,
-                    'running': deployment.status.available_replicas or 0,
-                    'pending': deployment.status.unavailable_replicas or 0,
-                    'desired': deployment.status.updated_replicas,
-                    'total': deployment.status.replicas,
-                },
-                'instances': pod_infos,
-                'events': event_messages,
-                'conditions': conditions,
-            }
-
-        except Exception as e:
-            logging.error(f"Failed to get app stat {self.app.appid}", exc_info=True)
-            raise e
-
-    async def get_logs(self, pod_name, container_name):
-
-        logs = await sync_to_async(self.core_v1.read_namespaced_pod_log)(
-            name=pod_name,
-            namespace=self.nsid,
-            container=container_name,
-            tail_lines=500,
-            timestamps=True,
-            previous=False
-        )
-
-        return {'logs': logs}
+            raise AppResourceError("Failed to delete resources for app", 500)
