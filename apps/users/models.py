@@ -61,9 +61,9 @@ class UserAdmin(admin.ModelAdmin):
 
 class Usage(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='usage')
-    cpu = models.IntegerField(null=True, default=0)
-    memory = models.IntegerField(null=True, default=0)
-    disk = models.IntegerField(null=True, default=0)
+    cpu = models.FloatField(null=True, default=0)
+    memory = models.FloatField(null=True, default=0)
+    disk = models.FloatField(null=True, default=0)
     public_ip = models.IntegerField(null=True, default=0)
     gpu = models.IntegerField(null=True, default=0)
     registry = models.IntegerField(null=True, default=0)
@@ -90,9 +90,9 @@ class UsageAdmin(admin.ModelAdmin):
 
 class Limit(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='limit')
-    cpu = models.IntegerField(null=True, default=0)
-    memory = models.IntegerField(null=True, default=0)
-    disk = models.IntegerField(null=True, default=0)
+    cpu = models.FloatField(null=True, default=0)
+    memory = models.FloatField(null=True, default=0)
+    disk = models.FloatField(null=True, default=0)
     public_ip = models.IntegerField(null=True, default=0)
     gpu = models.IntegerField(null=True, default=0)
     registry = models.IntegerField(null=True, default=0)
