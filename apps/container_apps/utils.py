@@ -1,14 +1,16 @@
+import logging
 import re
 import ipaddress
 
 from core.settings import env
+
 from .models import ContainerApp, CustomDomain
 from ..container_registry.models import ContainerRegistry
 from ..infra.models import Volume
-
-from ..infra.constants import VOLUME_TYPES, DOMAIN_REGEX, SLUG_REGEX
 from ..secret_store.models import Secret
 from ..users.models import User
+
+from ..infra.constants import VOLUME_TYPES, DOMAIN_REGEX, SLUG_REGEX, STATE_TRANSLATIONS
 
 DOMAIN_RE = re.compile(DOMAIN_REGEX)
 SLUG_RE = re.compile(SLUG_REGEX)
@@ -229,7 +231,7 @@ def validate_scaling_spec(spec: dict) -> tuple[bool, [str | None]]:
                 return False, 'Invalid scaler type'
             if not isinstance(each.get('target'), int):
                 return False, 'scaling[scalers][target] is required for scalers'
-            if each['threshold'] < 1 or each['threshold'] > 100:
+            if each['target'] < 1 or each['target'] > 100:
                 return False, 'scaling[scalers][target] must be with 1% and 100%'
 
     return True, None
@@ -540,14 +542,14 @@ def under_limits(spec: dict, user) -> bool:
 
 def process_events(events):
     """
-    Process kubernetes events
+    Process kubernetes events and sort them by timestamp in descending order
     """
     event_messages = []
-    for e in reversed(events.items):
+    for e in events.items:
         if e.reason == 'ScalingReplicaSet':
             msg = e.message.split()
             event_messages.append({
-                'message': ' '.join(msg[:2] + ['instances'] + msg[5:]),
+                'message': ' '.join(msg[:2] + ['app instances'] + msg[5:]),
                 'time': e.last_timestamp.isoformat() if e.last_timestamp else None
             })
         else:
@@ -556,7 +558,12 @@ def process_events(events):
                 'message': e.message,
                 'time': e.last_timestamp.isoformat() if e.last_timestamp else None
             })
-    return event_messages
+
+    return sorted(
+        event_messages,
+        key=lambda x: (x['time'] is None, x['time'] or ''),
+        reverse=True
+    )
 
 
 def process_conditions(deployment):
@@ -564,7 +571,8 @@ def process_conditions(deployment):
     Process deployment conditions
     """
     conditions = []
-    for condition in deployment.status.conditions:
+    k8s_conditions = sorted(deployment.status.conditions, key=lambda x: x.last_transition_time, reverse=True)
+    for condition in k8s_conditions:
         last_transition_time = condition.last_transition_time
         last_update_time = condition.last_update_time
 
@@ -579,71 +587,288 @@ def process_conditions(deployment):
     return conditions
 
 
-def process_container_status(container):
+def process_pod_info(pod) -> dict:
+    """
+    Process pod information
+    """
+
+    is_terminating = pod.metadata.deletion_timestamp is not None
+
+    pod_info = {
+        'iref': pod.metadata.name,
+        'state': None,
+        'started_at': pod.status.start_time.isoformat() if pod.status.start_time else '',
+        'main': {},
+        'sidecar': {},
+        'init': {},
+    }
+
+    for container in pod.spec.containers:
+        if container.name == 'main':
+            port = container.ports[0]
+            pod_info['main']['port'] = port.container_port
+            pod_info['main']['port_protocol'] = port.protocol.lower()
+            break
+
+    if pod.status.container_statuses:
+        for container in pod.status.container_statuses:
+            container_info = process_container_status(container)
+
+            if is_terminating:  # If pod is terminating, override container state
+                container_info['state'] = 'terminating'
+
+            if container.name.startswith('main'):
+                pod_info['main'].update(container_info)
+
+            elif container.name.startswith('sidecar'):
+                pod_info['sidecar'] = container_info
+
+    init_container = {}
+
+    if pod.status.init_container_statuses:
+        init_container = process_container_status(pod.status.init_container_statuses[0])
+
+        if is_terminating:  # If pod is terminating, override container state
+            init_container['state'] = 'terminating'
+
+        pod_info['init'] = init_container
+
+    for container in (pod_info['main'], pod_info['sidecar'], pod_info['init']):
+        if not container or (container.get('state') is None):
+            continue
+
+        if container['state'] == 'crash':
+            pod_info['state'] = 'crash'
+            break
+
+        else:
+            state = 'terminating' if is_terminating else get_state_from_conditions(pod.status.conditions)
+            if state == 'pending' and init_container.get('state') == 'running':
+                pod_info['state'] = 'pending'
+            else:
+                pod_info['state'] = 'creating' if state == 'pending' else state
+
+    return pod_info
+
+
+def process_container_status(container) -> dict:
     """
     Process container status information
     """
     container_info = {
-        'ref': container.name,
         'state': None,
         'image': container.image,
         'ready': container.ready,
-        'restart_count': container.restart_count,
+        'restarts': container.restart_count,
         'started': container.started,
-        'image_pull_status': None,
-        'last_state': {
-            'reason': None,
-            'exit_code': None,
-            'finished_at': None
-        },
-        'started_at': None
+        'started_at': None,
+        'message': ''
     }
 
-    if container.state.waiting:
-        container_info['state'] = 'creating'
-        container_info['image_pull_status'] = container.state.waiting.reason
-        if container.state.waiting.message:
-            container_info['message'] = container.state.waiting.message
+    if waiting := container.state.waiting:
+        message = ''
+
+        if waiting.message:
+            message = waiting.message.partition('container')[0].strip()
+
+        if waiting.reason in ('ImagePullBackOff', 'ErrImagePull'):
+            container_info['state'] = 'creating'
+            container_info['message'] = f'Image pull error'
+
+        elif waiting.reason in ('CrashLoopBackOff',):
+            container_info['state'] = 'crash'
+            container_info['message'] = f'Container crashed: {message.partition('container')[0].strip()}'
+
+        elif waiting.reason in ('RunContainerError', 'StartError'):
+            container_info['state'] = 'crash'
+            msg = message.split(':', 1)
+            if len(msg) > 1:
+                container_info['message'] = f'Container crashed: {" . ".join(msg[1:])}'
+            else:
+                container_info['message'] = f'Container crashed: {message}'
+
+        elif waiting.reason in ('PodInitializing',):
+            container_info['state'] = 'pending'
+
+        else:
+            container_info['state'] = 'creating'
+
     elif container.state.running:
-        container_info['state'] = 'active'
-        container_info['image_pull_status'] = 'Pulled'
+        container_info['state'] = 'running'
+
         started_at = container.state.running.started_at
         container_info['started_at'] = started_at.isoformat() if started_at else None
+
     elif container.state.terminated:
         container_info['state'] = 'terminated'
-        container_info['image_pull_status'] = container.state.terminated.reason
 
-    if container.last_state.terminated:
-        finished_at = container.last_state.terminated.finished_at
-        container_info['last_state'] = {
-            'reason': container.last_state.terminated.reason,
-            'exit_code': container.last_state.terminated.exit_code,
-            'finished_at': finished_at.isoformat() if finished_at else None
-        }
+    term_last_state = container.last_state.terminated
+
+    if container_info['state'] == 'crash' and term_last_state:
+        if term_last_state.reason == 'Error':
+            container_info['message'] += f' (received exit code {term_last_state.exit_code})'
+
+        elif term_last_state.reason == 'StartError':
+            msg = term_last_state.message.split(':', 1)
+            if len(msg) > 1:
+                container_info['message'] = f'Container crashed: {"".join(msg[1:]).strip()}'
+            elif msg:
+                container_info['message'] += " ".join(msg)
 
     return container_info
 
 
-def process_init_container_status(init_container):
-    """
-    Process init container status
-    """
-    init_container_info = {
-        'name': init_container.name,
-        'image': init_container.image,
-        'ready': init_container.ready,
-        'restart_count': init_container.restart_count,
-        'started': init_container.started,
-        'state': None
+async def fetch_metric(client, url, metric_name, query, params):
+    try:
+        response = await client.get(url, params={'query': query, **params})
+        response.raise_for_status()
+        result = response.json().get('data', {}).get('result', [])
+        return metric_name, result[0]['values'] if result else []
+    except Exception as e:
+        logging.error(f"Error fetching {metric_name}: {str(e)}")
+        return metric_name, []
+
+
+async def fetch_usage(client, url, query: str, metric_name: str) -> float:
+    try:
+        response = await client.get(url, params={'query': query}, timeout=10.0)
+        response.raise_for_status()
+        data = response.json()
+        result = data.get('data', {}).get('result', [])
+        if not result:
+            return 0
+        return float(result[0]['value'][1])
+
+    except Exception as e:
+        logging.error(f"Error fetching {metric_name}: {str(e)}")
+        raise e
+
+
+async def fetch_metric_server_stat(client, url: str) -> dict:
+    try:
+        response = await client.get(url)
+        response.raise_for_status()
+        metrics = response.json()
+
+        result = {
+            'main': {},
+            'sidecar': {},
+            'init': {},
+            'total': {},
+        }
+
+        if metrics.get('containers') is None:
+            return result
+
+        total_cpu = 0
+        total_memory = 0
+
+        for container in metrics['containers']:
+            usage = {
+                'cpu': round(cpu_to_cores(container['usage']['cpu']), 4),
+                'memory': round(memory_to_mb(container['usage']['memory'], mib=True), 4)
+            }
+
+            if container['name'] == 'main':
+                result['main'] = usage
+
+            elif container['name'] == 'sidecar':
+                result['sidecar'] = usage
+
+            elif container['name'] == 'init':
+                result['init'] = usage
+
+            total_cpu += usage['cpu']
+            total_memory += usage['memory']
+
+        result['total']['cpu'] = total_cpu
+        result['total']['memory'] = total_memory
+
+        return result
+
+    except Exception:
+        return {}
+
+
+def get_state_from_conditions(k8s_conditions: list, default='unknown') -> str:
+    conditions = sorted(k8s_conditions, key=lambda x: x.last_transition_time, reverse=True)
+
+    for condition in conditions:
+        if condition.type == 'Ready':
+            ready = condition.status == 'True'
+            if ready:
+                return 'active'
+
+    for condition in conditions:
+        if condition.status == 'True':
+            return STATE_TRANSLATIONS.get(condition.type, default)
+
+
+CPU_CONV_FACTORS = {
+    'n': 1e-9,
+    'u': 1e-6,
+    'm': 1e-3,
+    '': 1
+}
+
+
+def cpu_to_cores(value: str) -> float:
+    if not value:
+        return 0.0
+
+    unit = next((u for u in CPU_CONV_FACTORS.keys() if value.endswith(u)), '')
+    try:
+        number = float(value.rstrip('nmu'))
+        return round(number * CPU_CONV_FACTORS[unit], 3)
+    except ValueError:
+        return 0.0
+
+
+MEM_CONV_FACTORS = {
+    "K": 1e-3, "Ki": 1 / 1024,
+    "M": 1, "Mi": 1,
+    "G": 1e3, "Gi": 1024,
+    "T": 1e6, "Ti": 1024 ** 2
+}
+
+
+def memory_to_mb(value: str, mib=False) -> float:
+    match = re.match(r"(\d+(\.\d+)?)([KMGTP]i?|[kmgpt]i?)", value)
+    if not match:
+        raise ValueError(f"Invalid memory format: {value}")
+
+    num, _, unit = match.groups()
+    num = float(num)
+    unit = unit.capitalize()
+
+    if unit not in MEM_CONV_FACTORS:
+        raise ValueError(f"Unknown unit: {unit}")
+
+    factor = MEM_CONV_FACTORS[unit if mib else unit.rstrip("i")]
+    return round(num * factor, 3)
+
+
+def get_stat_from_deployment(deployment) -> dict:
+    cpu_limit = 0
+    mem_limit = 0
+
+    for container in deployment.spec.template.spec.containers:
+        print(container.to_dict())
+        if limits := container.resources.limits:
+            cpu_limit += cpu_to_cores(limits['cpu'])
+            mem_limit += memory_to_mb(limits['memory'], mib=True)
+
+    available_replicas = deployment.status.available_replicas or 0
+    unavailable_replicas = deployment.status.unavailable_replicas or 0
+    updated_replicas = deployment.status.updated_replicas or available_replicas
+
+    stat = {
+        'app_state': get_state_from_conditions(deployment.status.conditions),
+        'cpu_limit': cpu_limit * available_replicas,
+        'memory_limit': mem_limit * available_replicas,
+        'running': available_replicas,
+        'pending': unavailable_replicas,
+        'desired': updated_replicas or available_replicas + unavailable_replicas,
     }
 
-    if init_container.state.waiting:
-        init_container_info['state'] = 'waiting'
-        init_container_info['reason'] = init_container.state.waiting.reason
-    elif init_container.state.running:
-        init_container_info['state'] = 'running'
-    elif init_container.state.terminated:
-        init_container_info['state'] = 'terminated'
-        init_container_info['exit_code'] = init_container.state.terminated.exit_code
-
-    return init_container_info
+    return stat

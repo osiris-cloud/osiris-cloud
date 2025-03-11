@@ -324,15 +324,112 @@ def provision_vm(client: kubernetes.client, namespace: str, vm_name: str, cpu: i
 #         yaml.dump(vm_template, f)
 
 
+def gen_ns_network_policy(nsid: str) -> kubernetes.client.V1NetworkPolicy:
+    network_policy = kubernetes.client.V1NetworkPolicy(
+        api_version="networking.k8s.io/v1",
+        kind="NetworkPolicy",
+        metadata=kubernetes.client.V1ObjectMeta(
+            name="net-policy-0",
+            namespace=nsid
+        ),
+        spec=kubernetes.client.V1NetworkPolicySpec(
+            pod_selector=kubernetes.client.V1LabelSelector(
+                match_labels={}
+            ),
+            policy_types=["Ingress", "Egress"],
+            ingress=[
+                # Allow ingress from traefik and osiris-net namespaces
+                kubernetes.client.V1NetworkPolicyIngressRule(
+                    _from=[
+                        # Allow from traefik namespace
+                        kubernetes.client.V1NetworkPolicyPeer(
+                            namespace_selector=kubernetes.client.V1LabelSelector(
+                                match_labels={
+                                    "kubernetes.io/metadata.name": "traefik"
+                                }
+                            )
+                        ),
+                        # Allow from osiris-net namespace
+                        kubernetes.client.V1NetworkPolicyPeer(
+                            namespace_selector=kubernetes.client.V1LabelSelector(
+                                match_labels={
+                                    "kubernetes.io/metadata.name": "osiris-net"
+                                }
+                            )
+                        ),
+                        # Allow from same namespace
+                        kubernetes.client.V1NetworkPolicyPeer(
+                            namespace_selector=kubernetes.client.V1LabelSelector(
+                                match_labels={
+                                    "kubernetes.io/metadata.name": nsid
+                                }
+                            )
+                        )
+                    ]
+                )
+            ],
+            egress=[
+                # Allow DNS resolution
+                kubernetes.client.V1NetworkPolicyEgressRule(
+                    to=[
+                        kubernetes.client.V1NetworkPolicyPeer(
+                            namespace_selector=kubernetes.client.V1LabelSelector(
+                                match_labels={"kubernetes.io/metadata.name": "kube-system"}
+                            ),
+                            pod_selector=kubernetes.client.V1LabelSelector(
+                                match_labels={"k8s-app": "kube-dns"}
+                            )
+                        )
+                    ],
+                    ports=[
+                        kubernetes.client.V1NetworkPolicyPort(port=53, protocol="UDP"),
+                        kubernetes.client.V1NetworkPolicyPort(port=53, protocol="TCP")
+                    ]
+                ),
+                # Allow internet access
+                kubernetes.client.V1NetworkPolicyEgressRule(
+                    to=[
+                        kubernetes.client.V1NetworkPolicyPeer(
+                            ip_block=kubernetes.client.V1IPBlock(
+                                cidr="0.0.0.0/0",
+                                _except=[
+                                    "10.0.79.0/24",  # Block internal network
+                                ]
+                            )
+                        )
+                    ]
+                ),
+                # Allow same namespace communication
+                kubernetes.client.V1NetworkPolicyEgressRule(
+                    to=[
+                        kubernetes.client.V1NetworkPolicyPeer(
+                            namespace_selector=kubernetes.client.V1LabelSelector(
+                                match_labels={
+                                    "kubernetes.io/metadata.name": nsid
+                                }
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )
+    return network_policy
+
+
 def create_namespace(nsid) -> bool:
     if env.k8s_api_client is None:
         return False
 
-    v1 = kubernetes.client.CoreV1Api(env.k8s_api_client)
+    core_v1 = kubernetes.client.CoreV1Api(env.k8s_api_client)
+    networking_v1 = kubernetes.client.NetworkingV1Api(env.k8s_api_client)
     namespace_metadata = kubernetes.client.V1ObjectMeta(name=nsid)
     namespace_spec = kubernetes.client.V1Namespace(metadata=namespace_metadata)
+    net_policy = gen_ns_network_policy(nsid)
+
     try:
-        v1.create_namespace(body=namespace_spec)
+        core_v1.create_namespace(body=namespace_spec)
+        networking_v1.create_namespaced_network_policy(namespace=nsid, body=net_policy)
         return True
     except kubernetes.client.exceptions.ApiException as e:
         if e.status == 409:
