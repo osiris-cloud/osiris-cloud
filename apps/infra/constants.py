@@ -75,7 +75,7 @@ DOMAIN_REGEX = r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.(?:[A-Za-z]{2,6}|[A-Za-z0-9-]{2
 
 SLUG_REGEX = r'^[a-z0-9]+(-[a-z0-9]+)*$'
 
-NYU_SUBNETS = [
+NYU_SUBNETS = (
     "10.0.0.0/8",
     "172.16.0.0/12",
     "192.168.0.0/16",
@@ -104,4 +104,30 @@ NYU_SUBNETS = [
     "212.219.93.0/24",
     "213.42.147.0/26",
     "216.165.0.0/17",
-]
+)
+
+STATE_TRANSLATIONS = {
+    'Available': 'active',
+    'Running': 'active',
+    'Ready': 'active',
+    'Succeeded': 'success',
+    'ContainersReady': 'active',
+
+    'Pending': 'creating',
+    'Initialized': 'creating',
+    'PodScheduled': 'creating',
+
+    'PodReadyToStartContainers': 'pending',
+
+    'Progressing': 'updating',
+
+    'Failed': 'error',
+    'CrashLoopBackOff': 'crash',
+}
+
+K8S_WATCH_EVENT_EQS = {
+    'ADDED': 'add',
+    'MODIFIED': 'modify',
+    'DELETED': 'delete',
+    'ERROR': 'error',
+}
