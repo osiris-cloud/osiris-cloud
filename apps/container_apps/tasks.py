@@ -19,7 +19,7 @@ def delete_deployment(self, appid) -> None:
 
 
 @shared_task(bind=True, name='redeploy', max_retries=3)
-def redeploy(self, appid) -> None:
+def restart(self, appid) -> None:
     app = ContainerApp.objects.get(appid=appid)
     app_resource = AppResource(app)
     app_resource.redeploy()
