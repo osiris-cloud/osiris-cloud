@@ -88,7 +88,7 @@ def namespace(request, nsid=None):
 
                 ns_info = ns.info()
                 ns_info['users'] = ns.get_users_info()
-                return JsonResponse(success_message('Create namespace', ns_info), status=201)
+                return JsonResponse(success_message('Create namespace', {'namespace': ns_info}), status=201)
 
             case 'PATCH':
                 valid, err = validate_ns_update(ns_data, nsid)
