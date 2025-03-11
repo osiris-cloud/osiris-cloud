@@ -1,42 +1,48 @@
-$registryTable = $('#registry-table');
-$registryTableContainer = $('#registry-table-container');
+$appTable = $('#app-table');
+$appTableContainer = $('#app-table-container');
 
 
-function createTableEntry(registry) {
+function createTableEntry(app) {
     let $row = $('<tr/>', {
         class: 'bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600',
         click: function () {
-            window.location.href = `/container-registry/${currentURL.nsid}/${registry.crid}`;
+            window.location.href = `/container-apps/${currentURL.nsid}/${app.appid}`;
         }
     });
     $row.append($('<th/>', {
         scope: 'row',
         class: 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white',
-        text: registry.name,
+        text: app.name,
     })).append($('<td/>', {
-        class: 'px-6 py-4 dark:text-gray-50',
-    }).append(createStateBadge(registry.state)))
-        .append($('<td/>', {
-            class: 'px-6 py-4 dark:text-gray-50', text: normalizeTime(registry.created_at),
-        }))
-        .append($('<td/>', {
-        class: 'px-6 py-4 dark:text-gray-50', text: registry.url,
+            class: 'px-6 py-4 dark:text-gray-50',
+        }).append(
+            createStateBadge(app.state))
+    ).append($('<td/>', {
+            class: 'px-6 py-4 dark:text-gray-50', text: normalizeTime(app.created_at, true),
+        })
+    ).append($('<td/>', {
+        class: 'px-6 py-4 dark:text-gray-50 cursor-pointer', text: app.url +
+            ((app.connection_port === 443) ? '' : ':' + app.port),
+        click: function (e) {
+            e.stopPropagation();
+            window.open(`${app.url}:${app.connection_port}`, '_blank');
+        }
     }));
     return $row;
 }
 
 $.ajax({
-    url: `/api/container-registry/${currentURL.nsid}`,
+    url: `/api/container-apps/${currentURL.nsid}`,
     method: 'GET',
     headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
     success: (data) => {
-        if (data.registries.length === 0) {
+        if (data.apps.length === 0) {
             showNoResource();
         } else {
-            data.registries.forEach((registry) => {
-                $registryTable.append(createTableEntry(registry));
+            data.apps.forEach((registry) => {
+                $appTable.append(createTableEntry(registry));
             });
-            $registryTableContainer.removeClass('hidden');
+            $appTableContainer.removeClass('hidden');
         }
     },
     error: (resp) => {
