@@ -17,7 +17,7 @@ from ..infra.tasks import init_namespace, error_handler
 from .utils import validate_app_spec, validate_app_update_spec, generate_meta_for_image, under_limits
 from ..users.utils import get_default_ns
 
-from .tasks import apply_deployment, delete_deployment, redeploy
+from .tasks import apply_deployment, delete_deployment, restart
 
 
 @api_view(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
@@ -67,9 +67,9 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
         elif request.method == 'POST':
             app = ContainerApp.objects.get(appid=appid, namespace=ns)
-            if action == 'redeploy':
-                redeploy.delay(app.appid)
-                return JsonResponse(success_message('Redeploy container app'), status=202)
+            if action == 'restart':
+                restart.delay(app.appid)
+                return JsonResponse(success_message('Restart container app'), status=202)
             else:
                 return JsonResponse(error_message('Invalid action'), status=400)
 
@@ -364,6 +364,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
     except Exception as e:
         logging.exception(e)
         return JsonResponse(error_message('Internal server error'), status=500)
+
 
 @api_view(['POST'])
 def name_check(request):
