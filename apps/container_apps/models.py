@@ -14,7 +14,6 @@ from core.settings import env
 
 
 class Container(models.Model):
-    containerid = UUID7StringField(auto_created=True)
     type = models.CharField(max_length=16,
                             choices=(('init', 'Init Container'),
                                      ('main', 'Main Container'),
@@ -29,12 +28,11 @@ class Container(models.Model):
     command = models.JSONField(null=True, default=list)
     args = models.JSONField(null=True, default=list)
     cpu = models.FloatField()
-    memory = models.IntegerField()
+    memory = models.FloatField()
     metadata = models.JSONField(default=dict)
 
     def info(self):
         return {
-            'containerid': self.containerid,
             'image': self.image,
             'pull_secret': self.pull_secret.secretid if self.pull_secret else None,
             'env_secret': self.env_secret.secretid if self.env_secret else None,
@@ -175,11 +173,11 @@ class ContainerApp(models.Model):
 
     @property
     def cpu_limit(self):
-        return sum([container.cpu_limit for container in self.containers.all()])
+        return sum([container.cpu for container in self.containers.all()])
 
     @property
     def memory_limit(self):
-        return sum([container.memory_limit for container in self.containers.all()])
+        return sum([container.memory for container in self.containers.all()])
 
     def info(self):
         container_types = {
@@ -205,6 +203,14 @@ class ContainerApp(models.Model):
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }
+
+    def delete(self, *args, **kwargs):
+        self.containers.all().delete()
+        self.custom_domains.all().delete()
+        self.volumes.all().delete()
+        self.scaler.delete()
+        self.ip_rule.delete()
+        super().delete(*args, **kwargs)
 
 
 @admin.register(ContainerApp)
