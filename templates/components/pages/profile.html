@@ -54,8 +54,8 @@
                 <div class="block text-sm font-medium text-gray-900 dark:text-white">Resource Limit</div>
                 <div class="block text-sm font-medium text-gray-900 dark:text-white">
                     <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-white">
-                        <li class="list-item">vCPU: {{ user.limit.cpu }}</li>
-                        <li class="list-item">Memory: {{ user.limit.memory }} GB</li>
+                        <li class="list-item">CPU: {{ user.limit.cpu }} Cores</li>
+                        <li class="list-item">Memory: {{ user.limit.memory }} GiB</li>
                         <li class="list-item">Disk Space: {{ user.limit.disk }} GiB</li>
                         <li class="list-item">Public IP: {{ user.limit.public_ip }}</li>
                         <li class="list-item">Container Registry {{ user.limit.registry }}</li>
@@ -67,8 +67,8 @@
                 <div class="block text-sm font-medium text-gray-900 dark:text-white">Resource Usage</div>
                 <div class="block text-sm font-medium text-gray-900 dark:text-white">
                     <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-white">
-                        <li class="list-item">vCPU: {{ user.usage.cpu }}</li>
-                        <li class="list-item">Memory: {{ user.usage.memory }} GB</li>
+                        <li class="list-item">CPU: {{ user.usage.cpu }} Cores</li>
+                        <li class="list-item">Memory: {{ user.usage.memory }} GiB</li>
                         <li class="list-item">Disk Space: {{ user.usage.disk }} GiB</li>
                         <li class="list-item">Public IP: {{ user.usage.public_ip }}</li>
                         <li class="list-item">Container Registry {{ user.usage.registry }}</li>
