@@ -153,6 +153,7 @@ function createStateBadge(state, border=true) {
         case 'active':
         case 'success':
         case 'running':
+        case 'created':
             colorScheme = colorSchemes.green;
             break;
         case 'stopped':
