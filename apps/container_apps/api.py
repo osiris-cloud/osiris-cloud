@@ -5,11 +5,12 @@ from json import JSONDecodeError
 from celery import chain
 from django.http import JsonResponse
 from django.db import transaction
+from django.core.cache import cache
 from rest_framework.decorators import api_view
 
 from ..infra.models import Namespace, Volume
 from ..secret_store.models import Secret
-from .models import ContainerApp, Scaler, AppFW, Container, CustomDomain
+from .models import ContainerApp, Scaler, AppFW, Container, Ingress, IngressHosts
 from ..container_registry.models import ContainerRegistry
 
 from core.utils import success_message, error_message
@@ -30,9 +31,9 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
     ns = None
     if nsid == 'default':
-        if not (nsid := request.session.get('default_ns')):
+        if not (nsid := request.session.get('default_nsid')):
             ns = get_default_ns(request.user)
-            nsid = request.session['default_ns'] = ns.nsid
+            nsid = request.session['default_nsid'] = ns.nsid
 
     if (request.method in ('POST', 'PATCH', 'DELETE')) and appid is None:
         return JsonResponse(error_message('appid is required'), status=400)
@@ -57,7 +58,15 @@ def container_apps(request, nsid=None, appid=None, action=None):
         if request.method == 'GET':  # Get all apps in the namespace
             app_filter = {'appid': appid} if appid else {}
             apps = ContainerApp.objects.filter(namespace=ns, **app_filter)
-            result = [ca.info() for ca in apps]
+            cache_key = f'container_app_{nsid}_{appid}_info'
+            cached_data = cache.get(cache_key)
+            brief_only = bool(request.GET.get('brief', False))
+
+            if appid and cached_data and not brief_only:
+                result = [cached_data]
+            else:
+                result = [ca.brief() for ca in apps] if brief_only else [ca.info() for ca in apps]
+
             if appid:
                 if not result:
                     return JsonResponse(error_message('Container app not found'), status=404)
@@ -86,13 +95,13 @@ def container_apps(request, nsid=None, appid=None, action=None):
                 while ContainerApp.objects.filter(connection_port=conn_port).exists():
                     conn_port = randint(30030, 32767)
 
-            if not under_limits(app_data, request.user):
+            limit_ok, usage = under_limits(app_data, request.user)
+
+            if not limit_ok:
                 return JsonResponse(error_message('Resource request exceeds allocated limits'), status=400)
 
             with transaction.atomic():
                 app_containers = []
-                app_volumes = []
-                app_custom_domains = []
 
                 for i, spec in enumerate((app_data.get('main'), app_data.get('sidecar'), app_data.get('init'))):
                     if spec:
@@ -116,6 +125,8 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
                         app_containers.append(container)
 
+                app_volumes = []
+
                 if volumes := app_data.get('volumes'):
                     for volume in volumes:
                         v_mode = volume['mode']
@@ -128,12 +139,21 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
                         app_volumes.append(vol)
 
-                if custom_domains := app_data.get('custom_domains'):
-                    for domain in custom_domains:
-                        c_domain = CustomDomain.objects.create(name=domain.strip())
-                        app_custom_domains.append(c_domain)
+                ingress_hosts = []
+                app_ingress = None
 
-                scaling = spec.get('scaling', {})
+                if conn_proto == 'http':
+                    if ingress := app_data.get('ingress', {}):
+                        hosts_set = ingress.get('hosts', [])
+
+                        for host in hosts_set:
+                            ing_host = IngressHosts.objects.create(host=host.strip())
+                            ingress_hosts.append(ing_host)
+
+                    app_ingress = Ingress.objects.create(pass_tls=ingress.get('pass_tls', False))
+                    app_ingress.hosts.add(*ingress_hosts)
+
+                scaling = app_data.get('scaling', {})
 
                 app_scaler = Scaler.objects.create(min_replicas=scaling.get('min_replicas', 1),
                                                    max_replicas=scaling.get('max_replicas', 1),
@@ -152,17 +172,21 @@ def container_apps(request, nsid=None, appid=None, action=None):
                                                   name=app_data['name'],
                                                   slug=app_data['slug'],
                                                   scaler=app_scaler,
+                                                  ingress=app_ingress,
                                                   connection_port=conn_port,
                                                   connection_protocol=conn_proto,
-                                                  pass_tls=app_data.get('pass_tls', False),
-                                                  restart_policy=app_data['restart_policy'],
+                                                  restart_policy='always',
+                                                  update_strategy=app_data.get('update_strategy', 'rolling'),
                                                   ip_rule=app_ip_rule)
 
                 app.containers.add(*app_containers)
                 app.volumes.add(*app_volumes)
-                app.custom_domains.add(*app_custom_domains)
 
                 app.save()
+
+                request.user.usage.cpu += usage['cpu']
+                request.user.usage.memory += usage['memory']
+                request.user.usage.disk += usage['disk']
 
             chain(init_namespace.s(ns.nsid), apply_deployment.si(app.appid)).apply_async(link_error=error_handler.s())
 
@@ -175,14 +199,20 @@ def container_apps(request, nsid=None, appid=None, action=None):
             if not valid:
                 return JsonResponse(error_message(err), status=400)
 
-            if not under_limits(app_data, request.user):
+            limit_ok, usage = under_limits(app_data, request.user)
+
+            if not limit_ok:
                 return JsonResponse(error_message('Resource request exceeds allocated limits'), status=400)
 
             with transaction.atomic():
                 if name := app_data.get('name'):
                     app.name = name.strip()
-                if restart_policy := app_data.get('restart_policy'):
-                    app.restart_policy = restart_policy
+                if update_strategy := app_data.get('update_strategy'):
+                    app.update_strategy = update_strategy
+
+                request.user.usage.cpu -= app.cpu_limit
+                request.user.usage.memory -= app.memory_limit
+                request.user.usage.disk -= app.disk_limit
 
                 containers = app.containers.all()
 
@@ -212,11 +242,9 @@ def container_apps(request, nsid=None, appid=None, action=None):
                         container.metadata = meta
 
                         if pull_secret := spec.get('pull_secret'):
-                            container.pull_secrets.clear()
-                            container.pull_secrets.add(Secret.objects.get(secretid=pull_secret))
+                            container.pull_secret = Secret.objects.get(secretid=pull_secret)
                         if env_secret := spec.get('env_secret'):
-                            container.env_secrets.clear()
-                            container.env_secrets.add(Secret.objects.get(secretid=env_secret))
+                            container.env_secret = Secret.objects.get(secretid=env_secret)
 
                         container.save()
 
@@ -255,12 +283,13 @@ def container_apps(request, nsid=None, appid=None, action=None):
                             if volid not in existing_vol_ids:
                                 return JsonResponse(error_message(f'volumes[{i}][volid] not found'), status=400)
 
-                        # Update volume if it exists
                         v_mode = volume['mode']
+
+                        # Update volume if it exists
                         if vol := existing_volumes.filter(volid=volid).first():
                             existing_vol_ids.remove(vol.volid)
-                            vol.mount_path = volume['mount_path'],
-                            vol.type = volume['type'],
+                            vol.mount_path = volume['mount_path']
+                            vol.type = volume['type']
                             vol.metadata = {'ca_mode': v_mode, 'secretid': volume.get('secretid')}
                             vol.save()
                         else:  # Create volume if it doesn't exist
@@ -279,29 +308,35 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
                     app.volumes.add(*new_volumes)  # Add new volumes to the app
 
-                custom_domains = app_data.get('custom_domains')
+                if app.connection_protocol == 'http':
+                    ingress = app_data.get('ingress')
+                    if ingress:
+                        existing_hosts = app.ingress.hosts.all()
+                        hosts_set = set([ing.host for ing in existing_hosts])
+                        new_ingress_hosts = []
 
-                if custom_domains is not None:
-                    existing_domains = app.custom_domains.all()
-                    existing_domain_names = [domain.name for domain in existing_domains]
-                    new_domains = []
+                        if ingress.get('hosts') == []:  # Delete all existing hosts
+                            existing_hosts.delete()
 
-                    if custom_domains == []:
-                        existing_domains.delete()
-                    else:
-                        for domain in custom_domains:
-                            custom_domain = existing_domains.filter(name=domain).first()
-                            if custom_domain:
-                                existing_domain_names.remove(custom_domain.name)
-                            else:
-                                custom_domain = CustomDomain.objects.create(name=domain.strip())
-                                custom_domain.save()
-                                new_domains.append(custom_domain)
+                        else:
+                            for domain in ingress.get('hosts', []):
+                                ing_host = existing_hosts.filter(host=domain.strip).first()
+                                if ing_host:
+                                    hosts_set.discard(ing_host.host)
+                                else:
+                                    ing_host = IngressHosts.objects.create(host=domain.strip())
+                                    ing_host.save()
+                                    new_ingress_hosts.append(ing_host)
 
-                    for domain_name in existing_domain_names:
-                        existing_domains.filter(name=domain_name).delete()
+                        for domain_name in hosts_set:
+                            existing_hosts.filter(host=domain_name).delete()
 
-                    app.custom_domains.add(*new_domains)
+                        pass_tls = ingress.get('pass_tls')
+                        if pass_tls is not None:
+                            app.ingress.pass_tls = pass_tls
+
+                        app.ingress.hosts.add(*new_ingress_hosts)
+                        app.ingress.save()
 
                 scaling = spec.get('scaling', {})
 
@@ -317,7 +352,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
                         app.scaler.save()
 
-                if firewall := scaling.get('firewall'):
+                if firewall := app_data.get('firewall'):
                     app.ip_rule.allow = firewall.get('allow', [])
                     app.ip_rule.deny = firewall.get('deny', [])
                     app.ip_rule.precedence = firewall.get('precedence', 'deny')
@@ -325,14 +360,11 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
                     app.ip_rule.save()
 
-                if r_policy := app_data.get('restart_policy'):
-                    app.restart_policy = r_policy
-
-                pass_tls = app_data.get('pass_tls')
-                if pass_tls is not None:
-                    app.pass_tls = pass_tls
-
                 app.save()
+
+                request.user.usage.cpu += usage['cpu']
+                request.user.usage.memory += usage['memory']
+                request.user.usage.disk += usage['disk']
 
             apply_deployment.delay(app.appid)
 
@@ -340,8 +372,10 @@ def container_apps(request, nsid=None, appid=None, action=None):
 
         elif request.method == 'DELETE':
             app = ContainerApp.objects.get(appid=appid, namespace=ns)
-            if app is None:
-                return JsonResponse(error_message('Container app not found'), status=404)
+
+            request.user.usage.cpu -= app.cpu_limit
+            request.user.usage.memory -= app.memory_limit
+            request.user.usage.disk -= app.disk_limit
 
             delete_deployment.delay(app.appid)
             return JsonResponse(success_message('Delete container app'), status=202)
