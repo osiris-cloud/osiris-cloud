@@ -109,7 +109,7 @@ class Limit(models.Model):
 
     def __sub__(self, usage):
         if not isinstance(usage, Usage):
-            raise ValueError("Subtraction can only be performed with a Usage instance.")
+            raise TypeError("Subtraction can only be performed with a Usage instance.")
 
         remaining_resources = {
             'cpu': max(self.cpu - usage.cpu, 0),
@@ -123,18 +123,21 @@ class Limit(models.Model):
         return remaining_resources
 
     def limit_reached(self, cpu=None, memory=None, disk=None, public_ip=None, gpu=None, registry=None):
-        if cpu is not None and self.cpu < cpu:
+        current_usage = Usage.objects.get(user=self.user)
+
+        if cpu is not None and (self.cpu - current_usage.cpu <= cpu):
             return True
-        if memory is not None and self.memory < memory:
+        if memory is not None and (self.memory - current_usage.memory <= memory):
             return True
-        if disk is not None and self.disk < disk:
+        if disk is not None and (self.disk - current_usage.disk <= disk):
             return True
-        if public_ip is not None and self.public_ip < public_ip:
+        if public_ip is not None and (self.public_ip - current_usage.public_ip <= public_ip):
             return True
-        if gpu is not None and self.gpu < gpu:
+        if gpu is not None and (self.gpu - current_usage.gpu <= gpu):
             return True
-        if registry is not None and self.registry < registry:
+        if registry is not None and (self.registry - current_usage.registry <= registry):
             return True
+
         return False
 
     class Meta:

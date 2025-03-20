@@ -9,6 +9,7 @@ from ..secret_store.models import Secret
 from ..container_registry.models import ContainerRegistry
 
 from ..container_registry.utils import generate_auth_token
+from core.utils import similar_time
 
 from core.settings import env
 
@@ -34,6 +35,7 @@ class Container(models.Model):
     def info(self):
         return {
             'image': self.image,
+            'native_image': 'crid' in self.metadata,
             'pull_secret': self.pull_secret.secretid if self.pull_secret else None,
             'env_secret': self.env_secret.secretid if self.env_secret else None,
             'port': self.port,
@@ -70,14 +72,30 @@ class ContainerAdmin(admin.ModelAdmin):
     list_filter = ('port_protocol',)
 
 
-class CustomDomain(models.Model):
-    name = models.CharField(max_length=253, unique=True)
+class IngressHosts(models.Model):
+    host = models.CharField(max_length=253, unique=True)
 
 
-@admin.register(CustomDomain)
-class CustomDomainAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
+@admin.register(IngressHosts)
+class IngressHostsAdmin(admin.ModelAdmin):
+    list_display = ('host',)
+    search_fields = ('host',)
+
+
+class Ingress(models.Model):
+    hosts = models.ManyToManyField(IngressHosts, blank=True)
+    pass_tls = models.BooleanField(default=False)
+    rules = models.JSONField(default=dict)
+
+    def info(self):
+        return {
+            'pass_tls': self.pass_tls,
+            'hosts': [host.host for host in self.hosts.all()],
+        }
+
+    def delete(self, *args, **kwargs):
+        self.hosts.all().delete()
+        super().delete(*args, **kwargs)
 
 
 class Scaler(models.Model):
@@ -126,7 +144,7 @@ class ContainerApp(models.Model):
     name = models.CharField(max_length=64)
     slug = models.CharField(max_length=64)
     containers = models.ManyToManyField(Container, blank=True)
-    custom_domains = models.ManyToManyField(CustomDomain, blank=True)
+    ingress = models.OneToOneField(Ingress, on_delete=models.CASCADE, blank=True, null=True)
     volumes = models.ManyToManyField(Volume, blank=True)
     scaler = models.OneToOneField(Scaler, on_delete=models.CASCADE)
     connection_port = models.IntegerField()
@@ -134,7 +152,6 @@ class ContainerApp(models.Model):
                                            choices=(('http', 'Web app'),
                                                     ('tcp', 'TCP on random port'),
                                                     ('udp', 'UDP on random port')))
-    pass_tls = models.BooleanField(default=False)
     restart_policy = models.CharField(max_length=16, default='always', choices=(('always', 'Always'),
                                                                                 ('on_failure', 'On Failure'),
                                                                                 ('never', 'Never')))
@@ -163,21 +180,65 @@ class ContainerApp(models.Model):
 
     @property
     def connect_url(self):
-        return f'{self.url}:{self.connection_port}' if self.connection_protocol != 'http' else self.url
+        return f'{self.slug}.{env.container_apps_domain}:{self.connection_port}'
 
     @property
     def display_url(self):
         if self.connection_protocol == 'http':
-            return f'{self.url}'
-        return f'{self.connection_protocol}://{self.url}:{self.connection_port}'
+            return self.url
+        return self.connect_url
+
+    @property
+    def custom_domain_url(self):
+        if self.ingress and self.ingress.hosts.exists():
+            return f'https://{self.ingress.hosts.first().host}'
+        return self.display_url
 
     @property
     def cpu_limit(self):
-        return sum([container.cpu for container in self.containers.all()])
+        main_sidecar_cpu = 0
+        init_cpu = 0
+        for con in self.containers.all():
+            if con.type == 'init':
+                init_cpu += con.cpu
+            else:
+                main_sidecar_cpu += con.cpu
+
+        return max(main_sidecar_cpu, init_cpu) * self.scaler.max_replicas
 
     @property
     def memory_limit(self):
-        return sum([container.memory for container in self.containers.all()])
+        main_sidecar_memory = 0
+        init_memory = 0
+        for con in self.containers.all():
+            if con.type == 'init':
+                init_memory += con.memory
+            else:
+                main_sidecar_memory += con.memory
+
+        return max(main_sidecar_memory, init_memory) * self.scaler.max_replicas
+
+    @property
+    def disk_limit(self):
+        return sum([vol.size for vol in self.volumes.all()])
+
+    @property
+    def updated_at_pretty(self):
+        if similar_time(self.created_at, self.updated_at):
+            return 'Never'
+        return self.updated_at
+
+    def brief(self):
+        return {
+            'appid': self.appid,
+            'name': self.name,
+            'url': self.url,
+            'connection_port': 443 if self.connection_protocol == 'http' else self.connection_port,
+            'connection_protocol': self.connection_protocol,
+            'state': self.state,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+        }
 
     def info(self):
         container_types = {
@@ -196,19 +257,21 @@ class ContainerApp(models.Model):
             'connection_protocol': self.connection_protocol,
             'state': self.state,
             'restart_policy': self.restart_policy,
-            'custom_domains': [custom_domain.name for custom_domain in self.custom_domains.all()],
+            'update_strategy': self.update_strategy,
             **container_types,
             'volumes': self.volume_info(),
             'scaling': self.scaler.info(),
+            'ingress': self.ingress.info() if self.ingress else {},
+            'firewall': self.ip_rule.info(),
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }
 
     def delete(self, *args, **kwargs):
         self.containers.all().delete()
-        self.custom_domains.all().delete()
         self.volumes.all().delete()
         self.scaler.delete()
+        self.ingress.delete()
         self.ip_rule.delete()
         super().delete(*args, **kwargs)
 
@@ -217,3 +280,4 @@ class ContainerApp(models.Model):
 class ContainerAppAdmin(admin.ModelAdmin):
     list_display = ('name', 'url', 'connection_protocol')
     list_filter = ('connection_protocol',)
+

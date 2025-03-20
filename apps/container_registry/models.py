@@ -8,6 +8,7 @@ from django.db import models
 from django.utils import timezone
 
 from core.model_fields import UUID7StringField
+from core.utils import similar_time
 from ..infra.models import Namespace
 
 from core.settings import env
@@ -122,6 +123,12 @@ class ContainerRegistry(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def updated_at_pretty(self):
+        if similar_time(self.created_at, self.updated_at):
+            return 'Never'
+        return self.updated_at
 
     class Meta:
         db_table = 'container_registry'

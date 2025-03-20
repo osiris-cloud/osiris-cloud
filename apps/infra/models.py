@@ -6,7 +6,7 @@ from django.contrib import admin
 
 from ..users.models import User
 from .constants import VOLUME_TYPES
-from .constants import LB_PROTOCOLS, NS_ROLES, R_STATES
+from .constants import NS_ROLES, R_STATES
 
 
 class Namespace(models.Model):
@@ -31,7 +31,7 @@ class Namespace(models.Model):
         Returns -> 'owner', 'manager', 'viewer' or None
         """
         try:
-            return self.namespaceroles_set.filter(user=user).first().role
+            return self.namespaceroles_set.get(user=user).role
         except:
             return None
 
@@ -43,6 +43,17 @@ class Namespace(models.Model):
         return [u_info(u) for u in self.users.filter(~Q(namespaceroles__role='owner'))]
 
     def info(self):
+        return {
+            'nsid': self.nsid,
+            'name': self.name,
+            'default': self.default,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+            'owner': self.owner.info(),
+            'users': self.get_users_info(),
+        }
+
+    def brief(self):
         return {
             'nsid': self.nsid,
             'name': self.name,
@@ -96,6 +107,20 @@ class Volume(models.Model):
     def mode_info(self):
         return self.metadata.get('ca_mode', {})
 
+    @property
+    def mounted_to(self):
+        modes = self.mode_info()
+        modes = {
+            'main': modes['main'],
+            'sidecar': modes['sidecar'],
+            'init': modes['init'],
+        }
+
+        if not modes:
+            return 'None'
+
+        return ', '.join([f'{k.capitalize()} -> {v.upper() if v else 'NA'}' for k, v in modes.items()])
+
     class Meta:
         db_table = 'volumes'
         ordering = ['-created_at']
@@ -132,7 +157,6 @@ class Event(models.Model):
 class EventAdmin(admin.ModelAdmin):
     list_display = ('namespace', 'time', 'message', 'eventid')
     search_fields = ('namespace',)
-
 
 # class LBEndpoint(models.Model):
 #     name = models.CharField(max_length=64)
