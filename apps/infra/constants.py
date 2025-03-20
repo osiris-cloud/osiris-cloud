@@ -1,6 +1,7 @@
 R_STATES = (('creating', 'Resource is being created'),
             ('updating', 'Resource is being updated'),
             ('deleting', 'Resource is being deleted'),
+            ('created', 'Resource is created'),
             ('active', 'Resource is live'),
             ('stopped', 'Resource is stopped'),
             ('error', 'Resource is in error'),
@@ -71,7 +72,7 @@ ACCESS_SUB_SCOPES = {
 
 ACCESS_SCOPES = tuple(ACCESS_SUB_SCOPES.keys())
 
-DOMAIN_REGEX = r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.(?:[A-Za-z]{2,6}|[A-Za-z0-9-]{2,}\.[A-Za-z]{2,6})$'
+DOMAIN_REGEX = r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(?:\.[A-Za-z0-9-]{1,63}(?<!-)){1,}(?:\.[A-Za-z]{2,6})$'
 
 SLUG_REGEX = r'^[a-z0-9]+(-[a-z0-9]+)*$'
 
