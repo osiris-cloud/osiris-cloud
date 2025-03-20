@@ -435,3 +435,20 @@ def create_namespace(nsid) -> bool:
         if e.status == 409:
             return True
         return False
+
+
+def delete_namespace(nsid) -> bool:
+    if env.k8s_api_client is None:
+        return False
+
+    core_v1 = kubernetes.client.CoreV1Api(env.k8s_api_client)
+    networking_v1 = kubernetes.client.NetworkingV1Api(env.k8s_api_client)
+
+    try:
+        core_v1.delete_namespace(name=nsid)
+        networking_v1.delete_namespaced_network_policy(name='net-policy-0', namespace=nsid)
+        return True
+    except kubernetes.client.exceptions.ApiException as e:
+        if e.status == 404:
+            return True
+        return False
