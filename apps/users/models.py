@@ -61,9 +61,9 @@ class UserAdmin(admin.ModelAdmin):
 
 class Usage(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='usage')
-    cpu = models.IntegerField(null=True, default=0)
-    memory = models.IntegerField(null=True, default=0)
-    disk = models.IntegerField(null=True, default=0)
+    cpu = models.FloatField(null=True, default=0)
+    memory = models.FloatField(null=True, default=0)
+    disk = models.FloatField(null=True, default=0)
     public_ip = models.IntegerField(null=True, default=0)
     gpu = models.IntegerField(null=True, default=0)
     registry = models.IntegerField(null=True, default=0)
@@ -90,9 +90,9 @@ class UsageAdmin(admin.ModelAdmin):
 
 class Limit(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='limit')
-    cpu = models.IntegerField(null=True, default=0)
-    memory = models.IntegerField(null=True, default=0)
-    disk = models.IntegerField(null=True, default=0)
+    cpu = models.FloatField(null=True, default=0)
+    memory = models.FloatField(null=True, default=0)
+    disk = models.FloatField(null=True, default=0)
     public_ip = models.IntegerField(null=True, default=0)
     gpu = models.IntegerField(null=True, default=0)
     registry = models.IntegerField(null=True, default=0)
@@ -109,7 +109,7 @@ class Limit(models.Model):
 
     def __sub__(self, usage):
         if not isinstance(usage, Usage):
-            raise ValueError("Subtraction can only be performed with a Usage instance.")
+            raise TypeError("Subtraction can only be performed with a Usage instance.")
 
         remaining_resources = {
             'cpu': max(self.cpu - usage.cpu, 0),
@@ -121,6 +121,24 @@ class Limit(models.Model):
         }
 
         return remaining_resources
+
+    def limit_reached(self, cpu=None, memory=None, disk=None, public_ip=None, gpu=None, registry=None):
+        current_usage = Usage.objects.get(user=self.user)
+
+        if cpu is not None and (self.cpu - current_usage.cpu <= cpu):
+            return True
+        if memory is not None and (self.memory - current_usage.memory <= memory):
+            return True
+        if disk is not None and (self.disk - current_usage.disk <= disk):
+            return True
+        if public_ip is not None and (self.public_ip - current_usage.public_ip <= public_ip):
+            return True
+        if gpu is not None and (self.gpu - current_usage.gpu <= gpu):
+            return True
+        if registry is not None and (self.registry - current_usage.registry <= registry):
+            return True
+
+        return False
 
     class Meta:
         db_table = 'limits'

@@ -6,9 +6,10 @@ from . import routes
 # from ..vm import consumers as vm_consumers
 
 from ..users import api as user_api
-from ..users import consumers as user_consumers
+from ..users.consumers import UserSearchConsumer
+from ..container_apps.consumers import AppConsumer, TerminalConsumer, LogsConsumer
 
-from ..k8s import api as k8s_api
+from ..infra import api as k8s_api
 
 from ..secret_store import api as secret_store_api
 from ..admin_console import api as admin_api
@@ -83,5 +84,10 @@ urlpatterns = (
 
 websocket_urlpatterns = (
     # re_path(r'^api/vnc/(?P<vmid>[^/]+)$', vm_consumers.VNCProxyConsumer.as_asgi()),
-    re_path(r'^api/user/search$', user_consumers.UserSearchConsumer.as_asgi()),
+    re_path(r'^api/user/search$', UserSearchConsumer.as_asgi()),
+    re_path(r'^api/container-apps/(?P<nsid>[^/]+)/(?P<appid>[^/]+)/shell/(?P<iref>[^/]+)/(?P<cref>[^/]+)$',
+            TerminalConsumer.as_asgi()),
+    re_path(r'^api/container-apps/(?P<nsid>[^/]+)/(?P<appid>[^/]+)/logs/(?P<iref>[^/]+)/(?P<cref>[^/]+)$',
+            LogsConsumer.as_asgi()),
+    re_path(r'^api/container-apps/(?P<nsid>[^/]+)/(?P<appid>[^/]+)$', AppConsumer.as_asgi()),
 )

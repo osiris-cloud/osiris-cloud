@@ -1,4 +1,4 @@
-from ..k8s.constants import ACCESS_SCOPES, ACCESS_SUB_SCOPES
+from ..infra.constants import ACCESS_SCOPES, ACCESS_SUB_SCOPES
 from datetime import datetime, timezone
 
 

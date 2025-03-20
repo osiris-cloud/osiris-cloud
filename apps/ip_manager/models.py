@@ -5,7 +5,7 @@ from ..vm.models import VM
 
 
 class IP(models.Model):
-    namespace = models.ForeignKey('k8s.Namespace', on_delete=models.CASCADE)
+    namespace = models.ForeignKey('apps.infra.Namespace', on_delete=models.CASCADE)
     address = models.GenericIPAddressField()
     mac = models.CharField(max_length=17, null=True, blank=True)
     vm = models.ForeignKey(VM, on_delete=models.CASCADE)

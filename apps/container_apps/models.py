@@ -1,16 +1,20 @@
 from django.db import models
 from django.contrib import admin
 from core.model_fields import UUID7StringField
+from base64 import b64encode
 
-from ..k8s.models import Namespace, PVC
-from ..k8s.constants import R_STATES, DEFAULT_HPA_SPEC
+from ..infra.models import Namespace, Volume
+from ..infra.constants import R_STATES
 from ..secret_store.models import Secret
+from ..container_registry.models import ContainerRegistry
+
+from ..container_registry.utils import generate_auth_token
+from core.utils import similar_time
 
 from core.settings import env
 
 
 class Container(models.Model):
-    containerid = UUID7StringField(auto_created=True)
     type = models.CharField(max_length=16,
                             choices=(('init', 'Init Container'),
                                      ('main', 'Main Container'),
@@ -24,115 +28,144 @@ class Container(models.Model):
     port_protocol = models.CharField(max_length=16, choices=(('tcp', 'TCP'), ('udp', 'UDP')), null=True, default=None)
     command = models.JSONField(null=True, default=list)
     args = models.JSONField(null=True, default=list)
-    cpu_request = models.FloatField()
-    memory_request = models.IntegerField()
-    cpu_limit = models.IntegerField()
-    memory_limit = models.FloatField()
+    cpu = models.FloatField()
+    memory = models.FloatField()
+    metadata = models.JSONField(default=dict)
 
     def info(self):
         return {
-            'containerid': self.containerid,
             'image': self.image,
+            'native_image': 'crid' in self.metadata,
             'pull_secret': self.pull_secret.secretid if self.pull_secret else None,
             'env_secret': self.env_secret.secretid if self.env_secret else None,
             'port': self.port,
             'port_protocol': self.port_protocol,
             'command': self.command,
             'args': self.args,
-            'cpu_request': self.cpu_request,
-            'memory_request': self.memory_request,
-            'cpu_limit': self.cpu_limit,
-            'memory_limit': self.memory_limit,
+            'cpu': self.cpu,
+            'memory': self.memory,
         }
+
+    def gen_oc_auth_data(self) -> str | None:
+        if self.pull_secret:
+            return None
+
+        auth_token = generate_auth_token(r_type='repository',
+                                         r_name=f"{self.metadata['repo']}/{self.metadata['image']}",
+                                         actions=['pull'],
+                                         years=25)
+        auth_str = b64encode(f"osiris:{auth_token}".encode()).decode()
+        docker_config = {
+            "auths": {
+                env.registry_domain: {
+                    "auth": auth_str
+                }
+            }
+        }
+        return b64encode(str(docker_config).encode()).decode()
 
 
 @admin.register(Container)
 class ContainerAdmin(admin.ModelAdmin):
-    list_display = ('image', 'cpu_request', 'memory_request', 'cpu_limit', 'memory_limit')
+    list_display = ('image', 'cpu', 'memory',)
     search_fields = ('containerid',)
     list_filter = ('port_protocol',)
 
 
-class CustomDomain(models.Model):
-    name = models.CharField(max_length=253)
-    gen_tls_cert = models.BooleanField()
+class IngressHosts(models.Model):
+    host = models.CharField(max_length=253, unique=True)
+
+
+@admin.register(IngressHosts)
+class IngressHostsAdmin(admin.ModelAdmin):
+    list_display = ('host',)
+    search_fields = ('host',)
+
+
+class Ingress(models.Model):
+    hosts = models.ManyToManyField(IngressHosts, blank=True)
+    pass_tls = models.BooleanField(default=False)
+    rules = models.JSONField(default=dict)
 
     def info(self):
         return {
-            'name': self.name,
-            'gen_cert': self.gen_tls_cert,
+            'pass_tls': self.pass_tls,
+            'hosts': [host.host for host in self.hosts.all()],
         }
 
-
-@admin.register(CustomDomain)
-class CustomDomainAdmin(admin.ModelAdmin):
-    list_display = ('name', 'gen_tls_cert')
-    search_fields = ('name',)
+    def delete(self, *args, **kwargs):
+        self.hosts.all().delete()
+        super().delete(*args, **kwargs)
 
 
-class HPA(models.Model):
-    enable = models.BooleanField(default=False)
+class Scaler(models.Model):
     min_replicas = models.IntegerField(default=1)
     max_replicas = models.IntegerField(default=1)
-    scaleup_stb_window = models.IntegerField(default=300)
-    scaledown_stb_window = models.IntegerField(default=300)
-    cpu_trigger = models.IntegerField(null=True, default=90)
-    memory_trigger = models.IntegerField(null=True, default=90)
+    scaleup_stb_window = models.IntegerField(default=0)
+    scaledown_stb_window = models.IntegerField(default=150)
+    scalers = models.JSONField(default=list)
+
+    def default(self):
+        self.min_replicas = 1
+        self.max_replicas = 1
+        self.scaleup_stb_window = 0
+        self.scaledown_stb_window = 150
+        self.scalers = []
+        self.save()
 
     def info(self):
         return {
-            'enable': self.enable,
             'min_replicas': self.min_replicas,
             'max_replicas': self.max_replicas,
             'scaleup_stb_window': self.scaleup_stb_window,
             'scaledown_stb_window': self.scaledown_stb_window,
-            'cpu_trigger': self.cpu_trigger,
-            'memory_trigger': self.memory_trigger,
+            'scalers': self.scalers,
         }
 
 
-@admin.register(HPA)
-class HPAAdmin(admin.ModelAdmin):
-    list_display = ('enable', 'min_replicas', 'max_replicas', 'cpu_trigger', 'memory_trigger')
-    list_filter = ('enable',)
+class AppFW(models.Model):
+    deny = models.JSONField(default=list)
+    allow = models.JSONField(default=list)
+    precedence = models.CharField(max_length=16, choices=(('deny', 'Deny'), ('allow', 'Allow')))
+    nyu_only = models.BooleanField(default=False)
+
+    def info(self):
+        return {
+            'deny': self.deny,
+            'allow': self.allow,
+            'precedence': self.precedence,
+            'nyu_only': self.nyu_only,
+        }
 
 
 class ContainerApp(models.Model):
     appid = UUID7StringField(auto_created=True)
+    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     name = models.CharField(max_length=64)
     slug = models.CharField(max_length=64)
-    replicas = models.IntegerField(default=1)
-    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     containers = models.ManyToManyField(Container, blank=True)
-    custom_domains = models.ManyToManyField(CustomDomain, blank=True)
-    pvcs = models.ManyToManyField(PVC, blank=True)
-    hpa = models.ForeignKey(HPA, on_delete=models.SET_NULL, null=True, default=None)
-    connection_port = models.IntegerField(null=True, default=None)
+    ingress = models.OneToOneField(Ingress, on_delete=models.CASCADE, blank=True, null=True)
+    volumes = models.ManyToManyField(Volume, blank=True)
+    scaler = models.OneToOneField(Scaler, on_delete=models.CASCADE)
+    connection_port = models.IntegerField()
     connection_protocol = models.CharField(max_length=16,
                                            choices=(('http', 'Web app'),
                                                     ('tcp', 'TCP on random port'),
                                                     ('udp', 'UDP on random port')))
-    restart_policy = models.CharField(max_length=16, default='always', choices=(('always', 'Always'),
-                                                                                ('on_failure', 'On Failure'),
-                                                                                ('never', 'Never')))
-    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
-    exposed_public = models.BooleanField(default=True)
+    update_strategy = models.CharField(max_length=16, default='recreate', choices=(('rolling', 'Rolling'),
+                                                                                   ('recreate', 'Recreate')))
+    ip_rule = models.OneToOneField(AppFW, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    state = models.CharField(max_length=16, choices=R_STATES, default='creating')
+    metadata = models.JSONField(default=dict)
 
     def volume_info(self):
         result = []
-        for pvc in self.pvcs.all():
+        for vol in self.volumes.all():
             result.append({
-                'volid': pvc.pvcid,
-                'name': pvc.name,
-                'size': pvc.size,
-                'mount_path': pvc.mount_path,
-                'modes': {
-                    'main': pvc.container_app_mode.main,
-                    'init': pvc.container_app_mode.init,
-                    'sidecar': pvc.container_app_mode.sidecar,
-                }
+                **(vol.info()),
+                'mode': vol.mode_info()
             })
         return result
 
@@ -143,12 +176,66 @@ class ContainerApp(models.Model):
         return f'{self.slug}.{env.container_apps_domain}'
 
     @property
+    def connect_url(self):
+        return f'{self.slug}.{env.container_apps_domain}:{self.connection_port}'
+
+    @property
+    def display_url(self):
+        if self.connection_protocol == 'http':
+            return self.url
+        return self.connect_url
+
+    @property
+    def custom_domain_url(self):
+        if self.ingress and self.ingress.hosts.exists():
+            return f'https://{self.ingress.hosts.first().host}'
+        return self.display_url
+
+    @property
     def cpu_limit(self):
-        return sum([container.cpu_limit for container in self.containers.all()])
+        main_sidecar_cpu = 0
+        init_cpu = 0
+        for con in self.containers.all():
+            if con.type == 'init':
+                init_cpu += con.cpu
+            else:
+                main_sidecar_cpu += con.cpu
+
+        return max(main_sidecar_cpu, init_cpu) * self.scaler.max_replicas
 
     @property
     def memory_limit(self):
-        return sum([container.memory_limit for container in self.containers.all()])
+        main_sidecar_memory = 0
+        init_memory = 0
+        for con in self.containers.all():
+            if con.type == 'init':
+                init_memory += con.memory
+            else:
+                main_sidecar_memory += con.memory
+
+        return max(main_sidecar_memory, init_memory) * self.scaler.max_replicas
+
+    @property
+    def disk_limit(self):
+        return sum([vol.size for vol in self.volumes.all()])
+
+    @property
+    def updated_at_pretty(self):
+        if similar_time(self.created_at, self.updated_at):
+            return 'Never'
+        return self.updated_at
+
+    def brief(self):
+        return {
+            'appid': self.appid,
+            'name': self.name,
+            'url': self.url,
+            'connection_port': 443 if self.connection_protocol == 'http' else self.connection_port,
+            'connection_protocol': self.connection_protocol,
+            'state': self.state,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+        }
 
     def info(self):
         container_types = {
@@ -163,27 +250,31 @@ class ContainerApp(models.Model):
             'appid': self.appid,
             'name': self.name,
             'url': self.url,
-            'replicas': self.replicas,
             'connection_port': 443 if self.connection_protocol == 'http' else self.connection_port,
             'connection_protocol': self.connection_protocol,
             'state': self.state,
             'restart_policy': self.restart_policy,
-            'custom_domains': [custom_domain.info() for custom_domain in self.custom_domains.all()],
+            'update_strategy': self.update_strategy,
             **container_types,
             'volumes': self.volume_info(),
-            'autoscale': self.hpa.info() if self.hpa else {},
-            'exposed_public': self.exposed_public,
+            'scaling': self.scaler.info(),
+            'ingress': self.ingress.info() if self.ingress else {},
+            'firewall': self.ip_rule.info(),
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }
 
-    def save(self, *args, **kwargs):
-        if not self.hpa:
-            self.container_app_mode = HPA.objects.create(**DEFAULT_HPA_SPEC)
-        super().save(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        self.containers.all().delete()
+        self.volumes.all().delete()
+        self.scaler.delete()
+        self.ingress.delete()
+        self.ip_rule.delete()
+        super().delete(*args, **kwargs)
 
 
 @admin.register(ContainerApp)
 class ContainerAppAdmin(admin.ModelAdmin):
     list_display = ('name', 'url', 'connection_protocol')
     list_filter = ('connection_protocol',)
+

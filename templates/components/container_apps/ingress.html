@@ -1,0 +1,363 @@
+<div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-[6em] gap-y-2 mt-4 items-center">
+    <label class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0 flex-shrink-0 w-full md:w-40">
+        TLS pass-through
+    </label>
+    <div class="flex items-center justify-start md:justify-center relative flex-shrink-0 w-full md:w-auto">
+        <label class="inline-flex items-center cursor-pointer">
+            <input id="tls-passthrough" type="checkbox" value="" class="sr-only peer" disabled>
+            <div class="relative w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full 
+                rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] 
+                after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border 
+                after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600">
+            </div>
+        </label>
+    </div>
+</div>
+
+<button id="add-domain" data-modal-target="add-domain-modal" data-modal-toggle="add-domain-modal"
+    class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 mt-6">
+    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+    Add Domain
+</button>
+
+<div id="domains-container" class="space-y-2"></div>
+
+<template id="domain-item-template">
+    <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg shadow domain-item mt-4">
+        <div class="flex items-center gap-4">
+            <div class="flex flex-col">
+                <span class="text-sm font-medium text-gray-900 dark:text-white domain-name"></span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">
+                    <span class="domain-status"></span>
+                </span>
+            </div>
+        </div>
+        <div class="flex items-center">
+            <span class="px-2 py-1 text-xs font-medium rounded-full mr-2 status-badge"></span>
+            <button class="remove-domain text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+    </div>
+</template>
+
+<div id="add-domain-modal" tabindex="-1" aria-hidden="true"
+    class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative p-4 w-full max-w-[40em] max-h-full">
+        <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-800">
+            <!-- Modal header -->
+            <div
+                class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    Add Custom Domain
+                </h3>
+                <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center
+                        items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-target="add-domain-modal"
+                    data-modal-hide="add-domain-modal">
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"></path>
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="modal-container">
+
+                <!-- Step 1: Domain Input -->
+                <form id="domain-input-form" class="p-4 md:p-5">
+                    <div class="grid gap-4 mb-4 grid-cols-2">
+                        <div class="col-span-2">
+                            <p class="mb-3 text-sm text-gray-700 dark:text-gray-300">
+                                Enter the domain name you want to add to your application.
+                            </p>
+                        </div>
+                        <div class="col-span-2">
+                            <label for="domain-name"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                Domain Name
+                            </label>
+                            <input type="text" name="domain-name" id="domain-name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 
+                                       block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 
+                                       dark:focus:border-primary-500" placeholder="example.com" required>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" id="next-button"
+                            class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium 
+                                    rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                            Next
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Step 2: DNS Records -->
+                <form id="dns-confirmation-form" class="p-4 md:p-5 hidden">
+                    <div class="grid gap-4 mb-4 grid-cols-1">
+                        <div class="col-span-1">
+                            <p class="mb-3 text-sm text-gray-700 dark:text-gray-300">
+                                Log in to your domain registrar and add the following DNS record. Click Confirm
+                                after you have made the changes.
+                            </p>
+                        </div>
+                        <div
+                            class="col-span-1 p-3 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                            <h4 class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                DNS Configuration
+                            </h4>
+                            <div class="grid grid-cols-3 gap-2 mb-2">
+                                <div class="col-span-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                                    Type
+                                </div>
+                                <div class="col-span-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                                    Name
+                                </div>
+                                <div class="col-span-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                                    Target
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 items-center">
+                                <div class="col-span-1 text-sm text-gray-900 dark:text-white">CNAME</div>
+                                <div class="col-span-1 text-sm text-gray-900 dark:text-white domain-record-name">
+                                </div>
+                                <div class="col-span-1 text-sm text-gray-900 dark:text-white domain-record-value">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-span-1">
+                            <div class="flex items-center">
+                                <input id="dns-confirmed" type="checkbox" value=""
+                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                <label for="dns-confirmed"
+                                    class="ms-2 text-sm font-medium text-gray-900 dark:text-white">
+                                    I've added the DNS records
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <button type="button" id="back-button"
+                            class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm 
+                            font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">
+                            Back
+                        </button>
+                        <button type="submit" id="confirm-button" disabled data-modal-hide="add-domain-modal"
+                            class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center 
+                            dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 opacity-50 cursor-not-allowed">
+                            Confirm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        const $domainInputForm = $('#domain-input-form');
+        const $dnsConfirmationForm = $('#dns-confirmation-form');
+        const $confirmButton = $('#confirm-button');
+        const $domainsContainer = $('#domains-container');
+        const $domainNameInput = $('#domain-name');
+
+        $('#add-domain').on('click', function () {
+            $domainNameInput.val('');
+            $('#dns-confirmed').prop('checked', false);
+            $confirmButton.prop('disabled', true).addClass('opacity-50 cursor-not-allowed');
+            $domainInputForm.show();
+            $dnsConfirmationForm.hide();
+        });
+
+        $domainInputForm.on('submit', function (e) {
+            e.preventDefault();
+
+            const domainName = $domainNameInput.val().trim();
+            const validation = validateDomain(domainName);
+
+            if (!validation.valid) {
+                alert(validation.message);
+                return;
+            }
+
+            $('.domain-record-name').text(validation.isTLD ? '@' : domainName);
+            $('.domain-record-value').text(window.APP.url.replace('https://', ''));
+
+            $domainInputForm.hide();
+            $dnsConfirmationForm.fadeTo('fast', 0.8);
+        });
+
+        $('#back-button').on('click', function () {
+            $dnsConfirmationForm.hide();
+            $domainInputForm.fadeTo('fast', 0.8);
+        });
+
+        $('#dns-confirmed').on('change', function () {
+            if ($(this).is(':checked')) {
+                $confirmButton.prop('disabled', false).removeClass('opacity-50 cursor-not-allowed');
+            } else {
+                $confirmButton.prop('disabled', true).addClass('opacity-50 cursor-not-allowed');
+            }
+        });
+
+        $dnsConfirmationForm.on('submit', function (e) {
+            e.preventDefault();
+
+            const domainName = $domainNameInput.val().trim();
+
+            if (domainName) {
+                const domainElement = createDomainItem(domainName, 'pending');
+                $domainsContainer.append(domainElement);
+                const statusElement = domainElement.find('.domain-status');
+                checkDNSPropagation(domainName, statusElement);
+
+                $domainNameInput.val('');
+                $('#dns-confirmed').prop('checked', false);
+
+                $('[data-modal-hide="add-domain-modal"]').trigger('click');
+            }
+        });
+
+        $domainsContainer.on('click', '.remove-domain', function () {
+            $(this).closest('.domain-item').remove();
+        });
+
+        setInterval(function () {
+            const $pendingDomains = $('#domains-container .domain-item').filter(function () {
+                return $(this).find('.status-badge').text().toLowerCase() === 'pending';
+            });
+
+            $pendingDomains.each(function () {
+                const domain = $(this).data('domain');
+                const statusElement = $(this).find('.domain-status');
+                checkDNSPropagation(domain, statusElement);
+            });
+        }, 10000);
+
+    });
+
+    function validateDomain(domain) {
+        domain = domain.trim().replace(/\.$/, '');
+        if (!domain)
+            return { valid: false, message: 'Please enter a domain name' };
+
+        const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
+        if (!domainRegex.test(domain)) {
+            return { valid: false, message: 'Please enter a valid domain name' };
+        }
+
+        return {
+            valid: true,
+            isTLD: domain.split('.').length === 2,
+            domain: domain
+        };
+    }
+
+    function updateDomainStatus(domain, status, statusText) {
+        const $domainItem = $(`.domain-item[data-domain="${domain}"]`);
+        const $statusBadge = $domainItem.find('.status-badge');
+        const $statusElement = $domainItem.find('.domain-status');
+
+        $statusBadge.removeClass('bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300');
+        $statusBadge.removeClass('bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300');
+        $statusBadge.removeClass('bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300');
+
+        if (status === 'active') {
+            $statusBadge.text('Active');
+            $statusBadge.addClass('bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300');
+        } else if (status === 'pending') {
+            $statusBadge.text('Pending');
+            $statusBadge.addClass('bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300');
+        } else {
+            $statusBadge.text('Error');
+            $statusBadge.addClass('bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300');
+        }
+
+        $statusElement.text(statusText);
+    }
+
+    function createDomainItem(domain, status = 'pending') {
+        const $template = $('#domain-item-template');
+        const $clone = $($template.html());
+
+        $clone.attr('data-domain', domain);
+        $clone.find('.domain-name').text(domain);
+
+        const $statusBadge = $clone.find('.status-badge');
+        if (status === 'active') {
+            $statusBadge.text('Active');
+            $statusBadge.addClass('bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300');
+            $clone.find('.domain-status').text('DNS records verified');
+        } else if (status === 'pending') {
+            $statusBadge.text('Pending');
+            $statusBadge.addClass('bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300');
+            $clone.find('.domain-status').text('Waiting for DNS propagation');
+        } else {
+            $statusBadge.text('Error');
+            $statusBadge.addClass('bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300');
+            $clone.find('.domain-status').text('DNS configuration issue');
+        }
+
+        return $clone;
+    }
+
+    function checkDNSPropagation(domain, statusElement) {
+        $.ajax({
+            type: 'GET',
+            url: 'https://dns.google/resolve',
+            data: { name: domain, type: 'CNAME' },
+            dataType: 'json',
+            success: function (response) {
+                if (response.Status === 0 && response.Answer && response.Answer.length > 0) {
+                    const cnameRecord = response.Answer.find(record => record.type === 5); // Type 5 is CNAME
+                    if (cnameRecord) {
+                        updateDomainStatus(domain, 'active', 'DNS record verified');
+                    } else {
+                        updateDomainStatus(domain, 'pending', 'No CNAME record found');
+                    }
+                } else {
+                    updateDomainStatus(domain, 'pending', response.Status ? `Waiting for DNS propogation` : 'No records found');
+                }
+            },
+            error: function () {
+                updateDomainStatus(domain, 'pending', 'DNS check failed');
+            }
+        });
+    }
+
+    window.getIngressHosts = function getIngressHosts() {
+        const domains = [];
+        $('#domains-container .domain-item').each(function () {
+            domains.push({
+                domain: $(this).data('domain'),
+                status: $(this).find('.status-badge').text().toLowerCase()
+            });
+        });
+        return domains;
+    };
+
+    window.putIngressHosts = function putIngressHosts(domains) {
+        if (!domains || !Array.isArray(domains) || domains.length === 0)
+            return;
+
+        const $domainsContainer = $('#domains-container');
+        $domainsContainer.empty();
+
+        domains.forEach(domain => {
+            if (typeof domain === 'string') {
+                $domainsContainer.append(createDomainItem(domain, 'active'));
+            } else if (domain.domain) {
+                $domainsContainer.append(createDomainItem(domain.domain, domain.status || 'active'));
+            }
+        });
+    };
+</script>

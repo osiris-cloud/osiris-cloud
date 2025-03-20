@@ -2,7 +2,7 @@ def create_users():
     from django.utils import timezone
     from json import load as json_load
 
-    from apps.k8s.models import Namespace, NamespaceRoles
+    from apps.infra.models import Namespace, NamespaceRoles
     from apps.users.models import User, Limit
     from apps.oauth.models import NYUUser
     from core.utils import random_str
@@ -38,7 +38,7 @@ def create_users():
 def create_pvcs():
     from json import load as json_load
     from apps.users.models import User
-    from apps.k8s.models import Namespace, PVC
+    from apps.infra.models import Namespace, Volume
     with open(r'./seed/pvcs.json') as f:
         pvcs = json_load(f)
 
@@ -46,7 +46,7 @@ def create_pvcs():
         owner = User.objects.get(id=pvc['owner_id'])
         namespace = Namespace.objects.get(id=pvc['namespace_id'])
 
-        PVC.objects.create(
+        Volume.objects.create(
             name=pvc['name'],
             size=pvc['size'],
             owner=owner,
@@ -56,14 +56,14 @@ def create_pvcs():
 # TODO: Add seed data for other models
 def create_vms():
     from json import load as json_load
-    from apps.k8s.models import Namespace, PVC
+    from apps.infra.models import Namespace, Volume
     from apps.vm.models import VM
     from apps.users.models import User
     with open(r'./seed/vms.json') as f:
         vms = json_load(f)
 
     for vm in vms:
-        disk = PVC.objects.get(id=vm['disk_id'])
+        disk = Volume.objects.get(id=vm['disk_id'])
         owner = User.objects.get(id=vm['owner_id'])
         namespace = Namespace.objects.get(id=vm['namespace_id'])
 
@@ -80,7 +80,7 @@ def create_vms():
 
 def create_events():
     from json import load as json_load
-    from apps.k8s.models import Namespace, Event
+    from apps.infra.models import Namespace, Event
 
     with open(r'./seed/events.json') as f:
         events = json_load(f)

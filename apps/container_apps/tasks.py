@@ -1,46 +1,34 @@
 from celery import shared_task
 
-from .resources import AppResource
+from .resource import AppResource
 from .models import ContainerApp
 
 
 @shared_task(bind=True, name='create_deployment', max_retries=3)
-def create_deployment(self, appid) -> None:
+def apply_deployment(self, appid) -> None:
     app = ContainerApp.objects.get(appid=appid)
-    if app.namespace.state != 'active':
-        return
-    creator = AppResource()
-    creator.create_app(app)
-
-
-@shared_task(name='patch_deployment')
-def patch_deployment(appid) -> None:
-    app = ContainerApp.objects.get(appid=appid)
-    creator = AppResource()
-    creator.update_app(app)
-    app.state = 'active'
+    app_resource = AppResource(app)
+    app_resource.apply()
 
 
 @shared_task(bind=True, name='delete_deployment', max_retries=3)
 def delete_deployment(self, appid) -> None:
     app = ContainerApp.objects.get(appid=appid)
+    app_resource = AppResource(app)
 
-    creator = AppResource()
-    creator.delete_app(app)
+    # Update usage counts
+    owner = app.namespace.owner
 
-    for container in app.containers.all():
-        container.delete()
-    for custom_domain in app.custom_domains.all():
-        custom_domain.delete()
-    for volume in app.pvcs.all():
-        volume.delete()
-    if app.hpa:
-        app.hpa.delete()
-    app.delete()
+    owner.usage.cpu -= app.cpu_limit
+    owner.usage.memory -= app.memory_limit
+    owner.usage.disk -= app.disk_limit
+
+    app_resource.delete()
+    owner.usage.save()
 
 
 @shared_task(bind=True, name='redeploy', max_retries=3)
-def redeploy(self, appid) -> None:
+def restart(self, appid) -> None:
     app = ContainerApp.objects.get(appid=appid)
-    creator = AppResource()
-    creator.restart_deployment(app)
+    app_resource = AppResource(app)
+    app_resource.redeploy()

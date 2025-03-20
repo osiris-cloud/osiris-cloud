@@ -1,36 +1,36 @@
-<div class="flex flex-col bg-gray-50 bg-white dark:bg-gray-800 p-6 rounded-lg space-y-6">
+<div class="flex flex-col bg-white dark:bg-gray-800 p-6 rounded-lg space-y-6">
     <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
-        <label for="registry-url" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+        <label for="display_url" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
          flex-shrink-0 w-full md:w-40"
         >
-            Registry URL
+            App URL
         </label>
 
         <div class="relative flex-shrink-0 w-full md:w-auto">
-            <input id="registry-url" type="text" readonly
+            <input id="display_url" type="text" readonly
                    class="h-9 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
                        focus:ring-blue-500 focus:border-blue-500 block w-full md:w-[30em] p-2.5 dark:bg-gray-700 
                        dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 
                        dark:focus:border-blue-500 cursor-text"
-                   value="{{ cr.url }}"
+                   value="{{ app.custom_domain_url }}"
             >
 
-            <button id="copy-registry-url" onclick='copyToClip("{{ cr.url }}",
-                    "copy-icon-registry-url",
-                    "success-icon-registry-url",
-                    "tooltip-registry-url"
+            <button id="copy-registry-url" onclick='copyToClip("{{ app.custom_domain_url }}",
+                    "copy-icon-app-url",
+                    "success-icon-app-url",
+                    "tooltip-app-url"
                     )'
-                    data-tooltip-target="tooltip-registry-url"
+                    data-tooltip-target="tooltip-app-url"
                     class="absolute end-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 
-                        dark:hover:bg-gray-800 rounded-lg p-2 inline-flex items-center justify-center"
+                           dark:hover:bg-gray-800 rounded-lg p-2 inline-flex items-center justify-center"
             >
-                <span id="copy-icon-registry-url">
+                <span id="copy-icon-app-url">
                     <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
                         <path d="M16 1h-3.278A1.992 1.992 0 0 0 11 0H7a1.993 1.993 0 0 0-1.722 1H2a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm-3 14H5a1 1 0 0 1 0-2h8a1 1 0 0 1 0 2Zm0-4H5a1 1 0 0 1 0-2h8a1 1 0 1 1 0 2Zm0-5H5a1 1 0 0 1 0-2h2V2h4v2h2a1 1 0 1 1 0 2Z">
                         </path>
                     </svg>
                 </span>
-                <span id="success-icon-registry-url" class="hidden inline-flex items-center">
+                <span id="success-icon-app-url" class="hidden inline-flex items-center">
                     <svg class="w-3.5 h-3.5 text-blue-700 dark:text-blue-500" xmlns="http://www.w3.org/2000/svg"
                          fill="none" viewBox="0 0 16 12">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -40,7 +40,7 @@
                 </span>
             </button>
 
-            <div id="tooltip-registry-url" role="tooltip"
+            <div id="tooltip-app-url" role="tooltip"
                  class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700 text-center">
                 <span>Copy URL</span>
                 <div class="tooltip-arrow" data-popper-arrow></div>
@@ -48,116 +48,161 @@
 
         </div>
     </div>
-    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
-        <label for="registry-username" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
-         flex-shrink-0 w-full md:w-40"
-        >
-            Login Username
-        </label>
+</div>
 
-        <div class="relative flex-shrink-0 w-full md:w-auto">
-            <input id="registry-username" type="text" readonly
-                   class="h-9 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
-                       focus:ring-blue-500 focus:border-blue-500 block w-full md:w-[30em] p-2.5 dark:bg-gray-700 
-                       dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 
-                       dark:focus:border-blue-500 cursor-text"
-                   value="{{ cr.username }}"
-            >
+{% include 'components/container_apps/info.html' %}
 
-            <button id="copy-registry-username" onclick='copyToClip("{{ cr.username }}",
-                    "copy-icon-registry-username",
-                    "success-icon-registry-username",
-                    "tooltip-registry-username"
-                    )'
-                    data-tooltip-target="tooltip-registry-username"
-                    class="absolute end-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 
-                        dark:hover:bg-gray-800 rounded-lg p-2 inline-flex items-center justify-center"
-            >
-                <span id="copy-icon-registry-username">
-                    <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-                        <path d="M16 1h-3.278A1.992 1.992 0 0 0 11 0H7a1.993 1.993 0 0 0-1.722 1H2a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm-3 14H5a1 1 0 0 1 0-2h8a1 1 0 0 1 0 2Zm0-4H5a1 1 0 0 1 0-2h8a1 1 0 1 1 0 2Zm0-5H5a1 1 0 0 1 0-2h2V2h4v2h2a1 1 0 1 1 0 2Z">
-                        </path>
-                    </svg>
-                </span>
-                <span id="success-icon-registry-username" class="hidden inline-flex items-center">
-                    <svg class="w-3.5 h-3.5 text-blue-700 dark:text-blue-500" xmlns="http://www.w3.org/2000/svg"
-                         fill="none" viewBox="0 0 16 12">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M1 5.917 5.724 10.5 15 1.5">
-                        </path>
-                    </svg>
-                </span>
+<div class="mt-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+    <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" data-tabs-toggle="#view-app"
+        role="tablist"
+    >
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg" data-tabs-target="#instances"
+                    type="button" role="tab">
+                Instances
             </button>
+        </li>
 
-            <div id="tooltip-registry-username" role="tooltip"
-                 class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700 text-center">
-                <span>Copy Username</span>
-                <div class="tooltip-arrow" data-popper-arrow></div>
-            </div>
+        {#        <li class="me-2" role="presentation">#}
+        {#            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"#}
+        {#                    data-tabs-target="#app-logs" type="button" role="tab">#}
+        {#                Access Logs#}
+        {#            </button>#}
+        {#        </li>#}
 
-        </div>
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    data-tabs-target="#app-info" type="button" role="tab">
+                App Info
+            </button>
+        </li>
+
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    data-tabs-target="#volume-config" type="button" role="tab">
+                Volumes
+            </button>
+        </li>
+
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    data-tabs-target="#scaling-config" type="button" role="tab">
+                Scaling
+            </button>
+        </li>
+        {% if app.connection_protocol == "http" %}
+            <li class="me-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                        data-tabs-target="#ingress-config" type="button" role="tab">
+                    Ingress
+                </button>
+            </li>
+        {% endif %}
+
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    data-tabs-target="#firewall-config" type="button" role="tab">
+                Firewall
+            </button>
+        </li>
+
+    </ul>
+</div>
+
+<div id="view-app">
+    <div id="instances" class="flex flex-col bg-white dark:bg-gray-800 p-6 rounded-lg">
+        {% include 'components/container_apps/instances.html' %}
     </div>
-    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
-        <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
-         flex-shrink-0 w-full md:w-40"
-        >
-            Login Password
-        </label>
 
-        <div class="relative flex-shrink-0 w-full md:w-auto">
-            <input id="registry-password" type="password" readonly data-tooltip-target="tooltip-registry-password-input"
-                   class="h-9 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
-                       focus:ring-blue-500 focus:border-blue-500 block w-full md:w-[30em] p-2.5 dark:bg-gray-700 
-                       dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 
-                       dark:focus:border-blue-500 cursor-text"
-                   value="{{ cr.password }}"
-                   onclick="this.type = 'text'; $('#tooltip-registry-password-input').addClass('hidden')"
-            >
+    {#    <div id="app-logs" class="flex flex-col bg-white dark:bg-gray-800 p-6 rounded-lg"> </div> #}
 
-            <button id="copy-registry-password" onclick='copyToClip(
-                    "{{ cr.password }}",
-                    "copy-icon-registry-password",
-                    "success-icon-registry-password",
-                    "tooltip-registry-password"
-                    )'
-                    data-tooltip-target="tooltip-registry-password"
-                    class="absolute end-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 
-                        dark:hover:bg-gray-800 rounded-lg p-2 inline-flex items-center justify-center"
-            >
-                <span id="copy-icon-registry-password">
-                    <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-                        <path d="M16 1h-3.278A1.992 1.992 0 0 0 11 0H7a1.993 1.993 0 0 0-1.722 1H2a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm-3 14H5a1 1 0 0 1 0-2h8a1 1 0 0 1 0 2Zm0-4H5a1 1 0 0 1 0-2h8a1 1 0 1 1 0 2Zm0-5H5a1 1 0 0 1 0-2h2V2h4v2h2a1 1 0 1 1 0 2Z">
-                        </path>
-                    </svg>
-                </span>
-                <span id="success-icon-registry-password" class="hidden inline-flex items-center">
-                    <svg class="w-3.5 h-3.5 text-blue-700 dark:text-blue-500" xmlns="http://www.w3.org/2000/svg"
-                         fill="none" viewBox="0 0 16 12">
+    <div id="app-info" class="flex flex-col bg-white dark:bg-gray-800 p-6 rounded-lg hidden">
+        {% include 'components/container_apps/app-info.html' %}
+    </div>
+
+    <div id="volume-config" class="flex flex-col bg-white dark:bg-gray-800 p-6 rounded-lg hidden">
+        {% include 'components/container_apps/vol-info.html' %}
+    </div>
+
+    <div id="scaling-config" class="flex flex-col bg-white dark:bg-gray-800 p-6 rounded-lg hidden">
+        {% include 'components/container_apps/scaling-info.html' %}
+    </div>
+
+    {% if app.connection_protocol == "http" %}
+        <div id="ingress-config" class="flex flex-col bg-white dark:bg-gray-800 p-6 rounded-lg hidden">
+            {% include 'components/container_apps/ingress-info.html' %}
+        </div>
+    {% endif %}
+
+    <div id="firewall-config" class="flex flex-col bg-white dark:bg-gray-800 p-6 rounded-lg hidden">
+        {% include 'components/container_apps/fw-info.html' %}
+    </div>
+
+</div>
+
+
+<div id="console-modal" tabindex="-1"
+     class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative p-4 w-full max-w-[900px] max-h-[600px]">
+        <div class="relative rounded-lg shadow-sm bg-white dark:bg-gray-800">
+            <div class="flex items-center justify-between p-4 md:p-4 border-b rounded-t dark:border-gray-600 border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    Console
+                </h3>
+                <button type="button"
+                        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                        onclick="consoleModal.hide()">
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                         viewBox="0 0 14 14">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M1 5.917 5.724 10.5 15 1.5">
-                        </path>
+                              d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"></path>
                     </svg>
-                </span>
-            </button>
-
-            <div id="tooltip-registry-password" role="tooltip"
-                 class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700 text-center">
-                <span>Copy Password</span>
-                <div class="tooltip-arrow" data-popper-arrow></div>
+                    <span class="sr-only">Close modal</span>
+                </button>
             </div>
 
-            <div id="tooltip-registry-password-input" role="tooltip"
-                 class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700 text-center">
-                <span>Click to Reveal</span>
-                <div class="tooltip-arrow" data-popper-arrow></div>
+            <!-- Tab Navigation -->
+            <div class="flex overflow-hidden border-b border-gray-200 dark:border-gray-600" id="console-tabs-container">
+                <ul class="flex flex-nowrap -mb-px text-sm font-medium text-center" id="console-tabs" role="tablist">
+                </ul>
             </div>
 
+            <div class="p-1 w-full">
+                <div id="console-content" class="h-full"></div>
+            </div>
         </div>
     </div>
 </div>
 
-<h5 class="mt-8 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Images</h5>
+<div id="logs-modal" tabindex="-1"
+     class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative p-4 w-full max-w-[900px] max-h-[600px]">
+        <div class="relative rounded-lg shadow-sm bg-white dark:bg-gray-800">
+            <div class="flex items-center justify-between p-4 md:p-4 border-b rounded-t dark:border-gray-600 border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    Logs
+                </h3>
+                <button type="button"
+                        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                        onclick="logsModal.hide()">
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                         viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"></path>
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+            </div>
 
-{% include 'components/container_registry/images-table.html' %}
+            <!-- Tab Navigation -->
+            <div class="flex overflow-hidden border-b border-gray-200 dark:border-gray-600" id="console-tabs-container">
+                <ul class="flex flex-nowrap -mb-px text-sm font-medium text-center" id="logs-tabs" role="tablist">
+                </ul>
+            </div>
 
-{% include 'components/container_registry/registry-guide.html' %}
+            <div class="p-1 w-full">
+                <div id="logs-content" class="h-full"></div>
+            </div>
+        </div>
+    </div>
+</div>

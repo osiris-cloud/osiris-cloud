@@ -1,0 +1,160 @@
+<style>
+    .arc text {
+        font-family: Arial, serif;
+        font-size: 12px;
+        text-anchor: middle;
+    }
+
+    .center-text {
+        font-family: Arial, serif;
+        font-size: 24px;
+        font-weight: bold;
+        text-anchor: middle;
+    }
+
+    .center-label {
+        font-family: Arial, serif;
+        font-size: 12px;
+        text-anchor: middle;
+        fill: #666;
+    }
+
+</style>
+
+<div class="flex flex-row space-x-4">
+    <div class="flex flex-row bg-white dark:bg-gray-800 p-3 rounded-lg mt-6 w-[24em] h-[14em] items-center justify-between">
+        <div id="stat-chart" style="width: 200px; height: 200px"></div>
+        <div class="grid grid-cols-1 gap-y-3 w-36">
+            <dl class="bg-green-50 dark:bg-gray-700 rounded-lg flex flex-row space-x-2 items-center justify-start h-[3em] w-[8em] px-3">
+                <dt id="running-n"
+                    class="w-8 h-8 rounded-full bg-green-100 dark:bg-gray-500 text-green-400 dark:text-green-300 text-sm font-medium flex items-center justify-center">
+                    0
+                </dt>
+                <dd class="text-green-600 dark:text-green-300 text-sm font-medium">Running</dd>
+            </dl>
+            <dl class="bg-orange-50 dark:bg-gray-700 rounded-lg flex flex-row space-x-2 items-center justify-start h-[3em] w-[8em] px-3">
+                <dt id="pending-n"
+                    class="w-8 h-8 rounded-full bg-orange-100 dark:bg-gray-500 text-orange-600 dark:text-yellow-300 text-sm font-medium flex items-center justify-center">
+                    0
+                </dt>
+                <dd class="text-orange-600 dark:text-yellow-300 text-sm font-medium">Pending</dd>
+            </dl>
+            <dl class="bg-blue-50 dark:bg-gray-700 rounded-lg flex flex-row space-x-2 items-center justify-start h-[3em] w-[8em] px-3">
+                <dt id="desired-n"
+                    class="w-8 h-8 rounded-full bg-blue-100 dark:bg-gray-500 text-blue-600 dark:text-blue-300 text-sm font-medium flex items-center justify-center">
+                    0
+                </dt>
+                <dd class="text-blue-600 dark:text-blue-300 text-sm font-medium">Desired</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="flex flex-row bg-white dark:bg-gray-800 p-3 rounded-lg mt-6 w-[24em] h-[14em] items-center justify-between">
+        <div class="flex flex-col items-center w-1/2">
+            <div id="cpu-gauge" class="w-32 h-32 relative"></div>
+            <div class="text-sm text-gray-600 dark:text-gray-400 mt-2">CPU Usage</div>
+        </div>
+        <div class="flex flex-col items-center w-1/2">
+            <div id="memory-gauge" class="w-32 h-32 relative"></div>
+            <div class="text-sm text-gray-600 dark:text-gray-400 mt-2">Memory Usage</div>
+        </div>
+    </div>
+
+    <div class="flex flex-col bg-white dark:bg-gray-800 p-4 rounded-lg mt-6 w-[24em] h-[14em] justify-start">
+        <h2 class="text-gray-900 dark:text-gray-200">Network Stats</h2>
+        <hr class="my-2 border-gray-200 dark:border-gray-700">
+        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-lg mt-6 justify-center space-y-4">
+            <!-- Download Speed -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center text-blue-500">
+                    <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 19V5M5 12l7 7 7-7"></path>
+                    </svg>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Total Request Size</span>
+                </div>
+                <span id="req-usage" class="text-sm font-semibold dark:text-gray-200">0 B</span>
+            </div>
+
+            <!-- Upload Speed -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center text-green-500">
+                    <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12l7-7 7 7"></path>
+                    </svg>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Total Response Size</span>
+                </div>
+                <span id="resp-usage" class="text-sm font-semibold dark:text-gray-200">0 B</span>
+            </div>
+
+            <!-- Request Count -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center text-purple-500">
+                    <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                    </svg>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Request Count</span>
+                </div>
+                <span id="request-count" class="text-sm font-semibold dark:text-gray-200">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="events"
+         class="flex flex-col bg-white dark:bg-gray-800 p-4 rounded-lg mt-6 w-[24em] h-[14em] justify-start">
+        <h2 class="text-gray-900 dark:text-gray-200">Recent Events</h2>
+        <hr class="my-2 border-gray-200 dark:border-gray-700">
+        <div id="no-events-message" class="flex items-center justify-center h-32 text-gray-500 dark:text-gray-400">
+            No events
+        </div>
+    </div>
+
+</div>
+
+<template id="scale-up-template">
+    <div class="flex items-start space-x-3 p-2">
+        <div class="flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="16 12 12 8 8 12"></polyline>
+                <line x1="12" y1="16" x2="12" y2="8"></line>
+            </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-900 dark:text-gray-200 event-message"></p>
+            <div class="flex items-center mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 mr-1" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span class="text-xs text-gray-500 dark:text-gray-400 event-time"></span>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Template for scale down events -->
+<template id="scale-down-template">
+    <div class="flex items-start space-x-3 p-2">
+        <div class="flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="8 12 12 16 16 12"></polyline>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+            </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-900 dark:text-gray-200 event-message"></p>
+            <div class="flex items-center mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 mr-1" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span class="text-xs text-gray-500 dark:text-gray-400 event-time"></span>
+            </div>
+        </div>
+    </div>
+</template>

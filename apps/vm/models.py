@@ -2,7 +2,7 @@ import uuid
 from django.db import models
 
 from ..users.models import User
-from ..k8s.models import Namespace, PVC
+from ..infra.models import Namespace, PV
 
 
 class VM(models.Model):
@@ -12,7 +12,7 @@ class VM(models.Model):
     k8s_name = models.CharField(max_length=100)
     cpu = models.IntegerField()
     memory = models.IntegerField()
-    disk = models.ForeignKey(PVC, on_delete=models.CASCADE, related_name='vms')
+    disk = models.ForeignKey(PV, on_delete=models.CASCADE, related_name='vms')
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vms')
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)

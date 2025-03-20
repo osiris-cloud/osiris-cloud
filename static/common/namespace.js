@@ -225,8 +225,7 @@ $nsSubmitButton.on('click', () => {
             if (createNS)
                 Confirm('Namespace created. Do you want to switch it?', (ok) => {
                     if (ok) {
-                        let url = parseURL();
-                        window.location.href = `${url.host}/${url.app}/${ns.nsid}`;
+                        window.location.href = `${currentURL.host}/${currentURL.app}/${ns.nsid}`;
                     }
                 }, {'yes': 'Switch', 'no': 'Stay', 'icon': 'check'});
             else
@@ -259,7 +258,7 @@ $nsDelete.on('click', () => {
             contentType: 'application/json',
             success: (resp) => {
                 Alert('Namespace Deleted', () => {
-                    window.location.reload();
+                    window.location.href = `${currentURL.host}/${currentURL.app}/default`;
                 }, {'icon': 'check'});
             },
             error: (resp) => {

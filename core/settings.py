@@ -1,13 +1,18 @@
 import os
 import logging
+import tempfile
+import atexit
 
+from kubernetes import config
+from base64 import b64decode
 from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 from str2bool import str2bool
 from dataclasses import dataclass
 from urllib.parse import urlparse
+from yaml import safe_load
 
-from .utils import load_file_from_s3, load_file, generate_kid
+from .utils import load_file_from_s3, load_file, generate_kid, cleanup
 
 load_dotenv(override=True if os.environ.get('DEBUG') is None else False)
 
@@ -66,10 +71,16 @@ class Env:
 
     k8s_url = ''
     k8s_ws_url = ''
-    k8s_token = ''
+    k8s_config_dict = {}
     k8s_api_client = None
+    k8s_aio_client = None
+    k8s_auth = {
+        'client_key': tempfile.NamedTemporaryFile(delete=False),
+        'client_cert': tempfile.NamedTemporaryFile(delete=False),
+        'ca_cert': tempfile.NamedTemporaryFile(delete=False),
+    }
 
-    firewall_url = os.getenv('FIREWALL_URL')
+    loxi_url = os.getenv('FIREWALL_URL')
 
     registry_domain = os.getenv('REGISTRY_DOMAIN', 'registry.osiriscloud.io')
     registry_key_obj_path = os.getenv('REGISTRY_KEY_OBJECT_PATH')
@@ -87,16 +98,35 @@ class Env:
             kubeconfig = load_file_from_s3(self.kubeconfig_obj_path, self.aws_access_key, self.aws_secret_key)
 
         if kubeconfig:
-            from kubernetes import config
-            from yaml import safe_load
+            kube_config = safe_load(kubeconfig)
+            self.k8s_config_dict = kube_config
 
-            k8s_config = safe_load(kubeconfig)
-            self.k8s_url = k8s_config['clusters'][0]['cluster']['server']
-            self.k8s_token = k8s_config['users'][0]['user']['token']
             url = urlparse(self.k8s_url)
             self.k8s_ws_url = 'ws://' if url.scheme == 'http' else 'wss://' + url.netloc + url.path
-            self.k8s_api_client = config.new_client_from_config_dict(k8s_config)
+            self.k8s_api_client = config.new_client_from_config_dict(kube_config)
             print('# Initialized k8s client')
+
+            current_context = kube_config['current-context']
+            context = next(ctx for ctx in kube_config['contexts'] if ctx['name'] == current_context)
+            user = next(usr for usr in kube_config['users'] if usr['name'] == context['context']['user'])
+            user = user['user']
+
+            if 'client-certificate-data' in user:  # For cert based auth
+                # Write the certificate data to temp files
+                self.k8s_auth['client_key'].write(b64decode(user['client-key-data']))
+                self.k8s_auth['client_cert'].write(b64decode(user['client-certificate-data']))
+                self.k8s_auth['ca_cert'].write(
+                    b64decode(kube_config['clusters'][0]['cluster']['certificate-authority-data']))
+
+                self.k8s_auth['client_key'].flush()
+                self.k8s_auth['client_cert'].flush()
+                self.k8s_auth['ca_cert'].flush()
+
+                atexit.register(cleanup)
+
+            if 'token' in user:  # For token based auth
+                self.k8s_auth['token'] = user['token']
+
         else:
             print('# kubeconfig not found. k8s client not initialized')
 
@@ -144,7 +174,7 @@ INSTALLED_APPS = [
     "main",
     "apps.api",
     # "apps.ip_manager",
-    "apps.k8s",
+    "apps.infra",
     "apps.oauth",
     "apps.users",
     "apps.admin_console",
@@ -293,4 +323,11 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ),
     'EXCEPTION_HANDLER': 'apps.api.exceptions.exception_processor',
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'osiris-app-cache',
+    }
 }

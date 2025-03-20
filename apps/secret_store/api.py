@@ -7,7 +7,7 @@ from json import dumps as json_dumps
 from json import JSONDecodeError
 
 from .models import Secret
-from ..k8s.models import Namespace
+from ..infra.models import Namespace
 
 from core.utils import success_message, error_message
 from ..users.utils import get_default_ns
@@ -23,8 +23,8 @@ def secret_store(request, nsid=None, secretid=None, action=None):
         return JsonResponse(error_message('Namespace id is required'), status=400)
 
     if nsid == 'default':
-        if not (nsid := request.session.get('default_ns')):
-            nsid = request.session['default_ns'] = get_default_ns(request.user).nsid
+        if not (nsid := request.session.get('default_nsid')):
+            nsid = request.session['default_nsid'] = get_default_ns(request.user).nsid
 
     if (request.method in ['PATCH, DELETE']) and secretid is None:
         return JsonResponse(error_message('secretid is required'), status=400)
@@ -41,7 +41,14 @@ def secret_store(request, nsid=None, secretid=None, action=None):
         secret_data = request.data
         match request.method:
             case 'GET':
+                if s_type := request.GET.get('type'):
+                    if s_type not in ('opaque', 'dockerconfig'):
+                        return JsonResponse(error_message('Invalid secret type'), status=400)
+
                 secrets_filter = {'secretid': secretid} if secretid else {}
+                if s_type:
+                    secrets_filter['type'] = s_type
+
                 secrets = Secret.objects.filter(namespace=ns, **secrets_filter)
                 result = [sec.info() for sec in secrets]
                 if secretid:
@@ -103,10 +110,10 @@ def secret_store(request, nsid=None, secretid=None, action=None):
     except Namespace.DoesNotExist:
         return JsonResponse(error_message('Namespace not found or no permission to access'), status=404)
 
-    except (Secret.DoesNotExist, ValueError):
+    except Secret.DoesNotExist:
         return JsonResponse(error_message('Secret not found'), status=404)
 
-    except JSONDecodeError:
+    except (JSONDecodeError, ValueError):
         return JsonResponse(error_message('Invalid JSON data'), status=400)
 
     except Exception as e:

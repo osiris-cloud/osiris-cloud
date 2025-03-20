@@ -1,0 +1,311 @@
+<button id="add-volume"
+        class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 mt-6">
+    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+    Add Volume
+</button>
+
+<!-- Volumes Container -->
+<div id="volumes-container"></div>
+
+<template id="volume-template">
+    <div class="volume-entry border border-gray-500 rounded-md p-3 mb-4 mt-4 transition-all duration-200 placeholder-gray-400">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-3">
+            <span class="text-sm font-medium volume-number shrink-0 w-20">Volume 1</span>
+            <button class="remove-volume h-8 px-2 text-red-500 hover:text-red-700 shrink-0">
+                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                     width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="flex flex-col space-y-4">
+
+            <div class="flex flex-col md:flex-row md:items-center gap-x-20 gap-y-4">
+
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1 w-full lg:max-w-fit md:max-w-fit">
+                    <label class="text-xs w-12 shrink-0">Type</label>
+                    <select class="block volume-type p-1.5 w-full text-sm text-gray-500 dark:text-white rounded-md border-gray-300
+                            bg-transparent dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-8">
+                        <option class="dark:bg-gray-700" value="fs" selected>Filesystem</option>
+                        <option class="dark:bg-gray-700" value="temp">Temporary Storage</option>
+                        <option class="dark:bg-gray-700" value="secret">Secret</option>
+                        <option class="dark:bg-gray-700" value="block">Block Device</option>
+                    </select>
+                </div>
+
+                <select class="block volume-secret py-1.5 px-0 w-full md:w-96 text-sm text-gray-500 hidden
+                        bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400
+                        dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"
+                >
+                    <option class="dark:bg-gray-700 hidden" value="">Select Secret</option>
+                </select>
+
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-3">
+                <div class="flex-1 min-w-0">
+                    <label class="block text-xs mb-1">Name</label>
+                    <input type="text"
+                           class="volume-name bg-gray-50 h-8 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                           placeholder="Volume name" minlength="1" required
+                    />
+                </div>
+
+                <div class="w-full md:w-32">
+                    <label class="block text-xs mb-1">Size (GiB)</label>
+                    <input type="number"
+                           class="volume-size bg-gray-50 h-8 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                           placeholder="Size" minlength="1" required
+                    />
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <label class="block text-xs mb-1">Container Mount Path</label>
+                    <input type="text"
+                           class="volume-mount bg-gray-50 h-8 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                           placeholder="/path/to/mount" minlength="1" required
+                    />
+                </div>
+            </div>
+
+            <!-- Access Mode section -->
+            <div>
+                <div class="block text-sm mb-3">Access Mode</div>
+                <div class="flex flex-col md:flex-row gap-4 md:justify-between lg:justify-start">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-x-8 gap-y-2 flex-1">
+                        <label class="text-xs shrink-0">Main Container</label>
+                        <select class="block volume-mode-main p-1.5 w-full lg:max-w-48 text-sm text-gray-500 dark:text-white rounded-md border-gray-300
+                         bg-transparent dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-8">
+                            <option class="dark:bg-gray-700" value="">No access</option>
+                            <option class="dark:bg-gray-700" value="rw">Read & Write</option>
+                            <option class="dark:bg-gray-700" value="ro">Read Only</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-x-8 gap-y-2 flex-1">
+                        <label class="text-xs shrink-0">Sidecar Container</label>
+                        <select class="block volume-mode-sidecar p-1.5 w-full lg:max-w-48 text-sm text-gray-500 dark:text-white rounded-md border-gray-300
+                         bg-transparent dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-8">
+                            <option class="dark:bg-gray-700" value="">No access</option>
+                            <option class="dark:bg-gray-700" value="rw">Read & Write</option>
+                            <option class="dark:bg-gray-700" value="ro">Read Only</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-x-8 gap-y-2 flex-1">
+                        <label class="text-xs shrink-0">Init Container</label>
+                        <select class="block volume-mode-init p-1.5 w-full lg:max-w-48 text-sm text-gray-500 dark:text-white rounded-md border-gray-300
+                         bg-transparent dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-8">
+                            <option class="dark:bg-gray-700" value="">No access</option>
+                            <option class="dark:bg-gray-700" value="rw">Read & Write</option>
+                            <option class="dark:bg-gray-700" value="ro">Read Only</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+
+<script>
+    const RO = {value: 'ro', text: 'Read Only'};
+    const RW = {value: 'rw', text: 'Read & Write'};
+    const NA = {value: '', text: 'No access'};
+    
+    const ACCESS_MODES = {
+        temp: [NA, RO, RW],
+        fs: [NA, RO, RW],
+        secret: [NA, RO],
+        block: [NA, RW]
+    };
+
+    $('#add-volume').click(function () {
+        addVolume();
+    });
+    
+    const $volumesContainer = $('#volumes-container');
+
+    $volumesContainer.on('click', '.remove-volume', function () {
+        $(this).closest('.volume-entry').remove();
+        updateVolumeNumbers();
+    });
+
+    // Handle volume type changes
+    $volumesContainer.on('change', '.volume-type', function () {
+        const $volumeEntry = $(this).closest('.volume-entry');
+        const volumeType = $(this).val();
+
+        $volumeEntry.find('.volume-mode-main, .volume-mode-sidecar, .volume-mode-init').val('');
+
+        updateAccessModeOptions($volumeEntry, volumeType);
+
+        const $secretSelect = $volumeEntry.find('.volume-secret');
+        const $sizeInput = $volumeEntry.find('.volume-size');
+
+        if (volumeType === 'secret') {
+            $secretSelect.removeClass('hidden').prop('required', true);
+            $sizeInput.val(0).prop('disabled', true);
+        } else if (volumeType === 'temp') {
+            $secretSelect.addClass('hidden').prop('required', false);
+            $sizeInput.val(0.1).prop('disabled', true);
+        } else {
+            $secretSelect.addClass('hidden').prop('required', false);
+            $sizeInput.val('').prop('disabled', false);
+        } 
+    });
+
+    $volumesContainer.on('focus', '.volume-secret', function () {
+        loadSecretList($(this), 'opaque');
+    });
+    
+    const modeSelects = ['main','sidecar','init'];
+    
+    modeSelects.forEach(mode => {
+        const $containerToggle = $(`#${mode}-container-toggle`);
+        $containerToggle.on('change', function () {
+            const $volumes = $volumesContainer.children();
+            $volumes.each(function () {
+                const vType = $(this).find('.volume-type').val();
+                updateAccessModeOptions($(this), vType);
+            });
+        });
+    });
+
+    function updateAccessModeOptions($volumeEntry, volumeType) {
+        modeSelects.forEach(mode => {          
+            const $containerToggle = $(`#${mode}-container-toggle`);
+            const isEnabled = $containerToggle.length ? $containerToggle.prop('checked') : false;
+
+            const $select = $volumeEntry.find('.volume-mode-' + mode);
+            $select.prop('disabled', !isEnabled && mode !== 'main');
+
+            $select.empty();
+
+            ACCESS_MODES[volumeType].forEach(option => {
+                $select.append($('<option/>', {
+                    value: option.value,
+                    text: option.text,
+                    class: 'dark:bg-gray-700'
+                }));
+            });
+            $select.val('');
+        });
+    }
+
+    function addVolume() {
+        const $template = $('#volume-template');
+        const $clone = $($template.html());
+        $volumesContainer.append($clone);
+        updateVolumeNumbers();
+        const $newVolume = $volumesContainer.children().last();
+        const defaultType = $newVolume.find('.volume-type').val();
+        updateAccessModeOptions($newVolume, defaultType);
+    }
+
+    function updateVolumeNumbers() {
+        $('.volume-number').each(function (index) {
+            $(this).text(`Volume ${index + 1}`);
+        });
+    }
+    
+    function getVolumeData() {
+    let volumes = [];
+    $('.volume-entry').each(function () {
+        const volume = {
+            type: $(this).find('.volume-type').val(),
+            name: $(this).find('.volume-name').val(),
+            size: Number($(this).find('.volume-size').val()) || 0,
+            mount_path: $(this).find('.volume-mount').val(),
+            mode: {
+                init: $(this).find('.volume-mode-init').val(),
+                main: $(this).find('.volume-mode-main').val(),
+                sidecar: $(this).find('.volume-mode-sidecar').val()
+            }
+        };
+        
+        const volid = $(this).attr('data-volid');
+        if (volid) {
+            volume.volid = volid;
+        }
+
+        if (volume.type === 'secret') {
+            volume.secretid = $(this).find('.volume-secret').val();
+        }
+        volumes.push(volume);
+    });
+    return volumes;
+}
+
+    function putVolumeData(values) {
+    
+        if (!values || !Array.isArray(values) || values.length === 0) {
+            return;
+        }
+        
+        values.forEach(volume => {
+            addVolume();
+            
+            const $volumeEntry = $volumesContainer.children().last();
+    
+            // Preserve volid if it exists by adding a data attribute
+            if (volume.volid) {
+                $volumeEntry.attr('data-volid', volume.volid);
+            }
+            
+            $volumeEntry.find('.volume-type').val(volume.type || 'fs').trigger('change');
+            
+            $volumeEntry.find('.volume-name').val(volume.name || '');
+            
+            if (volume.type !== 'temp' && volume.type !== 'secret') {
+                $volumeEntry.find('.volume-size').val(volume.size || '');
+            }
+            
+            $volumeEntry.find('.volume-mount').val(volume.mount_path || '');
+            
+            if (volume.mode) {
+                if (volume.mode.main) {
+                    $volumeEntry.find('.volume-mode-main').val(volume.mode.main);
+                }
+    
+                if (volume.mode.sidecar) {
+                    $volumeEntry.find('.volume-mode-sidecar').val(volume.mode.sidecar);
+                }
+    
+                if (volume.mode.init) {
+                    $volumeEntry.find('.volume-mode-init').val(volume.mode.init);
+                }
+            }
+            
+            if (volume.type === 'secret' && volume.secretid) {
+                const $secretSelect = $volumeEntry.find('.volume-secret');
+                
+                if (!$secretSelect.find(`option[value="${volume.secretid}"]`).length) {
+                    $secretSelect.append(
+                        $('<option>', {
+                            value: volume.secretid,
+                            text: volume.secretid, // Use ID as display text until real data loads
+                            class: 'dark:bg-gray-700',
+                            selected: true
+                        })
+                    );
+                } else {
+                    $secretSelect.val(volume.secretid);
+                }
+            }
+        });
+        updateVolumeNumbers();
+    }
+</script>

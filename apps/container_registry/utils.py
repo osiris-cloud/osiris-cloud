@@ -7,7 +7,7 @@ from os import urandom
 from jwt import encode
 
 from core.settings import env
-from ..k8s.constants import DOCKER_HEADERS
+from ..infra.constants import DOCKER_HEADERS
 
 CATALOG_TOKEN = None
 

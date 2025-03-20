@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view
 from django.core.exceptions import ValidationError
 
 from .models import ContainerRegistry
-from ..k8s.models import Namespace
+from ..infra.models import Namespace
 
 from core.utils import success_message, error_message
 from .utils import validate_registry_spec, validate_registry_update_spec
@@ -48,8 +48,8 @@ def container_registry(request, nsid=None, crid=None, action=None):
         return JsonResponse(error_message('Namespace id is required'), status=400)
 
     if nsid == 'default':
-        if not (nsid := request.session.get('default_ns')):
-            nsid = request.session['default_ns'] = get_default_ns(request.user).nsid
+        if not (nsid := request.session.get('default_nsid')):
+            nsid = request.session['default_nsid'] = get_default_ns(request.user).nsid
 
     if (request.method in ['PATCH, DELETE']) and crid is None:
         return JsonResponse(error_message('crid is required'), status=400)
@@ -108,10 +108,16 @@ def container_registry(request, nsid=None, crid=None, action=None):
                 if not valid:
                     return JsonResponse(error_message(err), status=400)
 
+                if request.user.usage.registry >= request.user.limit.registry:
+                    return JsonResponse(error_message('Resource limit exceeded'), status=403)
+
                 cr = ContainerRegistry(namespace=ns, name=cr_data['name'], repo=cr_data['repo_name'],
                                        public=cr_data.get('public', False), state='active')
 
                 cr.save()
+
+                request.user.usage.registry += 1
+                request.user.usage.save()
 
                 return JsonResponse(success_message('Create registry', {'registry': cr.info()}), status=201)
 

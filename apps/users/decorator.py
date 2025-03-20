@@ -6,7 +6,7 @@ from django.shortcuts import redirect, render
 from core.settings import OC_APPS
 
 from .utils import get_default_ns
-from ..k8s.models import Namespace
+from ..infra.models import Namespace
 
 CLIENT_APPS = [app.replace('apps.', '').replace('_', '-') for app in OC_APPS]
 
