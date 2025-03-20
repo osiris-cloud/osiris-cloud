@@ -1,6 +1,7 @@
 from django.shortcuts import render
-from uuid_utils import UUID
+from django.core.cache import cache
 from django.contrib.auth.decorators import login_required
+
 from ..users.decorator import namespaced
 
 from .models import ContainerApp
@@ -26,42 +27,46 @@ def container_apps_create(request, nsid):
 
 @login_required
 @namespaced
-def container_apps_edit(request, nsid, appid):
+def container_apps_view(request, nsid, appid):
     try:
-        crid = UUID(appid)
-    except ValueError:
+        app = ContainerApp.objects.get(appid=appid)
+    except ContainerApp.DoesNotExist:
         return render(request, "pages/404-app.html", status=404)
 
-    cr = ContainerApp.objects.filter(crid=crid).first()
-    if not cr:
-        return render(request, "pages/404-app.html", status=404)
+    cache_key = f'container_app_{appid}_info'
+    cache.set(cache_key, app.info(), timeout=2)
 
-    if request.ns_role == 'viewer':
-        return render(request, "pages/403-app.html", status=403)
+    containers = {}
+    for container in app.containers.all():
+        containers[container.type] = container.info()
 
     context = {
-        'segment': ['container_apps', 'edit'],
-        'crid': crid,
-        'cr': cr,
+        'segment': ['container_apps', 'view'],
+        'app': app,
+        'nsid': nsid,
+        'containers': containers,
     }
+
     return render(request, "apps/container-apps.html", context)
 
 
 @login_required
 @namespaced
-def container_apps_view(request, nsid, appid):
+def container_apps_edit(request, nsid, appid):
     try:
-        crid = UUID(appid)
-    except ValueError:
+        app = ContainerApp.objects.get(appid=appid)
+    except ContainerApp.DoesNotExist:
         return render(request, "pages/404-app.html", status=404)
 
-    cr = ContainerApp.objects.filter(crid=crid).first()
-    if not cr:
-        return render(request, "pages/404-app.html", status=404)
+    if request.ns_role == 'viewer':
+        return render(request, "pages/403-app.html", status=403)
+
+    cache_key = f'container_app_{appid}_info'
+    cache.set(cache_key, app.info(), timeout=2)
 
     context = {
-        'segment': ['container_apps', 'view'],
-        'crid': crid,
-        'cr': cr,
+        'app': app,
+        'segment': ['container_apps', 'edit'],
     }
+
     return render(request, "apps/container-apps.html", context)
