@@ -23,8 +23,8 @@ def secret_store(request, nsid=None, secretid=None, action=None):
         return JsonResponse(error_message('Namespace id is required'), status=400)
 
     if nsid == 'default':
-        if not (nsid := request.session.get('default_ns')):
-            nsid = request.session['default_ns'] = get_default_ns(request.user).nsid
+        if not (nsid := request.session.get('default_nsid')):
+            nsid = request.session['default_nsid'] = get_default_ns(request.user).nsid
 
     if (request.method in ['PATCH, DELETE']) and secretid is None:
         return JsonResponse(error_message('secretid is required'), status=400)
