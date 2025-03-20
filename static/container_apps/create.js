@@ -335,7 +335,6 @@ $('#create-app-button').on('click', function () {
             Alert(`Name is required for volume ${i + 1}`);
             return;
         }
-        console.log(volume.size, volume.type);
         if (!volume.size && !(volume.type === 'secret' || volume.type === 'temp')) {
             Alert(`Size is required for volume ${i + 1}`);
             return;
