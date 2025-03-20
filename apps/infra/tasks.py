@@ -13,7 +13,7 @@ def error_handler(request, exc, traceback):
     logger.error(f'Error in task: {request.id}', exc_info=exc)
 
 
-@shared_task(bind=True, name='init_k8s_for_user', max_retries=30, default_retry_delay=60)
+@shared_task(bind=True, name='init_ns_for_user', max_retries=30, default_retry_delay=60)
 def init_namespace(self, nsid: str) -> bool:
     try:
         ns = Namespace.objects.get(nsid=nsid)
@@ -27,5 +27,8 @@ def init_namespace(self, nsid: str) -> bool:
             ns.state = 'error'
             ns.save()
             raise self.retry(countdown=60)
+
+    except Namespace.DoesNotExist:
+        return False
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)

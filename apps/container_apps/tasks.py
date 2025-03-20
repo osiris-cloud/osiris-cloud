@@ -15,7 +15,16 @@ def apply_deployment(self, appid) -> None:
 def delete_deployment(self, appid) -> None:
     app = ContainerApp.objects.get(appid=appid)
     app_resource = AppResource(app)
+
+    # Update usage counts
+    owner = app.namespace.owner
+
+    owner.usage.cpu -= app.cpu_limit
+    owner.usage.memory -= app.memory_limit
+    owner.usage.disk -= app.disk_limit
+
     app_resource.delete()
+    owner.usage.save()
 
 
 @shared_task(bind=True, name='redeploy', max_retries=3)
