@@ -31,21 +31,35 @@ function createTableEntry(app) {
     return $row;
 }
 
-$.ajax({
-    url: `/api/container-apps/${currentURL.nsid}`,
-    method: 'GET',
-    headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
-    success: (data) => {
-        if (data.apps.length === 0) {
-            showNoResource();
-        } else {
-            data.apps.forEach((registry) => {
-                $appTable.append(createTableEntry(registry));
-            });
-            $appTableContainer.removeClass('hidden');
-        }
-    },
-    error: (resp) => {
-        Alert(resp.responseJSON.message || "Internal Server Error");
-    },
+$(document).ready(function () {
+    showLoader(true);
+    loadAppList();
+    setInterval(() => {
+        loadAppList();
+    }, 5000);
 });
+
+function loadAppList() {
+    $.ajax({
+        url: `/api/container-apps/${currentURL.nsid}`,
+        method: 'GET',
+        data: {'brief': true},
+        headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
+        success: (data) => {
+            showLoader(false);
+            if (data.apps.length === 0) {
+                showNoResource();
+            } else {
+                $appTable.empty();
+                data.apps.forEach((registry) => {
+                    $appTable.append(createTableEntry(registry));
+                });
+                $appTableContainer.removeClass('hidden');
+            }
+        },
+        error: (resp) => {
+            showLoader(false);
+            Alert(resp.responseJSON.message || "Internal Server Error");
+        },
+    });
+}
