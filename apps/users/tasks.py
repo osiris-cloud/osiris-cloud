@@ -9,6 +9,8 @@ from ..infra.models import Namespace
 from ..container_apps.models import ContainerApp
 from ..container_registry.models import ContainerRegistry
 
+from ..infra.utils import delete_namespace
+
 from ..container_apps.tasks import delete_deployment
 from ..container_registry.tasks import delete_registry
 
@@ -49,8 +51,9 @@ def finalize_namespace_deletion(results, nsid):
     """
     try:
         ns = Namespace.objects.get(nsid=nsid)
+        delete_namespace(ns.nsid)
         ns.delete()
-        logging.info(f"Successfully deleted namespace {nsid} after all resources")
+
         return True
     except Exception as e:
         logging.exception(f"Failed to finalize namespace deletion {nsid}: {e}")
@@ -70,11 +73,11 @@ def delete_namespace(nsid):
         registries = ContainerRegistry.objects.filter(namespace=ns)
         registry_tasks = [delete_registry.s(registry.crid) for registry in registries]
 
-        if not apps and not registries:
-            ns.delete()
-            return True
-
         all_tasks = deployment_tasks + registry_tasks
+
+        if all_tasks == []:
+            finalize_namespace_deletion.s(nsid).delay()
+            return True
 
         chord(all_tasks)(finalize_namespace_deletion.s(nsid))
 
