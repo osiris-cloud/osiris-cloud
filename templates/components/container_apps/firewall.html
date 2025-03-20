@@ -138,8 +138,40 @@
             addRule($(this).data('type'));
         });
 
+        function putAllowRules(values) {
+            $('#allow-rules').find('.group').remove();
+            
+            if (!values || !Array.isArray(values) || values.length === 0) {
+                updateEmptyState($('#allow-rules'));
+                return;
+            }
+            
+            values.forEach(rule => {
+                if (rule && rule.trim()) {
+                    addRule('allow', rule.trim());
+                }
+            });
+        }
+
+        function putDenyRules(values) {
+            $('#deny-rules').find('.group').remove();
+            
+            if (!values || !Array.isArray(values) || values.length === 0) {
+                updateEmptyState($('#deny-rules'));
+                return;
+            }
+
+            values.forEach(rule => {
+                if (rule && rule.trim()) {
+                    addRule('deny', rule.trim());
+                }
+            });
+        }
+
         window.getDenyRules = getDenyRules;
         window.getAllowRules = getAllowRules;
+        window.putDenyRules = putDenyRules;
+        window.putAllowRules = putAllowRules;
         
         addRule('allow', '0.0.0.0/0'); // Add initial rule
     });
