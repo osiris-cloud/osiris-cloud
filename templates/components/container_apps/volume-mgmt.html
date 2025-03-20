@@ -220,27 +220,92 @@
             $(this).text(`Volume ${index + 1}`);
         });
     }
-
+    
     function getVolumeData() {
-        let volumes = [];
-        $('.volume-entry').each(function () {
-            const volume = {
-                type: $(this).find('.volume-type').val(),
-                name: $(this).find('.volume-name').val(),
-                size: parseInt($(this).find('.volume-size').val()) || 0,
-                mount_path: $(this).find('.volume-mount').val(),
-                mode: {
-                    init: $(this).find('.volume-mode-init').val(),
-                    main: $(this).find('.volume-mode-main').val(),
-                    sidecar: $(this).find('.volume-mode-sidecar').val()
-                }
-            };
-            if (volume.type === 'secret') {
-                volume.secretid = $(this).find('.volume-secret').val();
+    let volumes = [];
+    $('.volume-entry').each(function () {
+        const volume = {
+            type: $(this).find('.volume-type').val(),
+            name: $(this).find('.volume-name').val(),
+            size: Number($(this).find('.volume-size').val()) || 0,
+            mount_path: $(this).find('.volume-mount').val(),
+            mode: {
+                init: $(this).find('.volume-mode-init').val(),
+                main: $(this).find('.volume-mode-main').val(),
+                sidecar: $(this).find('.volume-mode-sidecar').val()
             }
-            volumes.push(volume);
-        });
-        return volumes;
-    }
+        };
+        
+        const volid = $(this).attr('data-volid');
+        if (volid) {
+            volume.volid = volid;
+        }
 
+        if (volume.type === 'secret') {
+            volume.secretid = $(this).find('.volume-secret').val();
+        }
+        volumes.push(volume);
+    });
+    return volumes;
+}
+
+    function putVolumeData(values) {
+    
+        if (!values || !Array.isArray(values) || values.length === 0) {
+            return;
+        }
+        
+        values.forEach(volume => {
+            addVolume();
+            
+            const $volumeEntry = $volumesContainer.children().last();
+    
+            // Preserve volid if it exists by adding a data attribute
+            if (volume.volid) {
+                $volumeEntry.attr('data-volid', volume.volid);
+            }
+            
+            $volumeEntry.find('.volume-type').val(volume.type || 'fs').trigger('change');
+            
+            $volumeEntry.find('.volume-name').val(volume.name || '');
+            
+            if (volume.type !== 'temp' && volume.type !== 'secret') {
+                $volumeEntry.find('.volume-size').val(volume.size || '');
+            }
+            
+            $volumeEntry.find('.volume-mount').val(volume.mount_path || '');
+            
+            if (volume.mode) {
+                if (volume.mode.main) {
+                    $volumeEntry.find('.volume-mode-main').val(volume.mode.main);
+                }
+    
+                if (volume.mode.sidecar) {
+                    $volumeEntry.find('.volume-mode-sidecar').val(volume.mode.sidecar);
+                }
+    
+                if (volume.mode.init) {
+                    $volumeEntry.find('.volume-mode-init').val(volume.mode.init);
+                }
+            }
+            
+            if (volume.type === 'secret' && volume.secretid) {
+                const $secretSelect = $volumeEntry.find('.volume-secret');
+                
+                if (!$secretSelect.find(`option[value="${volume.secretid}"]`).length) {
+                    $secretSelect.append(
+                        $('<option>', {
+                            value: volume.secretid,
+                            text: volume.secretid, // Use ID as display text until real data loads
+                            class: 'dark:bg-gray-700',
+                            selected: true
+                        })
+                    );
+                } else {
+                    $secretSelect.val(volume.secretid);
+                }
+            }
+        });
+        updateVolumeNumbers();
+    }
 </script>
