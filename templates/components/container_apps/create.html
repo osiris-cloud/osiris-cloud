@@ -82,13 +82,13 @@
                 <select id="connection-protocol" class="block p-1.5 w-full md:w-[23em] text-sm text-gray-500 dark:text-gray-400
                         rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 
                         focus:ring-blue-500 h-8 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <option class="dark:bg-gray-700" value="http" selected>HTTP</option>
+                    <option class="dark:bg-gray-700" value="http" selected>HTTP (web app)</option>
                     <option class="dark:bg-gray-700" value="tcp" disabled>TCP</option>
                     <option class="dark:bg-gray-700" value="udp" disabled>UDP</option>
                 </select>
             </div>
         </div>
-        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3 hidden">
             <label for="restart-policy" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
                                                flex-shrink-0 w-full md:w-40"
             >
@@ -104,53 +104,61 @@
                 </select>
             </div>
         </div>
-    </div>
-
-    <div id="containers" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
-        {% include 'components/container_apps/containers.html' %}
-    </div>
-
-    <div id="volumes" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-            Volumes are storage resources that can be mounted to containers, enabling persistent data storage
-            across the application lifecycle. You can create a volume of type Filesystem, Secret, or Block Device.
-        <div class="cursor-pointer flex w-28 mt-4 dark:hover:text-gray-200 text-center" data-drawer-target="volume-help-drawer"
-             data-drawer-show="volume-help-drawer" data-drawer-placement="right"
-        >
-            <svg class="w-4 h-4 me-2" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
-                 viewBox="0 0 20 20">
-                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z">
-                </path>
-            </svg>
-            <span class="text-xs font-semibold">Volume Types</span>
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+            <label for="update-strategy" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+                                               flex-shrink-0 w-full md:w-40"
+            >
+                Update Strategy
+            </label>
+            <div class="relative flex-shrink-0 w-full md:w-auto">
+                <select id="update-strategy" class="block p-1.5 w-full md:w-[23em] text-sm text-gray-500 dark:text-gray-400
+                        rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 
+                        focus:ring-blue-500 h-8 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <option class="dark:bg-gray-700" value="recreate" selected>Recreate All</option>
+                    <option class="dark:bg-gray-700" value="rolling">Partial Rollout (High Availability)</option>
+                </select>
+            </div>
         </div>
-        </p>
-        {% include 'components/container_apps/volume-mgmt.html' %}
     </div>
-
-    <div id="scaling" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-            Osiris Cloud allows you to dynamically increase or decrease the number of instances (replicas) of your
-            application based on load. When the load changes, replicas will be created or destroyed after waiting for
-            the provided stabilization window. Stabilization windows of 0 means scaling will happen instantly.
-        </p>
-        {% include 'components/container_apps/scaler.html' %}
-    </div>
-
-    <div id="firewall" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
-        {% include 'components/container_apps/firewall.html' %}
-    </div>
-
-    {#    <div id="custom-domains" class="hidden px-4 py-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">#}
-    {#        <p class="text-sm text-gray-500 dark:text-gray-400">#}
-    {#            Custom domains allow you to map your application to a domain name of your choice. You can add multiple#}
-    {#            domains to your application. The platform will automatically generate a TLS certificate for the domain#}
-    {#            and renew it automatically.#}
-    {#        </p>#}
-    {#        {% include 'components/container_apps/custom-domains.html' %}#}
-    {#    </div>#}
-
 </div>
+
+<div id="containers" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
+    {% include 'components/container_apps/containers.html' %}
+</div>
+
+<div id="volumes" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
+    <p class="text-sm text-gray-500 dark:text-gray-400">
+        Volumes are storage resources that can be mounted to containers, enabling persistent data storage
+        across the application lifecycle. You can create a volume of type Filesystem, Secret, or Block Device.
+    </p>
+    <div class="cursor-pointer flex w-28 mt-4 dark:hover:text-gray-200 text-center"
+         data-drawer-target="volume-help-drawer"
+         data-drawer-show="volume-help-drawer" data-drawer-placement="right"
+    >
+        <svg class="w-4 h-4 me-2" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+             viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z">
+            </path>
+        </svg>
+        <span class="text-xs font-semibold">Volume Types</span>
+    </div>
+    {% include 'components/container_apps/volume-mgmt.html' %}
+</div>
+
+<div id="scaling" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
+    <p class="text-sm text-gray-500 dark:text-gray-400">
+        Osiris Cloud allows you to dynamically increase or decrease the number of instances (replicas) of your
+        application based on load. When the load changes, replicas will be created or destroyed after waiting for
+        the provided stabilization window (in seconds). Stabilization windows of 0 means scaling will happen
+        instantly.
+    </p>
+    {% include 'components/container_apps/scaler.html' %}
+</div>
+
+<div id="firewall" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
+    {% include 'components/container_apps/firewall.html' %}
+</div>
+
 
 <button type="button" id="create-app-button"
         class="mt-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg 

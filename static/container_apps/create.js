@@ -1,4 +1,4 @@
-window.onload = () => {
+$(document).ready(() => {
     const tabsElement = document.getElementById('containers-tab');
     const tabElements = [
         {
@@ -17,6 +17,7 @@ window.onload = () => {
             targetEl: document.querySelector('#init-container'),
         },
     ];
+    let firstLoad = true;
     const options = {
         defaultTabId: 'main',
         activeClasses:
@@ -24,8 +25,16 @@ window.onload = () => {
         inactiveClasses:
             'dark:bg-gray-700 dark:hover:bg-gray-600 hover:bg-gray-300 bg-gray-200',
         onShow: (e) => {
-            loadRegistries();
-            loadSecrets();
+            if (firstLoad) {
+                setTimeout(() => {
+                    firstLoad = false;
+                    loadRegistries();
+                    loadSecrets();
+                }, 800);
+            } else {
+                loadRegistries();
+                loadSecrets();
+            }
         },
     };
     const instanceOptions = {
@@ -33,7 +42,7 @@ window.onload = () => {
         override: true
     };
     const tabs = new Tabs(tabsElement, tabElements, options, instanceOptions);
-}
+});
 
 const CTYPES = ['main', 'sidecar', 'init'];
 let REGISTRIES = [];
@@ -269,6 +278,7 @@ $('#create-app-button').on('click', function () {
     const initContainer = getContainerSpec('init');
     const volumes = getVolumeData();
     const scalingEnabled = $('#autoscale-toggle').is(':checked');
+    const updateStrategy = $('#update-strategy').val();
     let scaling = {
         'min_replicas': Number($('#min-replica').val())
     }
@@ -325,6 +335,7 @@ $('#create-app-button').on('click', function () {
             Alert(`Name is required for volume ${i + 1}`);
             return;
         }
+        console.log(volume.size, volume.type);
         if (!volume.size && !(volume.type === 'secret' || volume.type === 'temp')) {
             Alert(`Size is required for volume ${i + 1}`);
             return;
@@ -357,7 +368,7 @@ $('#create-app-button').on('click', function () {
     }
 
 
-    if($(this).text().trim() === 'Validate'){
+    if ($(this).text().trim() === 'Validate') {
         $(this).text('Validating...');
         setTimeout(() => {
             $(this).text('Create');
@@ -375,6 +386,7 @@ $('#create-app-button').on('click', function () {
             'slug': processedSlug,
             'connection_protocol': connectionProtocol,
             'restart_policy': restartPolicy,
+            'update_strategy': updateStrategy,
             'main': mainContainer,
             'sidecar': sidecarContainer,
             'init': initContainer,

@@ -1,0 +1,435 @@
+<div class="flex flex-col bg-gray-50 bg-white dark:bg-gray-800 rounded-lg space-y-4">
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                    flex-shrink-0 w-full md:w-40"
+        >
+            Create Date
+        </label>
+
+        <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+            {{ app.created_at }}
+        </div>
+    </div>
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                    flex-shrink-0 w-full md:w-40"
+        >
+            Last Updated
+        </label>
+
+        <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+            {{ app.updated_at_pretty }}
+        </div>
+    </div>
+    
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                   flex-shrink-0 w-full md:w-40"
+        >
+            Update Strategy
+        </label>
+
+        <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+            {{ app.update_strategy | capfirst }}
+        </div>
+    </div>
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                   flex-shrink-0 w-full md:w-40"
+        >
+            Total CPU Limit
+        </label>
+
+        <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+            {{ app.cpu_limit }} cores
+        </div>
+    </div>
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                   flex-shrink-0 w-full md:w-40"
+        >
+            Total Memory Limit
+        </label>
+
+        <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+            {{ app.memory_limit }} GiB
+        </div>
+    </div>
+
+</div>
+
+<hr class="my-4 border-gray-200 dark:border-gray-600">
+
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Main Container</h3>
+
+<div class="flex flex-col bg-gray-50 bg-white dark:bg-gray-800 rounded-lg space-y-4">
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                    flex-shrink-0 w-full md:w-40"
+        >
+            CPU
+        </label>
+
+        <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+            {{ containers.main.cpu }} cores
+        </div>
+    </div>
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                    flex-shrink-0 w-full md:w-40"
+        >
+            Memory
+        </label>
+
+        <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+            {{ containers.main.memory }} GiB
+        </div>
+    </div>
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                    flex-shrink-0 w-full md:w-40"
+        >
+            Image
+        </label>
+        {% if containers.main.metadata.crid %}
+            <a class="hover:underline" href="/container-registry/{{ nsid }}/{{ containers.main.metadata.crid }}"
+               target="_blank">{{ containers.main.image }}</a>
+        {% else %}
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                {{ containers.main.image }}
+            </div>
+        {% endif %}
+    </div>
+
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                        flex-shrink-0 w-full md:w-40"
+        >
+            Pull Secret
+        </label>
+        {% if containers.main.pull_secret %}
+            <a class="hover:underline" href="/container-registry/{{ nsid }}/{{ containers.main.pull_secret.secretid }}"
+               target="_blank">{{ containers.main.pull_secret.name }}</a>
+        {% else %}
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                None
+            </div>
+        {% endif %}
+    </div>
+
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                        flex-shrink-0 w-full md:w-40"
+        >
+            Environment Secret
+        </label>
+        {% if containers.main.env_secret %}
+            <a class="hover:underline" href="/container-registry/{{ nsid }}/{{ containers.main.env_secret.secretid }}"
+               target="_blank">{{ containers.main.env_secret.name }}</a>
+        {% else %}
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                None
+            </div>
+        {% endif %}
+    </div>
+
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                   flex-shrink-0 w-full md:w-40"
+        >
+            Container Port
+        </label>
+        <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+            {{ containers.main.port }}/{{ containers.main.port_protocol | upper }}
+        </div>
+    </div>
+
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                       flex-shrink-0 w-full md:w-40"
+        >
+            Command
+        </label>
+        {% if containers.main.command %}
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                {{ containers.main.command | join:" " }}
+            </div>
+        {% else %}
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                None
+            </div>
+        {% endif %}
+    </div>
+
+
+    <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+        <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                         flex-shrink-0 w-full md:w-40"
+        >
+            Args
+        </label>
+        {% if containers.main.args %}
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                {{ containers.main.args | join:" " }}
+            </div>
+        {% else %}
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                None
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% if containers.sidecar %}
+    <hr class="my-4 border-gray-200 dark:border-gray-600">
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Sidecar Container</h3>
+
+    <div class="flex flex-col bg-gray-50 bg-white dark:bg-gray-800 rounded-lg space-y-4">
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                        flex-shrink-0 w-full md:w-40"
+            >
+                CPU
+            </label>
+
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                {{ containers.sidecar.cpu }} cores
+            </div>
+        </div>
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                        flex-shrink-0 w-full md:w-40"
+            >
+                Memory
+            </label>
+
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                {{ containers.sidecar.memory }} GiB
+            </div>
+        </div>
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                        flex-shrink-0 w-full md:w-40"
+            >
+                Image
+            </label>
+            {% if containers.sidecar.metadata.crid %}
+                <a class="hover:underline" href="/container-registry/{{ nsid }}/{{ containers.sidecar.metadata.crid }}"
+                   target="_blank">{{ containers.sidecar.image }}</a>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    {{ containers.sidecar.image }}
+                </div>
+            {% endif %}
+        </div>
+
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                       flex-shrink-0 w-full md:w-40"
+            >
+                Pull Secret
+            </label>
+            {% if containers.sidecar.pull_secret %}
+                <a class="hover:underline"
+                   href="/container-registry/{{ nsid }}/{{ containers.sidecar.pull_secret.secretid }}"
+                   target="_blank">{{ containers.sidecar.pull_secret.name }}</a>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    None
+                </div>
+            {% endif %}
+        </div>
+
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                       flex-shrink-0 w-full md:w-40"
+            >
+                Environment Secret
+            </label>
+            {% if containers.sidecar.env_secret %}
+                <a class="hover:underline"
+                   href="/container-registry/{{ nsid }}/{{ containers.sidecar.env_secret.secretid }}"
+                   target="_blank">{{ containers.sidecar.env_secret.name }}</a>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    None
+                </div>
+            {% endif %}
+        </div>
+
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                           flex-shrink-0 w-full md:w-40"
+            >
+                Command
+            </label>
+            {% if containers.sidecar.command %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    {{ containers.sidecar.command | join:" " }}
+                </div>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    None
+                </div>
+            {% endif %}
+        </div>
+
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                       flex-shrink-0 w-full md:w-40"
+            >
+                Args
+            </label>
+            {% if containers.sidecar.args %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    {{ containers.sidecar.args | join:" " }}
+                </div>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    None
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+{% endif %}
+
+{% if containers.init %}
+    <hr class="my-4 border-gray-200 dark:border-gray-600">
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Init Container</h3>
+
+    <div class="flex flex-col bg-gray-50 bg-white dark:bg-gray-800 rounded-lg space-y-4">
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                        flex-shrink-0 w-full md:w-40"
+            >
+                CPU
+            </label>
+
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                {{ containers.init.cpu }} cores
+            </div>
+        </div>
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                        flex-shrink-0 w-full md:w-40"
+            >
+                Memory
+            </label>
+
+            <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                {{ containers.init.memory }} GiB
+            </div>
+        </div>
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                        flex-shrink-0 w-full md:w-40"
+            >
+                Image
+            </label>
+            {% if containers.init.metadata.crid %}
+                <a class="hover:underline" href="/container-registry/{{ nsid }}/{{ containers.init.metadata.crid }}"
+                   target="_blank">{{ containers.sidecar.image }}</a>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    {{ containers.init.image }}
+                </div>
+            {% endif %}
+        </div>
+
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                       flex-shrink-0 w-full md:w-40"
+            >
+                Pull Secret
+            </label>
+            {% if containers.init.pull_secret %}
+                <a class="hover:underline"
+                   href="/container-registry/{{ nsid }}/{{ containers.init.pull_secret.secretid }}"
+                   target="_blank">{{ containers.init.pull_secret.name }}</a>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    None
+                </div>
+            {% endif %}
+        </div>
+
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                       flex-shrink-0 w-full md:w-40"
+            >
+                Environment Secret
+            </label>
+            {% if containers.init.env_secret %}
+                <a class="hover:underline"
+                   href="/container-registry/{{ nsid }}/{{ containers.sidecar.init.secretid }}"
+                   target="_blank">{{ containers.init.env_secret.name }}</a>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    None
+                </div>
+            {% endif %}
+        </div>
+
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                           flex-shrink-0 w-full md:w-40"
+            >
+                Command
+            </label>
+            {% if containers.init.command %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    {{ containers.init.command | join:" " }}
+                </div>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    None
+                </div>
+            {% endif %}
+        </div>
+
+
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-4">
+            <label for="registry-password" class="text-sm font-medium text-gray-900 dark:text-gray-50 mb-2 md:mb-0
+                       flex-shrink-0 w-full md:w-40"
+            >
+                Args
+            </label>
+            {% if containers.init.args %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    {{ containers.init.args | join:" " }}
+                </div>
+            {% else %}
+                <div class="relative flex-shrink-0 w-full md:w-auto text-sm">
+                    None
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+{% endif %}
+
+<p class="dark:text-gray-400 text-xs mt-6">
+    Refreshed {% now "Y-m-d H:i:s" %}
+</p>

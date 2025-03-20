@@ -47,7 +47,7 @@
             <p class="mb-2">
                 The container that receives traffic from the internet.
             </p>
-            {% include "components/container_apps/container-types.html" with c_type="main" %}
+            {% include "components/container_apps/container-types.html" with c_type="main"%}
         </div>
 
         <div id="sidecar-container"
@@ -57,7 +57,7 @@
                 Sidecar operates beside the main container to provide additional functionalities. It can be
                 accessed through <code>localhost</code> from the main container.
             </p>
-            {% include "components/container_apps/container-types.html" with c_type="sidecar" %}
+            {% include "components/container_apps/container-types.html" with c_type="sidecar"%}
         </div>
 
         <div id="init-container"
@@ -68,8 +68,7 @@
                 perform initialization tasks, like setting up configuration files or any other operation necessary for
                 the main and sidecar containers to function properly.
             </p>
-            {% include "components/container_apps/container-types.html" with c_type="init" %}
+            {% include "components/container_apps/container-types.html" with c_type="init" hide_hints=True %}
         </div>
     </div>
 </div>
-

@@ -1,63 +1,248 @@
-<style>
-    .grid-con {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: auto;
-        grid-column-gap: 20px;
-        grid-row-gap: 35px;
-        justify-items: stretch;
-        align-items: stretch;
-        overflow: hidden;
-    }
-
-    .grid-item {
-        display: grid;
-        min-width: 200px;
-        grid-template-columns: 16em 20em;
-        grid-template-rows: 30px;
-        grid-column-gap: 20px;
-    }
-</style>
-
-
-<div class="px-4 pt-6 pb-1.5 rounded-lg bg-gray-50 bg-white dark:bg-gray-800">
-    <div class="grid-con mt-0.5">
-        <div class="grid-item">
-            <label for="registry-name"
-                   class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">Registry Name</label>
-            <input type="text" id="registry-name"
-                   class="h-8 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                   placeholder="Enter a name" required maxlength="64" minlength="1" value="{{ cr.name }}"
-            />
-        </div>
-
-        <div class="grid-item mb-1.5">
-            <label for="registry-slug"
-                   class="block text-sm font-medium pt-1.5 text-gray-900 dark:text-white">Registry URL</label>
-            <div>
-                <input type="text" id="registry-slug" readonly value="{{ cr.url }}"
-                       class="h-8 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                />
-            </div>
-        </div>
-
-        <div class="grid-item">
-            <label for="registry-password"
-                   class="block mb-2 pt-1.5 text-sm font-medium text-gray-900 dark:text-white">
-                Login Password
-            </label>
-            <input type="text" id="registry-password" value="{{ cr.password }}"
-                   class="h-8 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                   placeholder="•••••••••••••" required
-            />
-            <span id="generate-password" style="left: 670px;"
-                  class="pt-1.5 absolute text-primary-400 text-sm cursor-pointer hover:text-primary-500">[ Generate ]</span>
-        </div>
-        <div></div>
-    </div>
+<div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+    <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" data-tabs-toggle="#create-app"
+        role="tablist"
+    >
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg" id="basics-tab" data-tabs-target="#general"
+                    type="button" role="tab">
+                General
+            </button>
+        </li>
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    id="auth-tab" data-tabs-target="#containers" type="button" role="tab">
+                Containers
+            </button>
+        </li>
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    id="auth-tab" data-tabs-target="#volumes" type="button" role="tab">
+                Volumes
+            </button>
+        </li>
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    id="auth-tab" data-tabs-target="#scaling" type="button" role="tab">
+                Scaling
+            </button>
+        </li>
+        {% if app.connection_protocol == "http" %}
+            <li class="me-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                        id="ingress-tab" data-tabs-target="#ingress" type="button" role="tab">
+                    Ingress
+                </button>
+            </li>
+        {% endif %}
+        <li class="me-2" role="presentation">
+            <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                    id="auth-tab" data-tabs-target="#firewall" type="button" role="tab">
+                Firewall
+            </button>
+        </li>
+    </ul>
 </div>
 
-<button type="button" id="registry-edit"
-        class="mt-4 text-white bg-primary-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+<div id="create-app">
+    <div id="general" class="flex flex-col bg-white dark:bg-gray-800 p-6 rounded-lg space-y-7">
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+            <label for="app-name" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+                                         flex-shrink-0 w-full md:w-40"
+            >
+                App Name
+            </label>
+            <div class="relative flex-shrink-0 w-full md:w-auto">
+                <input id="app-name" type="text"
+                       class="h-8 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
+                       focus:ring-blue-500 focus:border-blue-500 block w-full md:w-[23em] p-2.5 dark:bg-gray-700 
+                       dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 
+                       dark:focus:border-blue-500 cursor-text"
+                       placeholder="Enter a name" required maxlength="64" minlength="1" value="{{ app.name }}"
+                >
+            </div>
+        </div>
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+            <label for="app-slug" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+                                         flex-shrink-0 w-full md:w-40"
+            >
+                App URL
+            </label>
+            <div class="relative flex-shrink-0 w-full md:w-auto">
+                <div>
+                    <input type="text" id="app-slug"
+                           class="h-8 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
+                           focus:ring-blue-500 focus:border-blue-500 block w-full md:w-[23em] p-2.5 dark:bg-gray-700 
+                           dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 
+                           dark:focus:border-blue-500 cursor-text"
+                           value="{{ app.connect_url }}" readonly
+                    >
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+            <label for="app-slug" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+                                         flex-shrink-0 w-full md:w-40"
+            >
+                Connection Protocol
+            </label>
+            <div class="relative flex-shrink-0 w-full md:w-auto">
+                <div>
+                    <input type="text" id="app-slug"
+                           class="h-8 bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg 
+                           focus:ring-blue-500 focus:border-blue-500 block w-full md:w-[23em] p-2.5 dark:bg-gray-700 
+                           dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 
+                           dark:focus:border-blue-500 cursor-text"
+                           value="{{ app.connection_protocol | upper }}" readonly
+                    >
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3 hidden">
+            <label for="restart-policy" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+                                               flex-shrink-0 w-full md:w-40"
+            >
+                Restart Policy
+            </label>
+            <div class="relative flex-shrink-0 w-full md:w-auto">
+                <select id="restart-policy" class="block p-1.5 w-full md:w-[23em] text-sm text-gray-500 dark:text-gray-400
+                        rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 
+                        focus:ring-blue-500 h-8 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <option class="dark:bg-gray-700" value="always" selected>Always</option>
+                    <option class="dark:bg-gray-700" value="on-failure">On Failure (non-zero exit code)</option>
+                    <option class="dark:bg-gray-700" value="never">Never</option>
+                </select>
+            </div>
+        </div>
+        <div class="flex flex-wrap w-full md:w-auto md:items-center gap-x-20 gap-y-3">
+            <label for="update-strategy" class="text-sm font-medium text-gray-900 dark:text-white mb-2 md:mb-0
+                                               flex-shrink-0 w-full md:w-40"
+            >
+                Update Strategy
+            </label>
+            <div class="relative flex-shrink-0 w-full md:w-auto">
+                <select id="update-strategy" class="block p-1.5 w-full md:w-[23em] text-sm text-gray-500 dark:text-gray-400
+                        rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 
+                        focus:ring-blue-500 h-8 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <option class="dark:bg-gray-700" value="recreate" selected>Recreate All</option>
+                    <option class="dark:bg-gray-700" value="rolling">Partial Rollout (High Availability)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div id="containers" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
+        {% include 'components/container_apps/containers.html' %}
+    </div>
+
+    <div id="volumes" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            Volumes are storage resources that can be mounted to containers, enabling persistent data storage
+            across the application lifecycle. You can create a volume of type Filesystem, Secret, or Block Device. You
+            can only expand volumes. Shrinking volumes is not supported.
+        </p>
+        <div class="cursor-pointer flex w-28 mt-4 dark:hover:text-gray-200 text-center"
+             data-drawer-target="volume-help-drawer"
+             data-drawer-show="volume-help-drawer" data-drawer-placement="right"
+        >
+            <svg class="w-4 h-4 me-2" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                 viewBox="0 0 20 20">
+                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z">
+                </path>
+            </svg>
+            <span class="text-xs font-semibold">Volume Types</span>
+        </div>
+        {% include 'components/container_apps/volume-mgmt.html' %}
+    </div>
+
+    <div id="scaling" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            Osiris Cloud allows you to dynamically increase or decrease the number of instances (replicas) of your
+            application based on load. When the load changes, replicas will be created or destroyed after waiting for
+            the provided stabilization window (in seconds). Stabilization window of 0 means scaling will happen instantly.
+        </p>
+        {% include 'components/container_apps/scaler.html' %}
+    </div>
+
+    {% if app.connection_protocol == "http" %}
+        <div id="ingress" class="hidden px-4 py-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                You can set up custom domains to access your app. The platform will generate and renew
+                TLS certificates automatically.
+            </p>
+            {% include 'components/container_apps/ingress.html' %}
+        </div>
+    {% endif %}
+
+    <div id="firewall" class="hidden p-6 rounded-lg bg-white dark:bg-gray-800" role="tabpanel">
+        {% include 'components/container_apps/firewall.html' %}
+    </div>
+
+</div>
+
+<button type="button" id="save-app-button"
+        class="mt-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg 
+        text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+>
     Save
 </button>
+
+<!-- volume help drawer -->
+<div id="volume-help-drawer"
+     class="dark:text-white fixed top-0 right-0 z-40 h-screen max-w-[40em] p-6 overflow-y-auto transition-transform translate-x-full bg-white dark:bg-gray-800"
+     tabindex="-1"
+>
+    <h5 class="inline-flex items-center mb-4 mt-2 text-base font-semibold text-gray-500 dark:text-white">
+        <svg class="w-4 h-4 me-2.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+             viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z">
+            </path>
+        </svg>
+        VOLUME TYPES
+    </h5>
+
+    <button type="button" data-drawer-hide="volume-help-drawer"
+            class="mt-2 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute
+             top-2.5 end-2.5 inline-flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6">
+            </path>
+        </svg>
+    </button>
+    <br>
+
+    <h5 class="inline-flex items-center mt-3 text-base font-semibold text-gray-500 dark:text-gray-300">
+        Filesystem
+    </h5>
+    <p class="text-justify text-sm text-gray-500 dark:text-gray-400">
+        A volume that can be mounted to a container as a directory. It works well for most use
+        cases. Applications that need to be scaled to more than 1 instance may not work with this
+        type.
+    </p>
+
+    <h5 class="inline-flex items-center mt-3 text-base font-semibold text-gray-500 dark:text-gray-300">
+        Temporary Storage
+    </h5>
+    <p class="text-justify text-sm text-gray-500 dark:text-gray-400">
+        A transient ultra-fast volume that can be mounted to a container as an
+        empty directory. Data stored in this volume will be deleted when the container app is restarted.
+    </p>
+
+    <h5 class="inline-flex items-center mt-3 text-base font-semibold text-gray-500 dark:text-gray-300">
+        Secret
+    </h5>
+    <p class="text-justify text-sm text-gray-500 dark:text-gray-400">
+        A volume that can be mounted to a container as a read-only file. This can be used to attach
+        secrets from secret store as a file. The key of the secret is the filename and the value is it's
+        content.
+    </p>
+
+    <h5 class="inline-flex items-center mt-3 text-base font-semibold text-gray-500 dark:text-gray-300">
+        Block Device
+    </h5>
+    <p class="text-justify text-sm text-gray-500 dark:text-gray-400">
+        A volume that can be mounted to a container as a raw block device (/dev/xxx). This is
+        useful for applications that wants to scale to any number of instances and manage its own storage.
+        This can offer better performance since they bypass the filesystem layer and provide direct I/O access.
+    </p>
+</div>
