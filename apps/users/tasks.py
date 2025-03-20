@@ -1,7 +1,7 @@
 import requests
 import logging
 
-from celery import shared_task, chord, group
+from celery import shared_task, chord
 
 from core.settings import env
 
