@@ -362,10 +362,6 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
     except ContainerApp.DoesNotExist:
         pass
 
-    if r_policy := spec.get('restart_policy'):
-        if r_policy not in ('always', 'on_failure', 'never'):
-            return False, 'Invalid restart_policy'
-
     if not spec.get('connection_protocol'):
         return False, 'connection_protocol is required'
 
@@ -440,10 +436,6 @@ def validate_app_update_spec(spec: dict, user) -> tuple[bool, [str | None]]:
 
         if not name.strip():
             return False, 'name cannot be empty'
-
-    if r_policy := spec.get('restart_policy'):
-        if r_policy not in ('always', 'on_failure', 'never'):
-            return False, 'Invalid restart_policy'
 
     if c_proto := spec.get('connection_protocol'):
         if c_proto not in ('http', 'tcp', 'udp'):

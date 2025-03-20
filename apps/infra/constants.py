@@ -53,12 +53,6 @@ DEFAULT_HPA_SPEC = {
     'memory_trigger': 90,
 }
 
-RESTART_POLICIES = {
-    'always': 'Always',
-    'on_failure': 'OnFailure',
-    'never': 'Never'
-}
-
 ACCESS_SUB_SCOPES = {
     'global': [],
     'container-registry': [

@@ -11,7 +11,7 @@ from .models import Container, ContainerApp
 from ..infra.models import Volume
 from ..secret_store.models import Secret
 
-from ..infra.constants import RESTART_POLICIES, NYU_SUBNETS
+from ..infra.constants import NYU_SUBNETS
 
 
 class AppResourceError(Exception):
@@ -394,7 +394,6 @@ class AppResource:
                     ),
                     spec=kubernetes.client.V1PodSpec(
                         runtime_class_name="kata-clh",
-                        restart_policy=RESTART_POLICIES[self.app.restart_policy],
                         init_containers=[self.create_container_spec(c) for c in init_containers],
                         containers=[self.create_container_spec(c) for c in main_containers + sidecar_containers],
                         volumes=self.gen_volume_spec(),

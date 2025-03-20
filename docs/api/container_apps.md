@@ -30,7 +30,6 @@ Sample Response:
     "url": "https://nginx1.poweredge.dev",
     "connection_port": 443,
     "connection_protocol": "http",
-    "restart_policy": "always",
     "custom_domains": [],
     "main": {
       "containerid": "0194c459-6494-78d2-b049-6c2252659d96",

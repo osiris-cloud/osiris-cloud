@@ -152,9 +152,6 @@ class ContainerApp(models.Model):
                                            choices=(('http', 'Web app'),
                                                     ('tcp', 'TCP on random port'),
                                                     ('udp', 'UDP on random port')))
-    restart_policy = models.CharField(max_length=16, default='always', choices=(('always', 'Always'),
-                                                                                ('on_failure', 'On Failure'),
-                                                                                ('never', 'Never')))
     update_strategy = models.CharField(max_length=16, default='recreate', choices=(('rolling', 'Rolling'),
                                                                                    ('recreate', 'Recreate')))
     ip_rule = models.OneToOneField(AppFW, on_delete=models.CASCADE)

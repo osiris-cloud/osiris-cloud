@@ -371,7 +371,6 @@ function putContainerSpec(type, values) {
 
 $('#save-app-button').on('click', function () {
     const appName = $('#app-name').val().trim();
-    const restartPolicy = $('#restart-policy').val();
     const mainContainer = getContainerSpec('main');
     const sidecarContainer = getContainerSpec('sidecar');
     const initContainer = getContainerSpec('init');
@@ -481,7 +480,6 @@ $('#save-app-button').on('click', function () {
         contentType: 'application/json',
         data: JSON.stringify({
             'name': appName,
-            'restart_policy': restartPolicy,
             'update_strategy': updateStrategy,
             'main': mainContainer,
             'sidecar': sidecarContainer,

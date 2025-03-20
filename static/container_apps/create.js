@@ -271,7 +271,6 @@ function getContainerSpec(type) {
 
 $('#create-app-button').on('click', function () {
     const appName = $('#app-name').val().trim();
-    const restartPolicy = $('#restart-policy').val();
     const connectionProtocol = $('#connection-protocol').val();
     const mainContainer = getContainerSpec('main');
     const sidecarContainer = getContainerSpec('sidecar');
@@ -384,7 +383,6 @@ $('#create-app-button').on('click', function () {
             'name': appName,
             'slug': processedSlug,
             'connection_protocol': connectionProtocol,
-            'restart_policy': restartPolicy,
             'update_strategy': updateStrategy,
             'main': mainContainer,
             'sidecar': sidecarContainer,
