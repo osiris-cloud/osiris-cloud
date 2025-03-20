@@ -324,3 +324,10 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'apps.api.exceptions.exception_processor',
 }
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'osiris-app-cache',
+    }
+}
