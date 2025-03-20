@@ -26,23 +26,24 @@
 <link rel="stylesheet" href="{% static 'common/loader.css' %}">
 
 <script>
-  if (localStorage.getItem('theme') === 'dark' || !('theme' in localStorage)) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark')
-  }
+    if (localStorage.getItem('theme') === 'dark' || !('theme' in localStorage)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark')
+    }
 </script>
 
-{#<script src="https://js.sentry-cdn.com/d140ad735d6170ed7a240ad5cefe7670.min.js" crossorigin="anonymous"></script>#}
-{#<script>#}
-{#  Sentry.onLoad(function() {#}
-{#    Sentry.init({#}
-{#      integrations: [#}
-{#        Sentry.replayIntegration(),#}
-{#      ],#}
-{#      // Session Replay#}
-{#      replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.#}
-{#      replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.#}
-{#    });#}
-{#  });#}
-{#</script>#}
+{% if not DEBUG %}
+    <script src="https://js.sentry-cdn.com/d140ad735d6170ed7a240ad5cefe7670.min.js" crossorigin="anonymous"></script>
+    <script>
+        Sentry.onLoad(function () {
+            Sentry.init({
+                integrations: [
+                    Sentry.replayIntegration(),
+                ],
+                replaysSessionSampleRate: 0.1,
+                replaysOnErrorSampleRate: 1.0,
+            });
+        });
+    </script>
+{% endif %}
