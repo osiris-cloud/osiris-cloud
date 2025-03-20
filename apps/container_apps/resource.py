@@ -3,6 +3,7 @@ import logging
 
 from base64 import b64encode
 from datetime import datetime
+from json import loads as json_loads
 
 from core.settings import env
 
@@ -30,7 +31,7 @@ class AppResource:
     def __init__(self, app: ContainerApp, request=None):
         self.app = app
         self.containers = app.containers.all()
-        self.main_container = app.containers.get(type='main')
+        self.main_container = self.containers.get(type='main')
         self.volumes = app.volumes.all()
         self.nsid = app.namespace.nsid
         self.ip_rule = app.ip_rule
@@ -47,7 +48,7 @@ class AppResource:
         self.create_fw_rules()
         self.create_route()
         self.create_autoscaler()
-        self.app.state = 'active'
+        self.app.state = 'created'
         self.app.save()
 
     def delete(self):
@@ -55,12 +56,12 @@ class AppResource:
             self.app.delete()
 
     def create_pull_secrets(self):
-        secrets = set()
+        secrets_id_set = set()
         ocr_auths = dict()
 
         for container in self.containers:
             if container.pull_secret:
-                secrets.add(container.pull_secret.secretid)
+                secrets_id_set.add(container.pull_secret.secretid)
 
             elif crid := container.metadata.get('crid'):  # Osiris Container Registry
                 if crid not in ocr_auths:
@@ -93,7 +94,7 @@ class AppResource:
             finally:
                 self.pull_secrets.add(name)
 
-        for secretid in secrets:
+        for secretid in secrets_id_set:
             user_secret = Secret.objects.get(secretid=secretid)
             auth_data_str = user_secret.values().get('.dockerconfigjson')
 
@@ -106,9 +107,7 @@ class AppResource:
         for crid, auth_data in ocr_auths.items():
             create('pull-secret-' + crid, data={".dockerconfigjson": auth_data})
 
-    def create_secrets(self):
-        secrets = set()
-
+    def create_secrets(self) -> None:
         # Create volume secrets
         for vol in self.app.volumes.all():
             if vol.type != 'secret':
@@ -125,20 +124,18 @@ class AppResource:
                     namespace=self.nsid
                 ),
                 type='Opaque',
-                string_data=user_secret.data
+                string_data=json_loads(user_secret.data)
             )
 
             try:
-                secret = AppResource.core_v1.create_namespaced_secret(namespace=self.nsid, body=secret_spec)
-                secrets.add(secret)
+                AppResource.core_v1.create_namespaced_secret(namespace=self.nsid, body=secret_spec)
             except kubernetes.client.exceptions.ApiException as e:
                 if e.status == 409:
-                    secret = AppResource.core_v1.replace_namespaced_secret(
+                    AppResource.core_v1.replace_namespaced_secret(
                         name='secret-' + user_secret.secretid,
                         namespace=self.nsid,
                         body=secret_spec
                     )
-                    secrets.add(secret)
                 else:
                     logging.error(f"Failed to create secret secret-{user_secret.secretid}", exc_info=True)
 
@@ -156,12 +153,11 @@ class AppResource:
                         namespace=self.nsid
                     ),
                     type='Opaque',
-                    string_data=user_secret.data
+                    string_data=json_loads(user_secret.data)
                 )
 
                 try:
                     secret = AppResource.core_v1.create_namespaced_secret(namespace=self.nsid, body=secret_spec)
-                    secrets.add(secret)
                 except kubernetes.client.exceptions.ApiException as e:
                     if e.status == 409:
                         secret = AppResource.core_v1.replace_namespaced_secret(
@@ -169,14 +165,10 @@ class AppResource:
                             namespace=self.nsid,
                             body=secret_spec
                         )
-                        secrets.add(secret)
                     else:
                         logging.error(f"Failed to create secret secret-{container.env_secret.secretid}", exc_info=True)
 
-        return list(secrets)
-
-    def create_pvc(self) -> list[kubernetes.client.V1PersistentVolumeClaim]:
-        pvcs = []
+    def create_pvc(self) -> None:
         for vol in self.volumes:
             if vol.type not in ('block', 'fs'):
                 continue
@@ -187,24 +179,21 @@ class AppResource:
                     namespace=self.nsid
                 ),
                 spec=kubernetes.client.V1PersistentVolumeClaimSpec(
-                    access_modes=["ReadWriteMany", "ReadWriteOnce"],
+                    access_modes=["ReadWriteOnce" if vol.type == 'fs' else "ReadWriteMany"],
                     volume_mode="Block" if vol.type == 'block' else "Filesystem",
                     resources=kubernetes.client.V1ResourceRequirements(
-                        requests={"storage": f"{vol.size}Gi"}
+                        requests={"storage": f"{round(vol.size, 2)}Gi"}
                     ),
                     storage_class_name="ceph-rbd"
                 )
             )
             try:
-                pvc = AppResource.core_v1.create_namespaced_persistent_volume_claim(namespace=self.nsid, body=pvc_spec)
-                pvcs.append(pvc)
+                AppResource.core_v1.create_namespaced_persistent_volume_claim(namespace=self.nsid, body=pvc_spec)
             except kubernetes.client.exceptions.ApiException as e:
                 if e.status == 409:
                     pass
                 else:
                     logging.error(f"Failed to create pvc vol-{vol.volid}", exc_info=True)
-
-        return pvcs
 
     def delete_pvc(self, del_all=False):
         volumes_to_delete = self.app.metadata.get('volumes_to_del', [])
@@ -258,7 +247,7 @@ class AppResource:
         for vol in self.volumes:
             container_mode = vol.metadata.get('ca_mode', {}).get(container.type)
             if container_mode:
-                if vol.type in ('block', 'fs'):
+                if vol.type == 'fs':
                     v_name = f"vol-{vol.volid}"
                 elif vol.type == 'temp':
                     v_name = f"temp-{vol.volid}"
@@ -276,6 +265,21 @@ class AppResource:
                 )
 
         return volume_mounts
+
+    def gen_volume_device_spec(self, container: Container) -> list[kubernetes.client.V1VolumeDevice]:
+        volume_devices = []
+
+        for vol in self.volumes:
+            container_mode = vol.metadata.get('ca_mode', {}).get(container.type)
+            if container_mode and vol.type == 'block':
+                volume_devices.append(
+                    kubernetes.client.V1VolumeDevice(
+                        name=f"vol-{vol.volid}",
+                        device_path=vol.mount_path
+                    )
+                )
+
+        return volume_devices
 
     def gen_volume_spec(self) -> list[kubernetes.client.V1Volume]:
         volumes = []
@@ -303,7 +307,7 @@ class AppResource:
                 volumes.append(
                     kubernetes.client.V1Volume(
                         name=f"temp-{volume.volid}",
-                        empty_dir=kubernetes.client.V1EmptyDirVolumeSource(medium='Memory', size_limit="100Mi")
+                        empty_dir=kubernetes.client.V1EmptyDirVolumeSource(medium='Memory', size_limit="0.1Gi")
                     )
                 )
 
@@ -317,6 +321,7 @@ class AppResource:
             resources=self.gen_container_resource_spec(container),
             ports=self.gen_container_port_spec(container),
             volume_mounts=self.gen_volume_mount_spec(container),
+            volume_devices=self.gen_volume_device_spec(container),
         )
 
         if container.command:
@@ -328,7 +333,7 @@ class AppResource:
         if container.env_secret:
             container_spec.env_from = [
                 kubernetes.client.V1EnvFromSource(
-                    secret_ref=env.k8s_client.V1SecretEnvSource(
+                    secret_ref=kubernetes.client.V1SecretEnvSource(
                         name='secret-' + container.env_secret.secretid
                     )
                 )
@@ -449,7 +454,7 @@ class AppResource:
                 logging.error(f"Failed to create service svc-{self.app.appid}", exc_info=True)
 
     def create_fw_rules(self):
-        if self.app.connection_protocol == 'http':
+        if self.app.connection_protocol == 'http' and not self.app.ingress.pass_tls:
             ip_rules = {
                 "apiVersion": "traefik.io/v1alpha1",
                 "kind": "Middleware",
@@ -489,19 +494,33 @@ class AppResource:
 
             for middleware in middlewares:
                 try:
-                    AppResource.custom_objects.create_namespaced_custom_object(group="traefik.io",
-                                                                               version="v1alpha1",
-                                                                               namespace=self.nsid,
-                                                                               plural="middlewares",
-                                                                               body=middleware)
+                    AppResource.custom_objects.create_namespaced_custom_object(
+                        group="traefik.io",
+                        version="v1alpha1",
+                        namespace=self.nsid,
+                        plural="middlewares",
+                        body=middleware
+                    )
                 except kubernetes.client.exceptions.ApiException as e:
                     if e.status == 409:
-                        AppResource.custom_objects.replace_namespaced_custom_object(name="fw-rules-" + self.app.appid,
-                                                                                    group="traefik.io",
-                                                                                    version="v1alpha1",
-                                                                                    namespace=self.nsid,
-                                                                                    plural="middlewares",
-                                                                                    body=middleware)
+                        existing = AppResource.custom_objects.get_namespaced_custom_object(
+                            group="traefik.io",
+                            version="v1alpha1",
+                            namespace=self.nsid,
+                            plural="middlewares",
+                            name=middleware["metadata"]["name"]
+                        )
+
+                        middleware["metadata"]["resourceVersion"] = existing["metadata"]["resourceVersion"]
+
+                        AppResource.custom_objects.replace_namespaced_custom_object(
+                            group="traefik.io",
+                            version="v1alpha1",
+                            namespace=self.nsid,
+                            plural="middlewares",
+                            name=middleware["metadata"]["name"],
+                            body=middleware
+                        )
                     else:
                         logging.error(f"Failed to create middleware {middleware['metadata']['name']}", exc_info=True)
 
@@ -509,13 +528,13 @@ class AppResource:
             pass
 
     def create_route(self):
-        if self.app.connection_protocol != 'http':
+        if self.app.connection_protocol != 'http' or self.app.ingress.pass_tls:
             return None
 
         hosts = [f"{self.app.slug}.{env.container_apps_domain}"]
 
-        for domain in self.app.custom_domains.all():
-            hosts.append(domain.name)
+        for host in self.app.ingress.hosts.all():
+            hosts.append(host.host)
 
         def generate_route(host: str):
             return {
@@ -540,16 +559,12 @@ class AppResource:
             "spec": {
                 "entryPoints": ["websecure", "web"],
                 "routes": [generate_route(host) for host in hosts],
+                "tls": {"certResolver": "letsencrypt"}
             }
         }
 
         if self.ip_rule.nyu_only:
             ingress_route['spec']['routes'][0]['middlewares'].append({"name": "nyu-only-" + self.app.appid})
-
-        if self.app.pass_tls:
-            ingress_route['spec']['tls'] = {"passthrough": True}
-        else:
-            ingress_route['spec']['tls'] = {"certResolver": "letsencrypt"}
 
         try:
             AppResource.custom_objects.create_namespaced_custom_object(group="traefik.io",
@@ -559,12 +574,24 @@ class AppResource:
                                                                        body=ingress_route)
         except kubernetes.client.exceptions.ApiException as e:
             if e.status == 409:
-                AppResource.custom_objects.replace_namespaced_custom_object(name=f"route-{self.app.appid}",
-                                                                            group="traefik.io",
-                                                                            version="v1alpha1",
-                                                                            namespace=self.nsid,
-                                                                            plural="ingressroutes",
-                                                                            body=ingress_route)
+                existing = AppResource.custom_objects.get_namespaced_custom_object(
+                    group="traefik.io",
+                    version="v1alpha1",
+                    namespace=self.nsid,
+                    plural="ingressroutes",
+                    name=ingress_route["metadata"]["name"]
+                )
+
+                ingress_route["metadata"]["resourceVersion"] = existing["metadata"]["resourceVersion"]
+
+                AppResource.custom_objects.replace_namespaced_custom_object(
+                    group="traefik.io",
+                    version="v1alpha1",
+                    namespace=self.nsid,
+                    plural="ingressroutes",
+                    name=ingress_route["metadata"]["name"],
+                    body=ingress_route
+                )
             else:
                 logging.error(f"Failed to create route-{self.app.appid}", exc_info=True)
 
@@ -589,7 +616,7 @@ class AppResource:
                 "type": t,
                 "metadata": {
                     "type": "Utilization",
-                    "value": v,
+                    "value": str(v),
                 }
             }
 
@@ -609,7 +636,7 @@ class AppResource:
                     "maxReplicaCount": self.app.scaler.max_replicas,
                     "pollingInterval": 15,
                     "cooldownPeriod": 60,
-                    "triggers": [triggers(scaler['type'], round(scaler['target'] / 2, 1)) for scaler in scalers],
+                    "triggers": [triggers(scaler['type'], round(scaler['target'] * 2, 1)) for scaler in scalers],
                     "advanced": {
                         "restoreToOriginalReplicaCount": True,
                         "horizontalPodAutoscalerConfig": {
@@ -681,7 +708,6 @@ class AppResource:
     def delete_deployment(self) -> bool:
         try:
             # Delete autoscaler
-
             try:
                 AppResource.custom_objects.delete_namespaced_custom_object(name=f"scaler-{self.app.appid}",
                                                                            group="keda.sh",
@@ -694,7 +720,6 @@ class AppResource:
                     raise e
 
             # Delete route
-
             try:
                 AppResource.custom_objects.delete_namespaced_custom_object(name=f"route-{self.app.appid}",
                                                                            group="traefik.io",
@@ -707,7 +732,6 @@ class AppResource:
                     raise e
 
             # Delete firewall rules/middlewares
-
             middleware_names = [f"iprules-{self.app.appid}"]
             if self.ip_rule.nyu_only:
                 middleware_names.append(f"nyu-only-{self.app.appid}")
@@ -725,7 +749,6 @@ class AppResource:
                         raise e
 
             # Delete service
-
             try:
                 AppResource.core_v1.delete_namespaced_service(name=f'svc-{self.app.appid}',
                                                               namespace=self.nsid)
@@ -736,7 +759,6 @@ class AppResource:
                     raise e
 
             # Delete deployment
-
             try:
                 AppResource.apps_v1.delete_namespaced_deployment(name=f'app-{self.app.appid}',
                                                                  namespace=self.nsid)
@@ -746,15 +768,13 @@ class AppResource:
                     logging.warning(f"Failed to delete deployment for {self.app.appid}: {e}")
                     raise e
 
-            #  Delete secrets
-
+            # Delete secrets
+            # Collect secret IDs to check
             secret_ids_to_check = set()
 
             for container in self.containers:
                 if container.pull_secret:
                     secret_ids_to_check.add(container.pull_secret.secretid)
-
-            for container in self.containers:
                 if container.env_secret:
                     secret_ids_to_check.add(container.env_secret.secretid)
 
@@ -762,18 +782,33 @@ class AppResource:
                 if vol.type == 'secret' and 'secretid' in vol.metadata:
                     secret_ids_to_check.add(vol.metadata.get('secretid'))
 
+            # Get the current app's containers and volumes for comparison
+            current_container_ids = [c.id for c in self.containers]
+            current_volume_ids = [v.id for v in self.volumes]
+
             # Check and delete secrets that aren't used elsewhere
-
             for secret_id in secret_ids_to_check:
+                # For pull secrets - check containers in other apps
+                other_pull_secret_usages = Container.objects.filter(
+                    pull_secret__secretid=secret_id
+                ).exclude(
+                    id__in=current_container_ids
+                ).count()
 
-                other_pull_secret_usages = (Container.objects.filter(pull_secret__secretid=secret_id)
-                                            .exclude(app=self.app).count())
+                # For env secrets - check containers in other apps
+                other_env_secret_usages = Container.objects.filter(
+                    env_secret__secretid=secret_id
+                ).exclude(
+                    id__in=current_container_ids
+                ).count()
 
-                other_env_secret_usages = (Container.objects.filter(env_secret__secretid=secret_id)
-                                           .exclude(app=self.app).count())
-
-                other_volume_usages = (Volume.objects.filter(type='secret', metadata__secretid=secret_id)
-                                       .exclude(app=self.app).count())
+                # For volume secrets - check volumes in other apps
+                other_volume_usages = Volume.objects.filter(
+                    type='secret',
+                    metadata__secretid=secret_id
+                ).exclude(
+                    id__in=current_volume_ids
+                ).count()
 
                 if other_pull_secret_usages == 0 and other_env_secret_usages == 0 and other_volume_usages == 0:
                     try:
@@ -793,8 +828,7 @@ class AppResource:
                         if e.status != 404:
                             logging.warning(f"Failed to delete pull-secret-{secret_id}: {e}")
 
-            # 7. Delete volume secrets
-
+            # Delete volume secrets
             for vol in self.volumes:
                 if vol.type == 'secret':
                     try:
@@ -807,7 +841,6 @@ class AppResource:
                             raise e
 
             # Delete PVC
-
             for vol in self.volumes:
                 if vol.type in ('block', 'fs'):
                     try:
@@ -821,5 +854,6 @@ class AppResource:
 
             return True
 
-        except Exception:
+        except Exception as e:
+            logging.error(f"Failed to delete resources for app {self.app.appid}: {str(e)}", exc_info=True)
             raise AppResourceError("Failed to delete resources for app", 500)
