@@ -8,20 +8,15 @@ from core.settings import env
 from apps.users.models import User
 from apps.infra.models import NamespaceRoles, Namespace
 
-VALID_NAME_CHARLIST = list(string.ascii_lowercase + string.digits + '_' + '-')
-MAILGUN_API_KEY = env.mailgun_api_key
-MAILGUN_DOMAIN = env.mailgun_sender_domain
-MAILGUN_SENDER_EMAIL = env.mailgun_sender_email
-
 
 def get_default_ns(user: User) -> Namespace | None:
     try:
-        return NamespaceRoles.objects.filter(user=user, role='owner', namespace__default=True).first().namespace
+        return NamespaceRoles.objects.get(user=user, role='owner', namespace__default=True).namespace
     except:
         return None
 
 
-def validate_dict(d):
+def validate_users_dict_type(d: dict) -> bool:
     if not isinstance(d, dict):
         return False
     for key, value in d.items():
@@ -30,99 +25,93 @@ def validate_dict(d):
     return True
 
 
-def validate_ns_creation(ns_data: dict) -> tuple[bool, dict]:
+def validate_ns_users(ns_users: list) -> tuple[bool, str | None]:
+    if ns_users is not None:
+        if not isinstance(ns_users, list):
+            return False, 'users must be an array'
+
+        user_role_options = ('manager', 'viewer')
+
+        for i, user in enumerate(ns_users):
+            if not isinstance(user, dict):
+                return False, f'users[{i}] must be an object'
+            if user.get('username') is None:
+                return False, f'users[{i}] is missing username'
+            if not isinstance(user['username'], str):
+                return False, f'users[{i}][username] must be a string'
+            if user.get('role') is None:
+                return False, f'users[{i}] is missing role'
+            if user['role'] not in user_role_options:
+                return False, f'users[{i}][role] is invalid'
+
+    return True, None
+
+
+def validate_ns_create(ns_data: dict) -> tuple[bool, str | None]:
     """
     Validate the data for creating a namespace
-    Returns a tuple of (valid, message)
     """
-
     if ns_data is None:
-        return False, error_message('Missing data')
-
-    str_types = ['name']
-    user_role_options = ['manager', 'viewer']
-
-    for field in str_types:
-        if field not in ns_data.keys():
-            return False, error_message(f'Missing field: {field}')
+        return False, 'Missing data'
 
     # Validate name
     ns_name = ns_data.get('name')
-    if not ns_name:
-        return False, error_message('Missing namespace name')
+    if ns_name is None:
+        return False, 'Namespace name is required'
     if not isinstance(ns_name, str):
-        return False, error_message('Invalid namespace name type')
+        return False, 'Namespace name must be a string'
     if ns_name.strip() == '':
-        return False, error_message('Namespace name cannot be empty')
+        return False, 'Namespace name cannot be empty'
 
     # Validate default
     ns_default = ns_data.get('default')
-    if ns_default is not None and not isinstance(ns_default, bool):
-        return False, error_message('Invalid default type')
+    if (ns_default is not None) and (not isinstance(ns_default, bool)):
+        return False, 'Invalid default type'
 
     # Validate users
     ns_users = ns_data.get('users')
-    if ns_users is not None:
-        if not isinstance(ns_users, list):
-            return False, error_message('Invalid users type')
-        for user in ns_users:
-            if not validate_dict(user):
-                return False, error_message('Invalid user data type')
-            if 'username' not in user:
-                return False, error_message('Missing user username')
-            if not isinstance(user['username'], str):
-                return False, error_message('Invalid user username type')
-            if 'role' not in user:
-                return False, error_message('Missing user role')
-            if user['role'] not in user_role_options:
-                return False, error_message('Invalid user role')
+    valid, err = validate_ns_users(ns_users)
+    if not valid:
+        return False, err
 
-    return True, success_message({})
+    return True, None
 
 
-def validate_ns_update(ns_data: dict, nsid: str) -> tuple[bool, dict]:
+def validate_ns_update(ns_data: dict) -> tuple[bool, str | None]:
     """
     Validate the data for updating a namespace
-    Returns a tuple of (valid, message)
     """
-
-    if not nsid or not isinstance(nsid, str):
-        return False, error_message('Invalid or missing nsid')
-
-    user_role_options = ['manager', 'viewer']
-
+    # Validate name
     ns_name = ns_data.get('name')
-    if ns_name is not None and not isinstance(ns_name, str):
-        return False, error_message('Invalid name type')
+    if ns_name is not None:
+        if not isinstance(ns_name, str):
+            return False, 'Namespace name must be a string'
+        if ns_name.strip() == '':
+            return False, 'Namespace name cannot be empty'
 
+    # Validate default
     ns_default = ns_data.get('default')
-    if ns_default is not None and not isinstance(ns_default, bool):
-        return False, error_message('Invalid default type')
+    if (ns_default is not None) and (not isinstance(ns_default, bool)):
+        return False, 'Invalid default type'
 
-    ns_owner = ns_data.get('owner')
-    if ns_owner is not None:
-        if not validate_dict(ns_owner):
-            return False, error_message('Invalid owner type')
-        if 'username' not in ns_owner or not isinstance(ns_owner['username'], str):
-            return False, error_message('Invalid owner username type')
+    # Validate owner
+    owner = ns_data.get('owner')
+    if owner is not None:
+        if not isinstance(owner, dict):
+            return False, 'Owner must be an object'
+        if owner.get('username') is None:
+            return False, 'Owner is missing username'
 
+    # Validate users
     ns_users = ns_data.get('users')
-    if ns_users is not None:
-        if not isinstance(ns_users, list):
-            return False, error_message('Invalid users type')
-        for user in ns_users:
-            if not validate_dict(user):
-                return False, error_message('Invalid user data type')
-            if 'username' not in user:
-                return False, error_message('Missing user username')
-            if not isinstance(user['username'], str):
-                return False, error_message('Invalid user username type')
-            if 'role' not in user:
-                return False, error_message('Missing user role')
-            if user['role'] not in user_role_options:
-                return False, error_message('Invalid user role')
+    valid, err = validate_ns_users(ns_users)
+    if not valid:
+        return False, err
 
-    return True, success_message({})
+    return True, None
+
+
+VALID_NAME_CHARLIST = list(string.ascii_lowercase + string.digits + '_' + '-')
 
 
 def sanitize_nsid(nsid: str) -> str:
@@ -179,7 +168,7 @@ def validate_user_update(user_data: dict) -> tuple[bool, dict]:
             return False, error_message('Invalid cluster role')
 
     if 'resource_limit' in user_data:
-        if not validate_dict(user_data['resource_limit']):
+        if not validate_users_dict_type(user_data['resource_limit']):
             return False, error_message('Invalid resource limit type')
         for key, value in user_data['resource_limit'].items():
             if key not in valid_resource_limits:
@@ -192,40 +181,6 @@ def validate_user_update(user_data: dict) -> tuple[bool, dict]:
 
 def delete_owner_resources(user_obj):
     # TODO: Handle actual resource deletion
-    return True
-
-
-def schedule_ns_deletion(namespace_obj):
-    # TODO: Handle actual resource deletion
-    return True
-
-
-def send_email_notification(to_email, subject, text):
-    response = requests.post(
-        f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
-        auth=("api", MAILGUN_API_KEY),
-        data={"from": MAILGUN_SENDER_EMAIL,
-              "to": to_email,
-              "subject": subject,
-              "text": text
-              }
-    )
-
-    return response
-
-
-def notify_new_owner(owner_email, namespace_id, namespace_name, requester_username):
-    subject = "Namespace Ownership Transfer"
-
-    text = (
-        f"You have been assigned as the new owner of the namespace: {namespace_name} ({namespace_id}) by {requester_username}.\n"
-    )
-    response = send_email_notification(owner_email, subject, text)
-
-    if response.status_code != 200:
-        logging.error(f"Failed to send email notification to {owner_email}")
-        return False
-
     return True
 
 

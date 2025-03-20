@@ -4,7 +4,7 @@ import ipaddress
 
 from core.settings import env
 
-from .models import ContainerApp, CustomDomain
+from .models import ContainerApp, IngressHosts
 from ..container_registry.models import ContainerRegistry
 from ..infra.models import Volume
 from ..secret_store.models import Secret
@@ -86,29 +86,38 @@ def validate_container_spec(c_type: str, spec: dict, user, port_req=True) -> tup
     return True, None
 
 
-def validate_custom_domain_spec(custom_domains: list) -> tuple[bool, [str | None]]:
-    if custom_domains == [] or custom_domains is None:
+def validate_ingress_spec(ingress: dict) -> tuple[bool, [str | None]]:
+    if ingress == {} or ingress is None:
         return True, None
 
-    if not isinstance(custom_domains, list):
-        return False, 'custom_domains must be an array'
+    if not isinstance(ingress, dict):
+        return False, 'ingress must be a dict'
 
-    for i, domain in enumerate(custom_domains):
-        if not isinstance(domain, str):
-            return False, f'custom_domains[{i}] must be a string'
+    if hosts := ingress.get('hosts'):
+        if not isinstance(hosts, list):
+            return False, 'hosts must be an array'
 
-        domain = domain.strip()
+        for i, domain in enumerate(hosts):
+            if not isinstance(domain, str):
+                return False, f'hosts[{i}] must be a string'
 
-        if not DOMAIN_RE.match(domain):
-            return False, f'custom_domains[{i}] is invalid'
-        if domain == env.container_apps_domain or domain.endswith(f".{env.container_apps_domain}"):
-            return False, f'custom_domains[{i}] is invalid'
+            domain = domain.strip()
 
-        try:
-            CustomDomain.objects.get(name=domain)
-            return False, f'custom_domains[{i}] is already used'
-        except ContainerApp.DoesNotExist:
-            pass
+            if not DOMAIN_RE.match(domain):
+                return False, f'host: "{domain}" is invalid'
+            if domain == env.container_apps_domain or domain.endswith(f".{env.container_apps_domain}"):
+                return False, f'host: "{domain}" cannot be used'
+
+            try:
+                IngressHosts.objects.get(host=domain)
+                return False, f'host: "{domain}" is already used by another app'
+            except IngressHosts.DoesNotExist:
+                pass
+
+    pass_tls = ingress.get('pass_tls')
+    if pass_tls is not None:
+        if not isinstance(pass_tls, bool):
+            return False, 'ingress[pass_tls] must be a boolean'
 
     return True, None
 
@@ -363,11 +372,6 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
     if spec['connection_protocol'] not in ('http', 'tcp', 'udp'):
         return False, 'Invalid connection_protocol'
 
-    pass_tls = spec.get('pass_tls')
-    if pass_tls is not None:
-        if not isinstance(pass_tls, bool):
-            return False, 'pass_tls must be a boolean'
-
     sidecar_enabled = False
     init_enabled = False
 
@@ -407,8 +411,8 @@ def validate_app_spec(spec: dict, user) -> tuple[bool, [str | None]]:
         if not valid:
             return False, err
 
-    if custom_domains := spec.get('custom_domains'):
-        valid, err = validate_custom_domain_spec(custom_domains)
+    if ingress := spec.get('ingress'):
+        valid, err = validate_ingress_spec(ingress)
         if not valid:
             return False, err
 
@@ -481,8 +485,8 @@ def validate_app_update_spec(spec: dict, user) -> tuple[bool, [str | None]]:
         if not valid:
             return False, err
 
-    if custom_domains := spec.get('custom_domains'):
-        valid, err = validate_custom_domain_spec(custom_domains)
+    if ingress := spec.get('ingress'):
+        valid, err = validate_ingress_spec(ingress)
         if not valid:
             return False, err
 
@@ -512,7 +516,11 @@ def generate_meta_for_image(image: str, user) -> tuple[dict, str | None]:
     return {}, None
 
 
-def under_limits(spec: dict, user) -> bool:
+def under_limits(spec: dict, user) -> [bool, dict]:
+    """
+    Check if the app spec can be created under user limits.
+    Returns True if the app can be created, False otherwise, along with resource usage as dict.
+    """
     agg_cpu = 0
     agg_memory = 0
     agg_disk = 0
@@ -530,14 +538,29 @@ def under_limits(spec: dict, user) -> bool:
     main_sidecar_ok = True
     init_ok = True
 
+    init_cpu = 0
+    init_mem = 0
+
     if user.limit.limit_reached(cpu=agg_cpu, memory=agg_memory, disk=agg_disk):
         main_sidecar_ok = False
 
     if init := spec.get('init'):
-        if user.limit.limit_reached(cpu=init['cpu'] * count, memory=init['memory'] * count):
+        init_cpu = init['cpu'] * count
+        init_mem = init['memory'] * count
+        if user.limit.limit_reached(cpu=init_cpu, memory=init_mem, disk=agg_disk):
             init_ok = False
 
-    return main_sidecar_ok and init_ok
+    if main_sidecar_ok and init_ok:
+        user.usage.cpu += agg_cpu
+        user.usage.memory += agg_memory
+        user.usage.disk += agg_disk
+        user.usage.save()
+
+    return (main_sidecar_ok and init_ok, {
+        'cpu': max(agg_cpu, init_cpu),
+        'memory': max(agg_memory, init_mem),
+        'disk': agg_disk
+    })
 
 
 def process_events(events):
@@ -669,7 +692,7 @@ def process_container_status(container) -> dict:
         message = ''
 
         if waiting.message:
-            message = waiting.message.partition('container')[0].strip()
+            message = waiting.message.partition('container')[0].replace(": unknown", '')
 
         if waiting.reason in ('ImagePullBackOff', 'ErrImagePull'):
             container_info['state'] = 'creating'
@@ -677,7 +700,8 @@ def process_container_status(container) -> dict:
 
         elif waiting.reason in ('CrashLoopBackOff',):
             container_info['state'] = 'crash'
-            container_info['message'] = f'Container crashed: {message.partition('container')[0].strip()}'
+            message = message.partition('container')[0].strip()
+            container_info['message'] = f'Container crashed: {message}'
 
         elif waiting.reason in ('RunContainerError', 'StartError'):
             container_info['state'] = 'crash'
@@ -709,7 +733,7 @@ def process_container_status(container) -> dict:
             container_info['message'] += f' (received exit code {term_last_state.exit_code})'
 
         elif term_last_state.reason == 'StartError':
-            msg = term_last_state.message.split(':', 1)
+            msg = term_last_state.message.replace(': unknown', '').split(':', 1)
             if len(msg) > 1:
                 container_info['message'] = f'Container crashed: {"".join(msg[1:]).strip()}'
             elif msg:
@@ -746,7 +770,7 @@ async def fetch_usage(client, url, query: str, metric_name: str) -> float:
 
 async def fetch_metric_server_stat(client, url: str) -> dict:
     try:
-        response = await client.get(url)
+        response = await client.get(url, timeout=5)
         response.raise_for_status()
         metrics = response.json()
 
@@ -787,7 +811,15 @@ async def fetch_metric_server_stat(client, url: str) -> dict:
         return result
 
     except Exception:
-        return {}
+        return {
+            'main': {},
+            'sidecar': {},
+            'init': {},
+            'total': {
+                'cpu': 0,
+                'memory': 0
+            },
+        }
 
 
 def get_state_from_conditions(k8s_conditions: list, default='unknown') -> str:
@@ -864,8 +896,8 @@ def get_stat_from_deployment(deployment) -> dict:
 
     stat = {
         'app_state': get_state_from_conditions(deployment.status.conditions),
-        'cpu_limit': cpu_limit * available_replicas,
-        'memory_limit': mem_limit * available_replicas,
+        'cpu_limit': cpu_limit * available_replicas if available_replicas else -1,
+        'memory_limit': mem_limit * available_replicas if available_replicas else -1,
         'running': available_replicas,
         'pending': unavailable_replicas,
         'desired': updated_replicas or available_replicas + unavailable_replicas,
