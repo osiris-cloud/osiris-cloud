@@ -141,47 +141,48 @@ def sanitize_nsid(nsid: str) -> str:
     return trimmed_nsid
 
 
-def validate_user_update(user_data: dict) -> tuple[bool, dict]:
+VALID_CLUSTER_ROLES = ('super_admin', 'admin', 'user', 'guest', 'blocked')
+VALID_RESOURCE_TYPES = ('cpu', 'memory', 'disk', 'public_ip', 'registry', 'gpu')
+
+
+def validate_user_update(user_data: dict) -> tuple[bool, str | None]:
     """
     Validate the data for updating a user
     Returns a tuple of (valid, message)
     """
-    valid_cluster_roles = ['super_admin', 'admin', 'user', 'guest', 'blocked']
-    valid_resource_limits = ['cpu', 'memory', 'disk', 'public_ip', 'gpu']
-
     if 'first_name' in user_data and not isinstance(user_data['first_name'], str):
-        return False, error_message('Invalid first name type')
+        return False, 'Invalid first name type'
 
     if 'last_name' in user_data and not isinstance(user_data['last_name'], str):
-        return False, error_message('Invalid last name type')
+        return False, 'Invalid last name type'
 
     if 'email' in user_data and not isinstance(user_data['email'], str):
-        return False, error_message('Invalid email type')
+        return False, 'Invalid email type'
 
     if 'avatar' in user_data:
         if not isinstance(user_data['avatar'], str):
-            return False, error_message('Invalid avatar type')
+            return False, 'Invalid avatar type'
         # TODO: Additional validation for avatar URL
 
     if 'cluster_role' in user_data:
-        if not isinstance(user_data['cluster_role'], str) or user_data['cluster_role'] not in valid_cluster_roles:
-            return False, error_message('Invalid cluster role')
+        if not isinstance(user_data['cluster_role'], str) or user_data['cluster_role'] not in VALID_CLUSTER_ROLES:
+            return False, 'Invalid cluster role'
 
     if 'resource_limit' in user_data:
         if not validate_users_dict_type(user_data['resource_limit']):
-            return False, error_message('Invalid resource limit type')
+            return False, 'Invalid resource limit type'
         for key, value in user_data['resource_limit'].items():
-            if key not in valid_resource_limits:
-                return False, error_message(f'Invalid resource limit key: {key}')
+            if key not in VALID_RESOURCE_TYPES:
+                return False, f'Invalid resource limit key: {key}'
             if value is not None and not isinstance(value, int):
-                return False, error_message(f'Invalid resource limit value for {key}')
+                return False, f'Invalid resource limit value for {key}'
 
-    return True, success_message('User data is valid')
+    return True, None
 
 
 def delete_owner_resources(user_obj):
     # TODO: Handle actual resource deletion
-    return True
+    return False
 
 
 def greater_than(r1: dict, r2: dict) -> bool:
