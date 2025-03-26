@@ -10,15 +10,16 @@
                 <h2 class="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
                     Users
                 </h2>
-                <button id="create-container-registry" type="button"
-                        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 h-10 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-primary-800"
-                        data-modal-show="user-modal" data-modal-target="user-modal">
+                <button type="button" data-modal-show="user-modal" data-modal-target="user-modal"
+                        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 h-10 focus:ring-primary-300 
+                        font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none 
+                        dark:focus:ring-primary-800"
+                >
                     Add External User
                 </button>
+                {% include 'components/modals/ext-user-modal.html' %}
             </div>
         </div>
-        
-        {% include 'components/modals/ext-user-modal.html' %}
         
         <div class="pl-4 pr-4 mx-4 md:items-center md:pl-6 md:pr-6 xl:pl-6 xl:pr-6 dark:text-white">
             {% include 'components/admin_console/user-table.html' %}
