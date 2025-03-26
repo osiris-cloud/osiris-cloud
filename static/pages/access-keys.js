@@ -84,7 +84,7 @@ $keySubmitButton.click(() => {
         success: (resp) => {
             accessModal.hide();
 
-            let msg = 'Here is your key. For security reasons, this will not be shown again';
+            let msg = 'Make sure to copy your key. It will not be shown again';
             msg += tooltipHTML;
             msg += `<code id="key-token"
                           class="mt-2 block text-sm font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded w-80 mx-auto">
