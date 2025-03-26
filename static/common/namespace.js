@@ -4,7 +4,7 @@ let nsModalClosable = true;
 
 let roleDropdown;
 
-let $createNS = $('#create-namespace');
+let $namespaceCreate = $('#create-namespace');
 let $namespaceSettings = $('#namespace-settings');
 let $nsDelete = $('#namespace-delete');
 let $namespaceLlist = $('#namespace-list');
@@ -16,37 +16,29 @@ let $nsModalName = $('#ns-modal-name');
 let $setAsDefault = $('#set-as-default');
 let $nsUserList = $('#ns-user-list');
 
-let $sharingSpinner = $('#sharing-spinner');
+let $nsLoadSpinner = $('#ns-load-spinner');
 let $selectedSvg = $('#role-selected-svg');
 let $userSearch = $('#user-search');
 let $userSearchDropdown = $('#user-search-dropdown');
 let $userSearchResults = $('#user-search-results');
 let userSearchSocket = null;
-let $nsSubmitButton = $('#ns-submit-button');
+let $nsModalSubmitButton = $('#ns-submit-button');
 
-let roleManager = $('#role-manager');
-let roleViewer = $('#role-viewer');
-let roleTransferOwner = $('#role-transfer-ownership');
-let roleRemoveUser = $('#role-remove-user');
+let $roleManager = $('#role-manager');
+let $roleViewer = $('#role-viewer');
+let $roleTransferOwner = $('#role-transfer-ownership');
+let $roleRemoveUser = $('#role-remove-user');
 
-let nsUsers = [];
+let NSCXT = {}
+let Myself = {}
 let selectedUser = {};
-let nsOwner = {};
-let userSelf = {};
 let createNS = false;
-let currentDefault = false;
-let currentRole = '';
 
-getSelf((user) => {
-    userSelf = {
-        ...user, 'name': user.first_name + ' ' + user.last_name, 'role': 'owner'
-    }
-});
-
-loadNamespace();
 loadAllNamespaces();
+getSelf();
 
-window.addEventListener('load', function () {
+
+window.addEventListener('load', () => {
     if ($('#namespace-modal').length > 0)
         nsModal = FlowbiteInstances.getInstance('Modal', 'namespace-modal');
 
@@ -66,6 +58,7 @@ window.addEventListener('load', function () {
             }, 50);
         }
     }
+
     if (window.alertModal) {
         alertModal._options.onShow = function () {
             setTimeout(() => {
@@ -77,6 +70,7 @@ window.addEventListener('load', function () {
             $alertModal.removeClass('show');
         }
     }
+
     if (nsModal) {
         nsModal._options.onShow = () => {
             setTimeout(() => {
@@ -84,114 +78,143 @@ window.addEventListener('load', function () {
             }, 10);
             connectSearch();
             $nsListDropdown.addClass('hidden');
-            $nsSubmitButton.prop('disabled', false);
+            $nsModalSubmitButton.prop('disabled', false);
         }
         nsModal._options.onHide = () => {
             $nsModal.removeClass('show');
-            showShareSpinner(false);
+            showNSSpinner(false);
             connectSearch(false);
             if (roleDropdown)
                 roleDropdown.destroyAndRemoveInstance();
-            $nsModalName.val('');
-            $userSearch.val('');
-            $nsUserList.empty();
-            $setAsDefault.prop('checked', false);
-            selectedUser = {};
-            nsOwner = {};
-            nsUsers = [];
         }
         nsModal._options.closable = false;
+        NSCXT = {}
+        createNS = false;
     }
 });
 
-function loadNamespace(nsid = '', apply = true, callback = null) {
-    let url = parseURL();
-    if (nsid === '') nsid = url.nsid;
-    if (callback) showShareSpinner();
+function loadNamespace(nsid = '') {
+    if (!nsid)
+        nsid = currentURL.nsid || localStorage.getItem('nsid');
+
+    showNSSpinner();
     $.ajax({
         url: '/api/namespace/' + (nsid ? nsid : 'default'),
         type: 'GET',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
         success: (resp) => {
-            let ns = resp.namespace;
-            nsUsers = ns.users;
-            nsOwner = ns.owner;
-            currentDefault = ns.default;
-            if (apply) {
-                $('#dropdown-ns-button').text(ns.name);
-                ns.users.forEach((user) => {
-                    if (user.username === userSelf.username)
-                        currentRole = user.role;
-                    if (user.username === userSelf.username && currentRole === 'viewer') // this is buggy. Should change to a better approach
-                        $namespaceSettings.addClass('hidden');
-                    $nsDelete.addClass('hidden');
-                });
-                localStorage.setItem('namespace', ns.nsid);
-            }
-            if (callback)
-                callback(resp);
+            NSCXT = resp.namespace;
+            localStorage.setItem('nsid', NSCXT.nsid);
+            loadNamespaceToModal()
+            showNSSpinner(false);
         },
         error: (resp) => {
             Alert(resp.responseJSON.message || "Internal Server Error", () => {
-                if (resp.status === 404 || resp.status === 403)
-                    loadNamespace('default', apply, callback);
+                window.location.href = `${currentURL.host}/${currentURL.app}/default`;
             }, {'ok': 'Go to Default'});
         }
     });
 }
 
-$createNS.on('click', () => {
+function clearNamespaceModal() {
+    $nsModalName.val('');
+    $setAsDefault.attr('disabled', false);
+    $setAsDefault.prop('checked', false);
+    $nsUserList.empty();
+    $nsModalSubmitButton.text('Create');
+    $nsSearch.attr('disabled', false);
+    $roleTransferOwner.removeClass('hidden');
+}
+
+function loadNamespaceToModal() {
+    clearNamespaceModal();
+
+    $nsModalName.val(NSCXT.name);
+    $nsModalSubmitButton.text('Save');
+
+    $nsUserList.append(createUserListItem({...NSCXT.owner, 'role': 'owner'}));
+
+    if (NSCXT.users) {
+        NSCXT.users.forEach((user) => {
+            $nsUserList.append(createUserListItem(user));
+        });
+    }
+
+    $setAsDefault.attr('disabled', NSCXT.default);
+    $setAsDefault.prop('checked', NSCXT.default);
+
+    if (NSCXT['_role'] === 'viewer') {
+        $('#set-as-default-container').addClass('hidden');
+        $nsDelete.attr('disabled', true);
+        $namespaceSettings.attr('disabled', true);
+        $nsSearch.attr('disabled', true);
+        $roleTransferOwner.addClass('hidden');
+
+    } else if (NSCXT['_role'] === 'manager') {
+        $('#set-as-default-container').addClass('hidden');
+        $namespaceSettings.attr('disabled', false);
+        $nsDelete.attr('disabled', false);
+        $nsSearch.attr('disabled', false);
+        $roleTransferOwner.addClass('hidden');
+
+    } else if (NSCXT['_role'] === 'owner') {
+        $('#set-as-default-container').removeClass('hidden');
+        $namespaceSettings.attr('disabled', false);
+        $nsDelete.attr('disabled', false);
+        $nsSearch.attr('disabled', false);
+        $roleTransferOwner.removeClass('hidden');
+    }
+}
+
+$namespaceCreate.on('click', () => {
     createNS = true;
+    NSCXT = {};
+    NSCXT.name = '';
+    NSCXT.owner = Myself;
+    NSCXT.default = false;
+    NSCXT.users = [];
+
     $nsModalTitle.text('Create Namespace');
-    $nsSubmitButton.text('Create');
-    roleTransferOwner.addClass('hidden');
-    $nsUserList.append(createUserListItem(userSelf));
+    $nsModalSubmitButton.text('Create');
+    $roleTransferOwner.addClass('hidden');
+
+    loadNamespaceToModal();
+
 });
 
 $namespaceSettings.on('click', false, () => {
     createNS = false;
     $nsModalTitle.text('Edit Namespace');
-    loadNamespace(currentURL.nsid, false, (resp) => {
-        let ns = resp.namespace;
-        $nsModalName.val(ns.name);
-        $nsSubmitButton.text('Save');
-        roleTransferOwner.removeClass('hidden');
-        $nsUserList.append(createUserListItem({...ns.owner, 'role': 'owner'}));
-        ns.users.forEach((user) => {
-            $nsUserList.append(createUserListItem(user));
-        });
-        if (nsOwner.username !== userSelf.username) {
-            $('#set-as-default-container').addClass('hidden');
-            $nsDelete.addClass('hidden');
-            $setAsDefault.prop('disabled', !ns.default);
-            roleTransferOwner.addClass('hidden');
-        } else {
-            $setAsDefault.prop('checked', ns.default);
-            $setAsDefault.prop('disabled', ns.default);
-        }
-        showShareSpinner(false);
-    });
+
+    loadNamespace();
 });
+
 $userSearch.on('input', () => {
     handleSearchUsers()
 });
-roleManager.on('click', () => {
+
+$roleManager.on('click', () => {
     handleChangeRole(selectedUser, 'manager')
 });
-roleViewer.on('click', () => {
+
+$roleViewer.on('click', () => {
     handleChangeRole(selectedUser, 'viewer')
 });
-roleTransferOwner.on('click', () => {
+
+$roleTransferOwner.on('click', () => {
+    console.log('Transfer Ownership', selectedUser);
     handleChangeRole(selectedUser, 'owner');
 });
-roleRemoveUser.on('click', () => {
+
+$roleRemoveUser.on('click', () => {
     $(`#ns-list-user-${selectedUser.username}`).remove();
-    nsUsers = nsUsers.filter(u => u.username !== selectedUser.username);
+    NSCXT.users = NSCXT.users.filter(u => u.username !== selectedUser.username);
     roleDropdown.hide();
     selectedUser = {};
 });
-$nsSubmitButton.on('click', () => {
+
+$nsModalSubmitButton.on('click', () => {
     let nsName = $nsModalName.val().trim();
     if (nsName.length === 0) {
         Alert('Namespace name cannot be empty');
@@ -200,17 +223,17 @@ $nsSubmitButton.on('click', () => {
 
     let data = {
         'name': nsName,
-        'users': nsUsers,
+        'users': NSCXT.users,
         'default': $setAsDefault.is(':checked')
     };
 
     if (!createNS) {
-        data['owner'] = {...nsOwner};
+        data['owner'] = NSCXT.owner;
     }
 
-    showShareSpinner();
+    showNSSpinner();
 
-    $nsSubmitButton.prop('disabled', true);
+    $nsModalSubmitButton.prop('disabled', true);
 
     $.ajax({
         url: '/api/namespace' + (createNS ? '' : '/' + currentURL.nsid),
@@ -220,7 +243,7 @@ $nsSubmitButton.on('click', () => {
         data: JSON.stringify(data),
         success: (resp) => {
             let ns = resp.namespace;
-            $nsSubmitButton.prop('disabled', false);
+            $nsModalSubmitButton.prop('disabled', false);
             nsModal.hide();
             if (createNS)
                 Confirm('Namespace created. Do you want to switch it?', (ok) => {
@@ -230,26 +253,23 @@ $nsSubmitButton.on('click', () => {
                 }, {'yes': 'Switch', 'no': 'Stay', 'icon': 'check'});
             else
                 Alert('Namespace Updated', () => {
-                    nsUsers = ns.users;
-                    nsOwner = ns.owner;
+                    NSCXT = ns;
                     $('#dropdown-ns-button').text(ns.name);
                 }, {'icon': 'check'});
+
             loadAllNamespaces();
-            showShareSpinner(false);
+            showNSSpinner(false);
+
         },
         error: (resp) => {
             Alert(resp.responseJSON.message || "Internal Server Error");
-            $nsSubmitButton.prop('disabled', false);
-            showShareSpinner(false);
+            $nsModalSubmitButton.prop('disabled', false);
+            showNSSpinner(false);
         }
     });
 });
 $nsDelete.on('click', () => {
-    if (currentDefault) {
-        Alert('Cannot delete the default namespace. Set another namespace as default and try again.');
-        return;
-    }
-    Confirm(`Are you sure you want to delete ${$('#dropdown-ns-button').text()}? All contained resources will be deleted.`, (ok) => {
+    Confirm(`Are you sure you want to delete ${$('#dropdown-ns-button').text()}? All resources within it will be deleted`, (ok) => {
         if (!ok) return;
         $.ajax({
             url: '/api/namespace/' + currentURL.nsid,
@@ -277,10 +297,10 @@ function handleChangeRole(user, newRole = '') {
         roleDropdown.show(); // show the dropdown when they click on the role
     } else if (newRole === 'owner') {
         // Transfer ownership
-        Confirm(`Are you sure you want to transfer ownership to ${user.name.split(' ')[0]}?`, (ok) => {
+        Confirm(`Are you sure you want to transfer ownership to ${user.first_name}?`, (ok) => {
             if (!ok) return;
 
-            let oldOwner = {...nsOwner, 'role': 'manager'};
+            let oldOwner = {...NSCXT.owner, 'role': 'manager'};
             let newOwner = {...selectedUser, 'role': 'owner'};
 
             if (oldOwner.username === newOwner.username) return;
@@ -298,15 +318,16 @@ function handleChangeRole(user, newRole = '') {
             $nsUserList.prepend($newOwner);
 
             // Update the owner reference
-            nsOwner = newOwner;
+            NSCXT.owner = newOwner;
 
             // Remove the new owner from the nsUsers list
-            nsUsers = nsUsers.filter(u => u.username !== newOwner.username);
-            nsUsers.push(oldOwner);
+            NSCXT.users = NSCXT.users.filter(u => u.username !== newOwner.username);
+            NSCXT.users.push(oldOwner);
+
         });
     } else {
         // Handle role change
-        let nsUser = nsUsers.find(u => u.username === user.username);    // get the user reference from nsUsers
+        let nsUser = NSCXT.users.find(u => u.username === user.username);    // get the user reference from nsUsers
         $selectedSvg.prependTo(`#role-${newRole}`);                      // update the checkmark
         // When they change the role in dropdown, update the role in the list
         roleDropdown.hide();
@@ -328,13 +349,13 @@ function createUserListItem(user) {
         class: 'flex items-center justify-between'
     });
     let $avatar = $('<img/>', {
-        class: 'w-10 h-10 rounded-full ml-0.5', src: user.avatar, alt: user.name
+        class: 'w-10 h-10 rounded-full ml-0.5', src: user.avatar, alt: user.username
     });
     let $textContainer = $('<div/>', {
         class: 'ml-2.5 py-0.5'
     });
     let $name = $('<span/>', {
-        class: 'text-black dark:text-white', text: user.name
+        class: 'text-black dark:text-white', text: user.first_name + ' ' + user.last_name
     });
     let $email = $('<p/>', {
         class: 'text-xs font-normal text-gray-500 dark:text-gray-300', text: user.email
@@ -396,11 +417,22 @@ function createUserListItem(user) {
 }
 
 function handleAddUser(user) {
-    if (user.username === nsOwner.username) // If they are the owner, skip
-        return;
-    if (nsUsers.find(u => u.username === user.username)) // If user is already in the list, skip
-        return;
-    nsUsers.push(user); // Add user to the list
+    if (createNS) {
+        NSCXT.users = NSCXT.users || [];
+        if (user.username === NSCXT.owner.username)
+            return;
+        if (NSCXT.users.find(u => u.username === user.username))
+            return;
+        NSCXT.users.push(user);
+
+    } else {
+        if (user.username === NSCXT.owner.username) // If they are the owner, skip
+            return;
+        if (NSCXT.users.find(u => u.username === user.username)) // If user is already in the list, skip
+            return;
+        NSCXT.users.push(user); // Add user to the list
+    }
+
     $nsUserList.append(createUserListItem(user));
 }
 
@@ -415,7 +447,6 @@ function handleSearchUsers() {
             Alert("Session expired, try refreshing page. If issue persists, contact support.");
         }
     }
-
 }
 
 function createNSListItem(name, owner, nsid) {
@@ -445,7 +476,7 @@ function createNSListItem(name, owner, nsid) {
 
 function createSearchUserListItem(username, name, email, avatar, roundedT, roundedB) {
     return $('<li>', {
-        class: ('flex items-center p-1 hover:bg-gray-300 dark:hover:bg-gray-600') + (roundedT ? ' rounded-t-lg' : '') + (roundedB ? ' rounded-b-lg' : ''),
+        class: ('flex items-center p-1 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600') + (roundedT ? ' rounded-t-lg' : '') + (roundedB ? ' rounded-b-lg' : ''),
         click: () => {
             $userSearchDropdown.addClass("hidden");
             $userSearch.val('');
@@ -466,7 +497,6 @@ function connectSearch(connect = true) {
             userSearchSocket = new WebSocket('/api/user/search');
             userSearchSocket.onopen = () => {
                 userSearchSocket.onmessage = handleSocketMessage;
-                showShareSpinner(false);
             };
             userSearchSocket.onclose = () => {
                 userSearchSocket = null;
@@ -492,20 +522,22 @@ function handleSocketMessage(event) {
         data.users.forEach((user, index) => {
             let roundedT = index === 0;
             let roundedB = index === data.users.length - 1;
-            $userSearchResults.append(createSearchUserListItem(user.username, user.name, user.email, user.avatar, roundedT, roundedB));
+            let name = user.first_name + ' ' + user.last_name;
+            $userSearchResults.append(createSearchUserListItem(user.username, name, user.email, user.avatar, roundedT, roundedB));
         });
         $userSearchDropdown.removeClass("hidden");
     }
 }
 
-function getSelf(callback) {
+function getSelf() {
     $.ajax({
         url: '/api/user/_self',
+        data: {brief: true},
         type: 'GET',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
         success: (resp) => {
-            callback(resp.user);
+            Myself = resp.user;
         },
         error: (resp) => {
             Alert(resp.responseJSON.message || "Internal Server Error");
@@ -513,14 +545,14 @@ function getSelf(callback) {
     });
 }
 
-
-function showShareSpinner(show = true) {
-    if (show) $sharingSpinner.removeClass('hidden'); else $sharingSpinner.addClass('hidden');
+function showNSSpinner(show = true) {
+    if (show) $nsLoadSpinner.removeClass('hidden'); else $nsLoadSpinner.addClass('hidden');
 }
 
 function loadAllNamespaces() {
     $.ajax({
         url: '/api/namespace',
+        data: {brief: true},
         type: 'GET',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         contentType: 'application/json',
@@ -528,10 +560,13 @@ function loadAllNamespaces() {
             $namespaceLlist.empty();
             let $nsArray = [];
             resp.namespaces.forEach((ns) => {
-                if (ns.nsid === currentURL.nsid)
-                    $nsArray.unshift(createNSListItem(ns.name, ns.owner.name, ns.nsid))
-                else
-                    $nsArray.push(createNSListItem(ns.name, ns.owner.name, ns.nsid));
+                let userName = ns.owner.first_name + ' ' + ns.owner.last_name;
+                if (ns.nsid === currentURL.nsid) {
+                    $nsArray.unshift(createNSListItem(ns.name, userName, ns.nsid));
+                    NSCXT = ns;
+                    loadNamespaceToModal();
+                } else
+                    $nsArray.push(createNSListItem(ns.name, userName, ns.nsid));
             });
             $namespaceLlist.append($nsArray);
         },
