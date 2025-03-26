@@ -14,6 +14,7 @@ let $nsSearch = $('#ns-search');
 let $nsModalTitle = $('#ns-modal-title');
 let $nsModalName = $('#ns-modal-name');
 let $setAsDefault = $('#set-as-default');
+let $setAsDefaultCon = $('#set-as-default-container');
 let $nsUserList = $('#ns-user-list');
 
 let $nsLoadSpinner = $('#ns-load-spinner');
@@ -145,21 +146,21 @@ function loadNamespaceToModal() {
     $setAsDefault.prop('checked', NSCXT.default);
 
     if (NSCXT['_role'] === 'viewer') {
-        $('#set-as-default-container').addClass('hidden');
+        $setAsDefaultCon.addClass('hidden');
         $nsDelete.attr('disabled', true);
         $namespaceSettings.attr('disabled', true);
         $nsSearch.attr('disabled', true);
         $roleTransferOwner.addClass('hidden');
 
     } else if (NSCXT['_role'] === 'manager') {
-        $('#set-as-default-container').addClass('hidden');
+        $setAsDefaultCon.addClass('hidden');
         $namespaceSettings.attr('disabled', false);
         $nsDelete.attr('disabled', false);
         $nsSearch.attr('disabled', false);
         $roleTransferOwner.addClass('hidden');
 
     } else if (NSCXT['_role'] === 'owner') {
-        $('#set-as-default-container').removeClass('hidden');
+        $setAsDefaultCon.removeClass('hidden');
         $namespaceSettings.attr('disabled', false);
         $nsDelete.attr('disabled', false);
         $nsSearch.attr('disabled', false);
@@ -203,7 +204,6 @@ $roleViewer.on('click', () => {
 });
 
 $roleTransferOwner.on('click', () => {
-    console.log('Transfer Ownership', selectedUser);
     handleChangeRole(selectedUser, 'owner');
 });
 
