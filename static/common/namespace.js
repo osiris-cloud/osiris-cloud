@@ -176,6 +176,10 @@ function loadNamespaceToModal() {
         $setAsDefault.attr('disabled', NSCXT.default);
         $setAsDefault.prop('checked', NSCXT.default);
     }
+
+    if (createNS){
+        $roleTransferOwner.addClass('hidden');
+    }
 }
 
 $namespaceCreate.on('click', () => {
