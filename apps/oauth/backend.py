@@ -25,9 +25,10 @@ class AuthBackend(BaseBackend):
                     return user
 
             elif mode == 'github':
+                print(user_info)
                 if github_user := GithubUser.objects.get(uid=user_info['id']):
                     github_user.username = user_info['login']  # Update user info on every login
-                    github_user.name = user_info['name']
+                    github_user.name = user_info['name'] or user_info['login']
                     github_user.email = user_info['email']
                     github_user.save()
 
