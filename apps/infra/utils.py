@@ -437,7 +437,7 @@ def create_namespace(nsid) -> bool:
         return False
 
 
-def delete_namespace(nsid) -> bool:
+def k8s_delete_namespace(nsid) -> bool:
     if env.k8s_api_client is None:
         return False
 

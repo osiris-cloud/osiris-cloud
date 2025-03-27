@@ -9,7 +9,7 @@ from ..infra.models import Namespace
 from ..container_apps.models import ContainerApp
 from ..container_registry.models import ContainerRegistry
 
-from ..infra.utils import delete_namespace
+from ..infra.utils import k8s_delete_namespace
 
 from ..container_apps.tasks import delete_deployment
 from ..container_registry.tasks import delete_registry
@@ -51,7 +51,7 @@ def finalize_namespace_deletion(results, nsid):
     """
     try:
         ns = Namespace.objects.get(nsid=nsid)
-        delete_namespace(ns.nsid)
+        k8s_delete_namespace(ns.nsid)
         ns.delete()
 
         return True
