@@ -76,7 +76,7 @@ def delete_namespace(nsid):
         all_tasks = deployment_tasks + registry_tasks
 
         if all_tasks == []:
-            finalize_namespace_deletion.s(nsid).delay()
+            finalize_namespace_deletion.s(None, nsid).delay()
             return True
 
         chord(all_tasks)(finalize_namespace_deletion.s(nsid))
