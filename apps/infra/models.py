@@ -21,7 +21,7 @@ class Namespace(models.Model):
 
     @property
     def owner(self):
-        return self.users.filter(namespaceroles__role='owner').first()
+        return self.users.get(namespaceroles__role='owner')
 
     def get_users(self):
         return self.users.all()
@@ -37,30 +37,26 @@ class Namespace(models.Model):
 
     def get_users_info(self):
         u_info = lambda u: {
-            **u.info(),
+            **u.brief(),
             'role': self.get_role(u),
         }
         return [u_info(u) for u in self.users.filter(~Q(namespaceroles__role='owner'))]
 
-    def info(self):
+    def info(self, user=None):
         return {
-            'nsid': self.nsid,
-            'name': self.name,
-            'default': self.default,
+            **self.brief(user),
             'created_at': self.created_at,
             'updated_at': self.updated_at,
-            'owner': self.owner.info(),
             'users': self.get_users_info(),
         }
 
-    def brief(self):
+    def brief(self, user=None):
         return {
+            '_role': self.get_role(user),
             'nsid': self.nsid,
             'name': self.name,
             'default': self.default,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at,
-            'owner': self.owner.info(),
+            'owner': self.owner.brief(),
         }
 
     class Meta:

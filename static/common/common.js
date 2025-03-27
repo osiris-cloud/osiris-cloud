@@ -39,7 +39,7 @@ function parseURL() {
     return {
         host: window.location.origin,
         app: parts[3],
-        nsid: parts[4] ? parts[4] : window.localStorage.getItem('namespace'),
+        nsid: parts[4] ? parts[4] : window.localStorage.getItem('nsid'),
         resource_id: resourceId,
         option: (parts[6]) ? parts[6] : 'view',
     };

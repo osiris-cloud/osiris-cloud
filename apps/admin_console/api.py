@@ -81,7 +81,6 @@ def external_user(request):
     except JSONDecodeError:
         return JsonResponse(error_message('Invalid JSON data'), status=400)
     except Exception as e:
-        print(e)
         logging.error(e)
         return JsonResponse(error_message('Internal server error'), status=500)
 

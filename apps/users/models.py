@@ -20,15 +20,16 @@ class User(AbstractUser):
     def not_manager(self):
         return self.username != 'osirisadmin'
 
-    def info(self):
+    def brief(self):
         return {
             'username': self.username,
-            'name': f'{self.first_name} {self.last_name}',
+            'first_name': self.first_name,
+            'last_name': self.last_name,
             'email': self.email,
             'avatar': self.avatar or 'https://blob.osiriscloud.io/profile.webp',
         }
 
-    def detailed_info(self):
+    def info(self):
         from .utils import get_default_ns
         if self.username == 'osirisadmin':
             return {}
@@ -125,17 +126,17 @@ class Limit(models.Model):
     def limit_reached(self, cpu=None, memory=None, disk=None, public_ip=None, gpu=None, registry=None):
         current_usage = Usage.objects.get(user=self.user)
 
-        if cpu is not None and (self.cpu - current_usage.cpu <= cpu):
+        if cpu is not None and (self.cpu - current_usage.cpu < cpu):
             return True
-        if memory is not None and (self.memory - current_usage.memory <= memory):
+        if memory is not None and (self.memory - current_usage.memory < memory):
             return True
-        if disk is not None and (self.disk - current_usage.disk <= disk):
+        if disk is not None and (self.disk - current_usage.disk < disk):
             return True
-        if public_ip is not None and (self.public_ip - current_usage.public_ip <= public_ip):
+        if public_ip is not None and (self.public_ip - current_usage.public_ip < public_ip):
             return True
-        if gpu is not None and (self.gpu - current_usage.gpu <= gpu):
+        if gpu is not None and (self.gpu - current_usage.gpu < gpu):
             return True
-        if registry is not None and (self.registry - current_usage.registry <= registry):
+        if registry is not None and (self.registry - current_usage.registry < registry):
             return True
 
         return False

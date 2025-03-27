@@ -38,8 +38,8 @@ admin_urlpatterns = [
 user_urlpatterns = [
     re_path(r'^/namespace$', user_api.namespace),
     re_path(r'^/namespace/(?P<nsid>[^/]+)$', user_api.namespace),
-    re_path(r'^/user$', user_api.user),
-    re_path(r'^/user/(?P<username>[^/]+)$', user_api.user),
+    re_path(r'^/user$', user_api.user_api),
+    re_path(r'^/user/(?P<username>[^/]+)$', user_api.user_api),
 ]
 
 secret_store_urlpatterns = [

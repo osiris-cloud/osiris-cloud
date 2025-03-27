@@ -60,7 +60,7 @@ def container_apps(request, nsid=None, appid=None, action=None):
             apps = ContainerApp.objects.filter(namespace=ns, **app_filter)
             cache_key = f'container_app_{nsid}_{appid}_info'
             cached_data = cache.get(cache_key)
-            brief_only = bool(request.GET.get('brief', False))
+            brief_only = request.GET.get('brief') == 'true'
 
             if appid and cached_data and not brief_only:
                 result = [cached_data]

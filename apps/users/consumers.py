@@ -29,7 +29,8 @@ class UserSearchConsumer(AsyncWebsocketConsumer):
 
         search = raw_search(User, text_data, search_params).get('hits')
         filter_result = lambda hit: {'username': hit.get('username'),
-                                     'name': hit.get('first_name') + ' ' + hit.get('last_name'),
+                                     'first_name': hit.get('first_name'),
+                                     'last_name': hit.get('last_name'),
                                      'email': hit.get('email'),
                                      'avatar': hit.get('avatar')
                                      }

@@ -9,7 +9,8 @@ from .models import User, Limit
 from ..infra.models import Namespace, NamespaceRoles
 
 from core.utils import success_message, error_message, random_str
-from ..users.utils import sanitize_nsid, validate_ns_create, validate_ns_update,validate_user_update, delete_owner_resources
+from ..users.utils import sanitize_nsid, validate_ns_create, validate_ns_update, validate_user_update, \
+    delete_owner_resources
 from .utils import get_default_ns, greater_than
 from ..dashboard.utils import get_ns_usage
 
@@ -37,23 +38,23 @@ def namespace(request, nsid=None):
 
     try:
         if request.method == 'GET':
-            brief_only = request.GET.get('brief', False)
+            brief_only = request.GET.get('brief') == 'true'
 
             if ns:
-                result = ns.brief() if brief_only else ns.info()
-                result['_role'] = 'owner'
+                result = ns.brief(request.user) if brief_only else ns.info(request.user)
                 return JsonResponse(success_message('Get namespace', {'namespace': result}), status=200)
 
             if nsid:
                 ns = Namespace.objects.get(nsid=nsid, locked=False)
-                if ns.get_role(request.user) is None:
+                role = ns.get_role(request.user)
+                if role is None:
                     return JsonResponse(error_message('Namespace not found or no permission to access'), status=404)
 
                 result = ns.brief() if brief_only else ns.info()
-                result['_role'] = ns.get_role(request.user)
+                result['_role'] = role
             else:
                 namespaces = Namespace.objects.filter(users=request.user, locked=False)
-                result = [ns.brief() if brief_only else ns.info() for ns in namespaces]
+                result = [ns.brief(request.user) if brief_only else ns.info(request.user) for ns in namespaces]
 
             return JsonResponse(success_message('Get namespaces', {
                 'namespace' if nsid else 'namespaces': result,
@@ -128,7 +129,7 @@ def namespace(request, nsid=None):
                                         status=403)
 
             if new_ns_name := ns_data.get('name'):
-                ns.name = new_ns_name
+                ns.name = new_ns_name.strip()
 
             if new_ns_default:
                 # If the context namespace is set to default, unset 'default' on prev default namespace
@@ -181,13 +182,7 @@ def namespace(request, nsid=None):
             return JsonResponse(success_message('Update namespace', {'namespace': ns.info()}))
 
         elif request.method == 'DELETE':
-            ns = Namespace.objects.filter(nsid=nsid, locked=False).first()
-
-            if not ns:
-                return JsonResponse(error_message(f'Namespace {nsid} not found'), status=404)
-
-            if ns.default:
-                return JsonResponse(error_message('Cannot delete default namespace'), status=400)
+            ns = Namespace.objects.get(nsid=nsid)
 
             if ns.owner != request.user:
                 return JsonResponse(
@@ -195,7 +190,8 @@ def namespace(request, nsid=None):
 
             # If the namespace is set as default, user has to set another namespace as default before deleting
             if ns.default:
-                return JsonResponse(error_message('Cannot delete default namespace'), status=400)
+                return JsonResponse(error_message('Please set another namespace as default to continue deleting this '
+                                                  'namespace'), status=400)
 
             # Set namespace to locked
             ns.locked = True
@@ -204,6 +200,9 @@ def namespace(request, nsid=None):
             delete_namespace.delay(ns.nsid)
 
             return JsonResponse(success_message('Delete namespace', {'nsid': nsid}), status=200)
+
+    except User.DoesNotExist:
+        return JsonResponse(error_message('Invalid user'), status=404)
 
     except Namespace.DoesNotExist:
         return JsonResponse(error_message('Namespace not found'), status=404)
@@ -217,14 +216,14 @@ def namespace(request, nsid=None):
 
 
 @api_view(['GET', 'PATCH', 'DELETE'])
-def user(request, username=None):
+def user_api(request, username=None):
     """
     API for all users or a specific user
     """
     if (request.method in ['PATCH, DELETE']) and username is None:
         return JsonResponse(error_message('username is required'), status=400)
 
-    cluster_admin = request.user.role in ['admin', 'super_admin']
+    cluster_admin = request.user.role in ('admin', 'super_admin')
 
     if username == '_self':
         username = request.user.username
@@ -232,47 +231,43 @@ def user(request, username=None):
     try:
         match request.method:
             case 'GET':
-                user_filter = {'username': username} if username else {}
-                users = User.objects.filter(**user_filter)
-                user_infos = [u.detailed_info() for u in users]
+                brief_only = request.GET.get('brief') == 'true'
 
                 if username:
                     if (request.user.username != username) and not cluster_admin:
-                        return JsonResponse(error_message('Permission denied'))
+                        return JsonResponse(error_message('Permission denied'), status=403)
 
-                    if not user_infos:
-                        return JsonResponse(error_message('User not found'), status=404)
+                    user = User.objects.get(username=username)
+                    result = user.brief() if brief_only else user.detailed_info()
 
-                    return JsonResponse(success_message('Get user', {'user': user_infos[0]}), status=200)
+                else:
+                    if not cluster_admin:
+                        return JsonResponse(error_message('Permission denied'), status=403)
 
-                if not cluster_admin:
-                    return JsonResponse(error_message('Permission denied'))
+                    users = User.objects.all()
+                    result = [user.brief() if brief_only else user.detailed_info() for user in users]
 
-                return JsonResponse(success_message('Get users', {'users': user_infos}), status=200)
+                return JsonResponse(success_message('Get users', {
+                    'user' if username else 'users': result,
+                }), status=200)
 
             case 'PATCH':
-                user_obj = User.objects.filter(username=username).first()
-                if not user_obj:
-                    return JsonResponse(error_message('User not found'), status=404)
+                user_obj = User.objects.get(username=username)
 
                 # Non-admins can only update their own info
                 if request.user != user_obj and not cluster_admin:
-                    return JsonResponse(error_message('Permission denied'))
+                    return JsonResponse(error_message('Permission denied'), status=403)
 
-                if request.data.get('data') is not None:
-                    user_data = request.data.get('data')
-                else:
-                    user_data = request.data
+                user_data = request.data
 
                 # Non-admins cannot update cluster_role or resource_limit
                 if not cluster_admin:
                     if 'cluster_role' in user_data or 'resource_limit' in user_data:
-                        return JsonResponse(error_message('Permission denied'))
+                        return JsonResponse(error_message('Permission denied'), status=403)
 
-                valid, resp = validate_user_update(user_data)
-
+                valid, err = validate_user_update(user_data)
                 if not valid:
-                    return JsonResponse(resp)
+                    return JsonResponse(error_message(err), status=400)
 
                 try:
                     with transaction.atomic():
@@ -287,10 +282,10 @@ def user(request, username=None):
                         if 'cluster_role' in user_data:
                             if request.user.role == 'admin' and user_data['cluster_role'] == 'super_admin':
                                 return JsonResponse(error_message('Admin cannot assign super_admin role'))
-                            if request.user.role in ['admin', 'super_admin']:
+                            if request.user.role in ('admin', 'super_admin'):
                                 user_obj.role = user_data['cluster_role']
                         if 'resource_limit' in user_data and cluster_admin:
-                            user_limit_obj = Limit.objects.filter(user=user_obj).first()
+                            user_limit_obj = Limit.objects.get(user=user_obj)
                             for key, value in user_data['resource_limit'].items():
                                 setattr(user_limit_obj, key, value)
 
@@ -300,20 +295,18 @@ def user(request, username=None):
 
                 except Exception as e:
                     logging.error(str(e))
-                    return JsonResponse(error_message('Failed to update user'))
+                    return JsonResponse(error_message('Failed to update user'), status=500)
 
-                return JsonResponse(success_message('Update user', user_obj.detailed_info()))
+                return JsonResponse(success_message('Update user', user_obj.info()))
 
             case 'DELETE':
                 if not username:
-                    return JsonResponse(error_message('No username provided'))
+                    return JsonResponse(error_message('No username provided'), status=400)
 
-                if request.user.role not in ['admin', 'super_admin']:
-                    return JsonResponse(error_message('Permission denied'))
+                if not cluster_admin:
+                    return JsonResponse(error_message('Permission denied'), status=403)
 
-                user_obj = User.objects.filter(username=username).first()
-                if not user_obj:
-                    return JsonResponse(error_message('User not found'))
+                user_obj = User.objects.get(username=username)
 
                 # Nuke all resources of namespaces owned by the user
                 if delete_owner_resources(user_obj):
@@ -328,15 +321,17 @@ def user(request, username=None):
                                 Namespace.objects.filter(id=namespace_id).delete()
                             user_obj.delete()
 
-                            return JsonResponse(success_message('Delete user', {'username': username}))
+                            return JsonResponse(success_message('Delete user', {'username': username}), status=200)
                     except Exception as e:
                         logging.error(str(e))
-                        return JsonResponse(error_message('Failed to delete user'))
+                        return JsonResponse(error_message('Failed to delete user'), status=500)
                 else:
-                    return JsonResponse(error_message('Failed to delete user resources'))
+                    return JsonResponse(error_message('Failed to delete user resources'), status=500)
+
+    except User.DoesNotExist:
+        return JsonResponse(error_message('User not found'), status=404)
 
     except JSONDecodeError as e:
-        logging.error(e)
         return JsonResponse('Invalid JSON data', status=400)
 
     except Exception as e:
