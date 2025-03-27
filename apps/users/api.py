@@ -190,7 +190,8 @@ def namespace(request, nsid=None):
 
             # If the namespace is set as default, user has to set another namespace as default before deleting
             if ns.default:
-                return JsonResponse(error_message('Cannot delete namespace when it is set as default'), status=400)
+                return JsonResponse(error_message('Please set another namespace as default to continue deleting this '
+                                                  'namespace'), status=400)
 
             # Set namespace to locked
             ns.locked = True
