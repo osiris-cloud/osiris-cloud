@@ -14,7 +14,7 @@ let $nsSearch = $('#ns-search');
 let $nsModalTitle = $('#ns-modal-title');
 let $nsModalName = $('#ns-modal-name');
 let $setAsDefault = $('#set-as-default');
-let $setAsDefaultCon = $('#set-as-default-container');
+let $setAsDefaultCon = $('#set-as-default-con');
 let $nsUserList = $('#ns-user-list');
 
 let $nsLoadSpinner = $('#ns-load-spinner');
@@ -34,6 +34,7 @@ let NSCXT = {}
 let Myself = {}
 let selectedUser = {};
 let createNS = false;
+let disableRoleDropdown = false;
 
 loadAllNamespaces();
 getSelf();
@@ -120,12 +121,26 @@ function loadNamespace(nsid = '') {
 
 function clearNamespaceModal() {
     $nsModalName.val('');
+    $nsModalName.attr('readonly', false);
+
     $setAsDefault.attr('disabled', false);
+    $setAsDefaultCon.removeClass('hidden');
     $setAsDefault.prop('checked', false);
+
+    $userSearch.val('');
+    $userSearch.attr('readonly', false);
+    $userSearchResults.empty();
+
     $nsUserList.empty();
+
     $nsModalSubmitButton.text('Create');
-    $nsSearch.attr('disabled', false);
+    $nsModalSubmitButton.attr('disabled', false).removeClass('disabled cursor-not-allowed');
+
     $roleTransferOwner.removeClass('hidden');
+    disableRoleDropdown = false;
+
+    $nsDelete.removeClass('disabled cursor-not-allowed');
+    $nsDelete.attr('disabled', false);
 }
 
 function loadNamespaceToModal() {
@@ -142,29 +157,24 @@ function loadNamespaceToModal() {
         });
     }
 
-    $setAsDefault.attr('disabled', NSCXT.default);
-    $setAsDefault.prop('checked', NSCXT.default);
-
     if (NSCXT['_role'] === 'viewer') {
+        $nsModalName.attr('readonly', true);
+        $userSearch.attr('readonly', true);
+        disableRoleDropdown = true;
         $setAsDefaultCon.addClass('hidden');
+        $nsModalSubmitButton.attr('disabled', true).addClass('disabled cursor-not-allowed');
+        $nsDelete.addClass('disabled cursor-not-allowed');
         $nsDelete.attr('disabled', true);
-        $namespaceSettings.attr('disabled', true);
-        $nsSearch.attr('disabled', true);
-        $roleTransferOwner.addClass('hidden');
 
     } else if (NSCXT['_role'] === 'manager') {
-        $setAsDefaultCon.addClass('hidden');
-        $namespaceSettings.attr('disabled', false);
-        $nsDelete.attr('disabled', false);
-        $nsSearch.attr('disabled', false);
         $roleTransferOwner.addClass('hidden');
+        $setAsDefaultCon.addClass('hidden');
+        $nsDelete.addClass('disabled cursor-not-allowed');
+        $nsDelete.attr('disabled', true);
 
     } else if (NSCXT['_role'] === 'owner') {
-        $setAsDefaultCon.removeClass('hidden');
-        $namespaceSettings.attr('disabled', false);
-        $nsDelete.attr('disabled', false);
-        $nsSearch.attr('disabled', false);
-        $roleTransferOwner.removeClass('hidden');
+        $setAsDefault.attr('disabled', NSCXT.default);
+        $setAsDefault.prop('checked', NSCXT.default);
     }
 }
 
@@ -269,7 +279,7 @@ $nsModalSubmitButton.on('click', () => {
     });
 });
 $nsDelete.on('click', () => {
-    Confirm(`Are you sure you want to delete ${$('#dropdown-ns-button').text()}? All resources within it will be deleted`, (ok) => {
+    Confirm(`Namespace "${$('#dropdown-ns-button').text().trim()}" and all resources within it will be deleted`, (ok) => {
         if (!ok) return;
         $.ajax({
             url: '/api/namespace/' + currentURL.nsid,
@@ -289,6 +299,8 @@ $nsDelete.on('click', () => {
 });
 
 function handleChangeRole(user, newRole = '') {
+    if (disableRoleDropdown) return;
+
     selectedUser = {...user};
 
     if (newRole === '') {
@@ -457,13 +469,13 @@ function createNSListItem(name, owner, nsid) {
             window.location.href = `/${url.app}/${nsid}`;
         });
 
-    const textSmDiv = $('<div></div>')
+    const textSmDiv = $('<div>')
         .addClass('text-sm');
 
-    const mainText = $('<div></div>')
+    const mainText = $('<div>')
         .text(name + (nsid === currentURL.nsid ? ' (Current)' : ''));
 
-    const subText = $('<div></div>')
+    const subText = $('<div>')
         .addClass('text-xs font-normal text-gray-500 dark:text-gray-300')
         .text(owner);
 
@@ -474,18 +486,18 @@ function createNSListItem(name, owner, nsid) {
     return listItem;
 }
 
-function createSearchUserListItem(username, name, email, avatar, roundedT, roundedB) {
+function createSearchUserListItem(username, first_name, last_name, email, avatar, roundedT, roundedB) {
     return $('<li>', {
         class: ('flex items-center p-1 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600') + (roundedT ? ' rounded-t-lg' : '') + (roundedB ? ' rounded-b-lg' : ''),
         click: () => {
             $userSearchDropdown.addClass("hidden");
             $userSearch.val('');
-            handleAddUser({username, name, email, avatar, 'role': 'viewer'});
+            handleAddUser({username, first_name, last_name, email, avatar, 'role': 'viewer'});
         }
-    }).append($('<img>', {class: 'w-10 h-10 rounded-full ml-1', src: avatar, alt: name})).append($('<div>', {
+    }).append($('<img>', {class: 'w-10 h-10 rounded-full ml-1', src: avatar, alt: username})).append($('<div>', {
         class: 'ml-2.5 items-center'
     }).append($('<div>', {
-        class: 'text-black text-sm dark:text-white align-middle cursor-default mr-1', text: name
+        class: 'text-black text-sm dark:text-white align-middle cursor-default mr-1', text: first_name + ' ' + last_name
     })).append($('<div>', {
         class: 'text-xs font-normal text-gray-500 dark:text-gray-300 cursor-default', text: email
     })));
@@ -522,8 +534,14 @@ function handleSocketMessage(event) {
         data.users.forEach((user, index) => {
             let roundedT = index === 0;
             let roundedB = index === data.users.length - 1;
-            let name = user.first_name + ' ' + user.last_name;
-            $userSearchResults.append(createSearchUserListItem(user.username, name, user.email, user.avatar, roundedT, roundedB));
+            $userSearchResults.append(createSearchUserListItem(user.username,
+                user.first_name,
+                user.last_name,
+                user.email,
+                user.avatar,
+                roundedT,
+                roundedB
+            ));
         });
         $userSearchDropdown.removeClass("hidden");
     }
