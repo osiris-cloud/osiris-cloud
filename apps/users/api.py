@@ -182,13 +182,11 @@ def namespace(request, nsid=None):
             return JsonResponse(success_message('Update namespace', {'namespace': ns.info()}))
 
         elif request.method == 'DELETE':
-            ns = Namespace.objects.filter(nsid=nsid, locked=False).first()
+            ns = Namespace.objects.get(nsid=nsid)
 
-            if not ns:
-                return JsonResponse(error_message(f'Namespace {nsid} not found'), status=404)
-
-            if ns.default:
-                return JsonResponse(error_message('Cannot delete default namespace'), status=400)
+            if ns.owner != request.user:
+                return JsonResponse(
+                    error_message('Permission denied: Only the owner can delete the namespace'), status=403)
 
             # If the namespace is set as default, user has to set another namespace as default before deleting
             if ns.default:
