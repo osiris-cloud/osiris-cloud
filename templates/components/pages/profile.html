@@ -82,12 +82,14 @@
                     {% if github %}
                         {{ github }}
                         <button id="unlink-github" type="button"
-                                class="mx-2 px-1 text-white rounded-md bg-red-700 hover:bg-red-800 focus:ring-4">unlink
-                            account
+                                class="mx-2 px-1 text-white rounded-md bg-red-700 hover:bg-red-800 focus:ring-4 text-center"
+                        >
+                            Unlink account
                         </button>
                     {% else %}
-                        <button id="link-github" type="button" class="-mt-2 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4
-                    focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-1.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                        <button id="link-github" type="button" class="-mt-2 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 
+                        font-medium rounded-lg text-sm px-4 py-1.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                        >
                             Link Github
                         </button>
                     {% endif %}
