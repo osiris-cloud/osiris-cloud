@@ -7,7 +7,6 @@
     <title>{% block title %}Osiris Cloud{% endblock title %}</title>
     {% include "components/head.html" %}
     {% block top_import %}{% endblock top_import %}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-800">
@@ -28,16 +27,17 @@
         {% block content %}{% endblock content %}
         {% block footer %}{% endblock footer %}
         {% block copy %}
-            <div class="my-4 text-sm text-center text-gray-500">&copy; 2025 Osiris Cloud ({{ VER }})</div>
+            <div class="my-4 text-sm text-center text-gray-500">&copy; 2024 - Present Osiris Cloud ({{ VER }})</div>
         {% endblock copy %}
     </div>
 
 </div>
 
 <script src="{% static 'dist/main.bundle.js' %}"></script>
-<script src="{% static 'common/common.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+<script defer src="{% static 'common/common.js' %}"></script>
 {% block namespace_js %}
-    <script src="{% static 'common/namespace.js' %}"></script>
+    <script defer src="{% static 'common/namespace.js' %}"></script>
 {% endblock namespace_js %}
 
 {% block bottom_import %}{% endblock bottom_import %}
