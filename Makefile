@@ -42,7 +42,6 @@ dev: venv node_modules
 build: node_modules
 	@echo "### Building app"
 	npm run build
-	npx tailwindcss -i ./static/assets/style.css -o ./static/dist/output.css
 	./venv/bin/python3 python manage.py collectstatic --no-input
 
 .PHONY: migrations

@@ -145,6 +145,20 @@ function DeleteDB
     Copy-Item -Path "db-orig.sqlite3" -Destination "db.sqlite3"
 }
 
+function Clean-Environment
+{
+    Write-Host "### Cleaning environment"
+    Remove-Item -Path "node_modules" -Recurse -Force
+    Remove-Item -Path "venv" -Recurse -Force
+    Remove-Item -Path ".env" -Force
+}
+
+function Start-Build
+{
+    npm run build
+	python manage.py collectstatic --no-input
+}
+
 
 switch ($Target)
 {
@@ -185,20 +199,10 @@ switch ($Target)
         Load-Env
         Algolia-ClearIndex
     }
-    "app" {
-        if ($args.Count -eq 0)
-        {
-            Write-Host "Please provide an app name."
-        }
-        else
-        {
-            Create-App $args[0] #TODO
-        }
-    }
     "clean" {
-        Clean-Environment #TODO
+        Clean-Environment
     }
-    "delete" {
+    "reset" {
         DeleteDB
     }
     "kill" {
