@@ -1,5 +1,5 @@
 ifeq ($(OS),Windows_NT)
-$(error Use ".\make" instead of make on Windows)
+$(error Use local make ".\make" instead of Windows Make)
 endif
 
 PYTHON := python3.12
@@ -19,12 +19,14 @@ venv:
 node_modules:
 	npm install
 
+.PHONY: django
 django: venv
 	@echo "### Starting Django"
 	./venv/bin/python3 manage.py runserver
 
+.PHONY: web
 web: node_modules
-	@echo "### Starting Flowbite"
+	@echo "### Starting Webpack"
 	npm run dev
 
 celery:
@@ -40,7 +42,7 @@ dev: venv node_modules
 build: node_modules
 	@echo "### Building app"
 	npm run build
-	npx tailwindcss -i ./static/assets/style.css -o ./static/dist/css/output.css
+	npx tailwindcss -i ./static/assets/style.css -o ./static/dist/output.css
 	./venv/bin/python3 python manage.py collectstatic --no-input
 
 .PHONY: migrations
@@ -57,16 +59,27 @@ app: venv
 %:
 	@true
 
+.PHONY: index
+algolia-reindex: venv
+	@echo "### Reindexing Algolia"
+	./venv/bin/python3 manage.py algolia_reindex
+
+.PHONY: clear-index
+algolia-clear: venv
+	@echo "### Clearing Algolia index"
+	./venv/bin/python3 manage.py algolia_clear
+
 .PHONY: clean
 clean:
 	@echo "### Deleting virtual environment"
 	rm -rf $$(find -name __pycache__) venv node_modules package-lock.json staticfiles/*
 
-.PHONY: delete
+.PHONY: reset
 delete:
 	@echo "### Deleting DB"
 	rm -f db.sqlite3
 	cp db-orig.sqlite3 db.sqlite3
+	@echo "### DB reset"
 
 .INTERRUPT:
 	@exit 1

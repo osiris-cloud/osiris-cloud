@@ -6,11 +6,6 @@ param (
 $PYTHON = "python"
 $PIP = ".\venv\Scripts\pip.exe"
 $PY_VENV = ".\venv\Scripts\python.exe"
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-
-
-# Global variable to store job references
-$global:jobs = @()
 
 
 function Show-Help
@@ -48,7 +43,7 @@ function Start-Django
 function Start-Web
 {
     Install-NodeModules
-    Write-Host "### Starting Flowbite"
+    Write-Host "### Starting Webpack"
     & npm run dev
 }
 
@@ -141,90 +136,6 @@ function Load-Env
 }
 
 
-function Force-StopJob($job)
-{
-    if ($job -and $job.State -ne 'Completed')
-    {
-        $childProcesses = Get-WmiObject Win32_Process -Filter "ParentProcessID=$( $job.PID )"
-        foreach ($childProcess in $childProcesses)
-        {
-            Stop-Process -Id $childProcess.ProcessId -Force -ErrorAction SilentlyContinue
-        }
-        Stop-Job -Job $job -PassThru | Remove-Job -Force
-    }
-}
-
-
-function Start-Dev
-{
-    Create-Venv
-    Install-NodeModules
-    Write-Host "### starting app"
-    Load-Env
-
-    $global:jobs = @()
-
-    $global:jobs += Start-Job -Name "Django" -ScriptBlock {
-        param($dir, $venvPath)
-        Set-Location $dir
-        & doppler run -- $venvPath\Scripts\python.exe manage.py runserver
-    } -ArgumentList $scriptDir, (Resolve-Path ".\venv")
-
-    #    $global:jobs += Start-Job -Name "Celery" -ScriptBlock {
-    #        param($dir, $venvPath)
-    #        Set-Location $dir
-    #        & $venvPath\Scripts\python.exe -m celery -A core worker --loglevel INFO
-    #    } -ArgumentList $scriptDir, (Resolve-Path ".\venv")
-
-    $global:jobs += Start-Job -Name "NodeJS" -ScriptBlock {
-        param($dir)
-        Set-Location $dir
-        npm run dev
-    } -ArgumentList $scriptDir
-
-    $cancelSource = New-Object System.Threading.CancellationTokenSource
-
-    $ctrlCJob = Start-Job -ScriptBlock {
-        param($cancelSource)
-        while (-not $cancelSource.Token.IsCancellationRequested)
-        {
-            if ([Console]::KeyAvailable -and [Console]::ReadKey($true).Key -eq [ConsoleKey]::C -and [Console]::KeyAvailable -and [Console]::ReadKey($true).Modifiers -eq [ConsoleModifiers]::Control)
-            {
-                $cancelSource.Cancel()
-                break
-            }
-            Start-Sleep -Milliseconds 100
-        }
-    } -ArgumentList $cancelSource
-
-    try
-    {
-        while (-not $cancelSource.Token.IsCancellationRequested)
-        {
-            $global:jobs | ForEach-Object {
-                $job = $_
-                Receive-Job -Job $job | ForEach-Object {
-                    Write-Host "[$( $job.Name )] $_"
-                }
-            }
-            Start-Sleep -Milliseconds 100
-        }
-    }
-    finally
-    {
-        # Run netstat command in the background after 1 second
-        Start-Job -ScriptBlock {
-            Start-Sleep -Seconds 1
-            netstat -ano | findstr ":8000" | ForEach-Object { $_ -split "\s+" | Select-Object -Last 1 } | ForEach-Object { taskkill /PID $_ /F }
-        } | Out-Null
-
-        Write-Host "`nStopping all processes..."
-        $global:jobs | ForEach-Object { Force-StopJob $_ }
-        Force-StopJob $ctrlCJob
-        $cancelSource.Dispose()
-    }
-}
-
 function DeleteDB
 {
     if (Test-Path -Path "db.sqlite3")
@@ -253,15 +164,12 @@ switch ($Target)
         Load-Env
         Start-Django
     }
-    "flowbite" {
+    "web" {
         Start-Web
     }
     "celery" {
         Load-Env
         Start-Celery
-    }
-    "dev" {
-        Start-Dev
     }
     "build" {
         Start-Build
@@ -273,7 +181,7 @@ switch ($Target)
         Load-Env
         Algolia-Reindex
     }
-    "clearindex" {
+    "clear-index" {
         Load-Env
         Algolia-ClearIndex
     }
