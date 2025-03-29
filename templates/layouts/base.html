@@ -35,9 +35,10 @@
 
 <script src="{% static 'dist/main.bundle.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
-<script defer src="{% static 'common/common.js' %}"></script>
+<script type="module" src="{% static 'common/common.js' %}"></script>
+
 {% block namespace_js %}
-    <script defer src="{% static 'common/namespace.js' %}"></script>
+    <script type="module" src="{% static 'common/namespace.js' %}"></script>
 {% endblock namespace_js %}
 
 {% block bottom_import %}{% endblock bottom_import %}
