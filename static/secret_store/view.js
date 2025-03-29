@@ -96,7 +96,7 @@ function deleteSecret() {
         method: 'DELETE',
         headers: {"X-CSRFToken": document.querySelector('input[name="csrf-token"]').value},
         success: () => {
-            Alert('Secret deleted successfully', () => {
+            Alert('Secret deleted', () => {
                 window.location.href = `/secret-store/${currentURL.nsid}`
             }, {'icon': 'check'});
         },
