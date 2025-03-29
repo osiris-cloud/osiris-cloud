@@ -1,8 +1,11 @@
 window.addEventListener('load', function () {
+    const SESSION_TIMEOUT = 60000;
+
     let isInitializingTerminal = false; // Flag to prevent concurrent connections
     let activeTabId = null;
-    let consoleTabsMap = new Map(); // {name, iref, cref, terminal, fitAddon, socket, pendingConnection, sessionTimeout, resizeObserver, resizeTimeout}
-    const SESSION_TIMEOUT = 60000;
+
+    // {name, iref, cref, terminal, fitAddon, socket, pendingConnection, sessionTimeout, resizeTimeout}
+    let consoleTabsMap = new Map();
 
     const consoleModalEl = document.getElementById('console-modal');
     const options = {
@@ -28,7 +31,8 @@ window.addEventListener('load', function () {
         id: 'console-modal',
         override: true,
     };
-    let consoleModal = new Modal(consoleModalEl, options, instanceOptions);
+
+    const consoleModal = new Modal(consoleModalEl, options, instanceOptions);
 
     // Function to handle terminal resize
     function handleTerminalResize(tabInfo) {
@@ -517,7 +521,12 @@ window.addEventListener('load', function () {
         }, 100);
     });
 
+    $('#console-modal-close').on('click', function () {
+        consoleModal.hide();
+    });
+
     $(window).on('beforeunload', function () {
         closeAllTerminals();
     });
+
 });
