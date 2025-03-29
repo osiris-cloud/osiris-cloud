@@ -253,7 +253,6 @@ class ContainerApp(models.Model):
             'connection_port': 443 if self.connection_protocol == 'http' else self.connection_port,
             'connection_protocol': self.connection_protocol,
             'state': self.state,
-            'restart_policy': self.restart_policy,
             'update_strategy': self.update_strategy,
             **container_types,
             'volumes': self.volume_info(),

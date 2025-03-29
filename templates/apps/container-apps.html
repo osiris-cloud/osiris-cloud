@@ -13,6 +13,10 @@
     {% endif %}
 {% endblock title %}
 
+{% block top_import %}
+    <link rel="stylesheet" href="{% static 'dist/xterm.css' %}">
+{% endblock top_import %}
+
 {% block content %}
     <main class="grow">
         <div class="p-4 mt-4 mx-4 md:items-center md:p-6 xl:pl-6 xl:pr-6 xl:pt-6 dark:text-white">
@@ -113,15 +117,22 @@
 
 {% block bottom_import %}
     {% if 'create' in segment %}
-        <script src="{% static 'container_apps/create.js' %}"></script>
+        <script type="module" src="{% static 'container_apps/utils.js' %}"></script>
+        <script type="module" src="{% static 'container_apps/create.js' %}" defer></script>
+        
     {% elif 'list' in segment %}
-        <script src="{% static 'container_apps/list.js' %}"></script>
+        <script type="module" src="{% static 'container_apps/list.js' %}" defer></script>
+        
     {% elif 'view' in segment %}
-        <script src="{% static 'container_apps/info.js' %}"></script>
-        <script src="{% static 'container_apps/view.js' %}"></script>
-        <script src="{% static 'container_apps/console.js' %}"></script>
-        <script src="{% static 'container_apps/logs.js' %}"></script>
+        <script type="module" src="{% static 'dist/d3.bundle.js' %}"></script>
+        <script type="module" src="{% static 'dist/xterm.bundle.js' %}"></script>
+        <script type="module" src="{% static 'container_apps/console.js' %}"></script>
+        <script type="module" src="{% static 'container_apps/logs.js' %}"></script>    
+        <script type="module" src="{% static 'container_apps/info.js' %}"></script>
+        <script type="module" src="{% static 'container_apps/view.js' %}"></script>
+        
     {% elif 'edit' in segment %}
-        <script src="{% static 'container_apps/edit.js' %}"></script>
+        <script type="module" src="{% static 'container_apps/utils.js' %}"></script>
+        <script type="module" src="{% static 'container_apps/edit.js' %}" defer></script>
     {% endif %}
 {% endblock bottom_import %}

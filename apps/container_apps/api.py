@@ -175,7 +175,6 @@ def container_apps(request, nsid=None, appid=None, action=None):
                                                   ingress=app_ingress,
                                                   connection_port=conn_port,
                                                   connection_protocol=conn_proto,
-                                                  restart_policy='always',
                                                   update_strategy=app_data.get('update_strategy', 'rolling'),
                                                   ip_rule=app_ip_rule)
 

@@ -6,9 +6,8 @@
 <meta name="description" content="Infrastructure for the better web">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
-<link href="https://fonts.cdnfonts.com/css/pt-serif" rel="stylesheet">
 
 <link rel="apple-touch-icon" sizes="180x180" href="{% static 'common/icon.png' %}">
 <link rel="icon" type="image/png" href="{% static 'common/icon.png' %}">
@@ -24,6 +23,7 @@
 
 <link rel="stylesheet" href="{% static 'dist/main.css' %}">
 <link rel="stylesheet" href="{% static 'common/loader.css' %}">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
 <script>
     if (localStorage.getItem('theme') === 'dark' || !('theme' in localStorage)) {
@@ -41,7 +41,7 @@
                 integrations: [
                     Sentry.replayIntegration(),
                 ],
-                replaysSessionSampleRate: 0.1,
+                replaysSessionSampleRate: 0.5,
                 replaysOnErrorSampleRate: 1.0,
             });
         });

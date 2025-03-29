@@ -12,7 +12,7 @@ const themeToggleBtn = document.getElementById('theme-toggle');
 
 let event = new Event('dark-mode');
 
-themeToggleBtn.addEventListener('click', function() {
+themeToggleBtn.addEventListener('click', function () {
 
     // toggle icons
     themeToggleDarkIcon.classList.toggle('hidden');
@@ -28,7 +28,7 @@ themeToggleBtn.addEventListener('click', function() {
             localStorage.setItem('theme', 'light');
         }
 
-    // if NOT set via local storage previously
+        // if NOT set via local storage previously
     } else {
         if (document.documentElement.classList.contains('dark')) {
             document.documentElement.classList.remove('dark');
@@ -40,5 +40,5 @@ themeToggleBtn.addEventListener('click', function() {
     }
 
     document.dispatchEvent(event);
-    
+
 });
