@@ -58,7 +58,7 @@ window.addEventListener('load', function () {
 
     showLoader();
     loadRegistryInfo();
-    setInterval(loadRegistryInfo, 5000);
+    const loadRegistryInterval = setInterval(loadRegistryInfo, 5000);
 
     function deleteImage(repo, tag) {
         Confirm("Are you sure you want to delete this image?", (ok) => {
@@ -84,6 +84,7 @@ window.addEventListener('load', function () {
     $deleteRegistry.click(() => {
         Confirm("Are you sure you want to delete this registry?", (ok) => {
             if (!ok) return;
+            clearInterval(loadRegistryInterval);
             $.ajax({
                 url: `/api/container-registry/${currentURL.nsid}/${currentURL.resource_id}`,
                 method: 'DELETE',
