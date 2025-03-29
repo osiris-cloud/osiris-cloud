@@ -1,9 +1,8 @@
 param (
-    [Parameter(Position = 0, Mandatory = $true)]
-    [string]$Target
+    [string]$Target = "help"
 )
 
-$PYTHON = "python"
+$PYTHON = "py"
 $PIP = ".\venv\Scripts\pip.exe"
 $PY_VENV = ".\venv\Scripts\python.exe"
 
@@ -11,7 +10,18 @@ $PY_VENV = ".\venv\Scripts\python.exe"
 function Show-Help
 {
     Write-Host "### Available targets:"
-    Get-Content Makefile | Select-String -Pattern "^.PHONY:" | ForEach-Object { $_.Line -replace ".PHONY: ", ".\make.ps1 " }
+    Write-Host "### .\make.ps1 init - Create py virtual environment and install node modules"
+    Write-Host "### .\make.ps1 venv - Create py virtual environment"
+    Write-Host "### .\make.ps1 node_modules - Install node modules"
+    Write-Host "### .\make.ps1 env - Load environment variables from doppler to .env file"
+    Write-Host "### .\make.ps1 django - Start Django server"
+    Write-Host "### .\make.ps1 web - Start Webpack"
+    Write-Host "### .\make.ps1 celery - Start Celery worker"
+    Write-Host "### .\make.ps1 build - Build static files"
+    Write-Host "### .\make.ps1 migrations - Make and apply migrations"
+    Write-Host "### .\make.ps1 index - Reindex Algolia"
+    Write-Host "### .\make.ps1 clear-index - Clear Algolia index"
+    Write-Host "### .\make.ps1 clean - Clean environment"
 }
 
 function Create-Venv
@@ -23,6 +33,10 @@ function Create-Venv
         & $PY_VENV -m pip install --upgrade pip
         & $PIP install -r requirements.txt
     }
+    else
+    {
+        Write-Host "### Virtual environment already exists"
+    }
 }
 
 function Install-NodeModules
@@ -30,6 +44,10 @@ function Install-NodeModules
     if (-not (Test-Path node_modules))
     {
         npm install
+    }
+    else
+    {
+        Write-Host "### Node modules already installed"
     }
 }
 
@@ -148,9 +166,12 @@ function DeleteDB
 function Clean-Environment
 {
     Write-Host "### Cleaning environment"
-    Remove-Item -Path "node_modules" -Recurse -Force
-    Remove-Item -Path "venv" -Recurse -Force
-    Remove-Item -Path ".env" -Force
+    Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "venv" -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path ".env" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "staticfiles/*" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "static/dist/*" -Force -ErrorAction SilentlyContinue
+    Write-Host "### Done"
 }
 
 function Start-Build
@@ -164,6 +185,10 @@ switch ($Target)
 {
     "help" {
         Show-Help
+    }
+    "init" {
+        Create-Venv
+        Install-NodeModules
     }
     "venv" {
         Create-Venv
@@ -209,6 +234,7 @@ switch ($Target)
         netstat -ano | findstr ":8000" | ForEach-Object { $_ -split "\s+" | Select-Object -Last 1 } | ForEach-Object { taskkill /PID $_ /F }
     }
     default {
+        Write-Host "### Unknown target: $Target"
         Show-Help
     }
 }

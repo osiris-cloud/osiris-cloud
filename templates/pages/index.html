@@ -5,6 +5,73 @@
 
 {% block top_import %}
     <link rel="stylesheet" href="{% static 'home/style.css' %}">
+    <style>
+        @keyframes glowPulse {
+            0% {
+                text-shadow: 0 0 5px rgba(16, 185, 129, 0.2);
+                color: #f3f4f6;
+            }
+            50% {
+                text-shadow: 0 0 10px rgba(5, 150, 105, 0.5), 0 0 20px rgba(5, 150, 105, 0.3);
+                color: #fff;
+            }
+            100% {
+                text-shadow: 0 0 5px rgba(16, 185, 129, 0.2);
+                color: #f3f4f6;
+            }
+        }
+
+        @keyframes borderPulse {
+            0% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        #cycling-message-container {
+            min-height: 68px;
+            height: auto;
+            position: relative;
+            overflow: hidden;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            background: rgba(17, 24, 39, 0.6);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .cycling-message {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease, transform 0.5s ease;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+            will-change: opacity, transform;
+            padding-right: 1rem;
+            line-height: 1.4;
+        }
+
+        .cycling-message.visible {
+            opacity: 1;
+            transform: translateY(0);
+            animation: glowPulse 3s infinite alternate;
+        }
+
+        .cycling-message.visible::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(5, 150, 105, 0.7), transparent);
+            animation: borderPulse 3s infinite alternate;
+        }
+    </style>
 {% endblock top_import %}
 
 {% block content %}
@@ -18,20 +85,71 @@
                 <h1 class="max-w-2xl text-4xl text-gray-100 font-bold font-pt-sans tracking-tight leading-none md:text-5xl xl:text-7xl inline-block bg-gradient2">
                     the better web
                 </h1>
-                <p class="max-w-2xl mt-6 font-light text-gray-400 md:text-lg lg:text-xl">
-                    Dev-centric, secure and open-source cloud
-                </p>
-                <p class="max-w-2xl mt-10 font-light text-gray-400 text-justify">
-                    Osiris Cloud by
-                    <a href="https://osiris.cyber.nyu.edu" target="_blank" class="hover:text-lime-500">
-                        OSIRIS Lab
-                    </a>
-                    is a cloud platform that offers a range of services to help eliminate infrastructure
-                    barriers at NYU. The platform provides a secure and reliable way to do homework, build and deploy
-                    applications - so you can focus on what you do best.
+
+                <div id="cycling-message-container">
+                    <p class="cycling-message visible text-lg md:text-xl font-medium">
+                        Infrastructure is hard, but it doesn't have to be.
+                    </p>
+                    <p class="cycling-message text-lg md:text-xl font-medium">
+                        Deploy so fast, even your caffeine addiction can't keep up.
+                    </p>
+                    <p class="cycling-message text-lg md:text-xl font-medium">
+                        More uptime than your sleep schedule.
+                    </p>
+                    <p class="cycling-message text-lg md:text-xl font-medium">
+                        Infrastructure that runs smoother than your pick-up lines.
+                    </p>
+                    <p class="cycling-message text-lg md:text-xl font-medium">
+                        Spin up containers so fast, you'll think we're time travelers.
+                    </p>
+                    <p class="cycling-message text-lg md:text-xl font-medium">
+                        Scaling your app should be easier than explaining your job to your parents.
+                    </p>
+                    <p class="cycling-message text-lg md:text-xl font-medium">
+                        Say goodbye to infrastructure headaches and hello to… well, whatever you want to do.
+                    </p>
+                    <p class="cycling-message text-lg md:text-xl font-medium">
+                        We don't just scale. We YOLO-scale.
+                    </p>
+                    <p class="cycling-message text-lg md:text-xl font-medium">
+                        Stop worrying about infrastructure. Worry about your OS homework instead.
+                    </p>
+                    <p class="cycling-message text-lg md:text-xl font-medium">
+                        Cloud so easy, even your cat can provision a VM.
+                    </p>
+                </div>
+
+                <p class="max-w-2xl mt-6 font-light text-gray-400 text-justify">
+                    Osiris Cloud is a cloud platform designed to eliminate infrastructure barriers, providing a
+                    secure and reliable environment to get stuff done, anywhere from homeworks to deploying applications
+                    to the world. Osiris Cloud aims to give developers the tools to push boundaries, accelerate ideas,
+                    and transform what's possible.
                 </p>
             </div>
         </div>
     </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const messages = document.querySelectorAll('.cycling-message');
+            let currentIndex = 0;
+            let isAnimating = false;
+
+            function cycleMessage() {
+                if (isAnimating) return;
+                isAnimating = true;
+                messages[currentIndex].classList.remove('visible');
+                currentIndex = (currentIndex + 1) % messages.length;
+                setTimeout(() => {
+                    messages[currentIndex].classList.add('visible');
+                    setTimeout(() => {
+                        isAnimating = false;
+                    }, 500);
+                }, 400);
+            }
+
+            setInterval(cycleMessage, 3700);
+        });
+    </script>
 
 {% endblock content %}
