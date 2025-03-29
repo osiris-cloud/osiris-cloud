@@ -119,12 +119,12 @@
 
 {% block bottom_import %}
     {% if 'create' in segment %}
-        <script src="{% static 'container_registry/create.js' %}"></script>
+        <script type="module" src="{% static 'container_registry/create.js' %}"></script>
     {% elif 'list' in segment %}
-        <script src="{% static 'container_registry/list.js' %}"></script>
+        <script type="module" src="{% static 'container_registry/list.js' %}"></script>
     {% elif 'view' in segment %}
-        <script src="{% static 'container_registry/view.js' %}"></script>
+        <script type="module" src="{% static 'container_registry/view.js' %}"></script>
     {% elif 'edit' in segment %}
-        <script src="{% static 'container_registry/edit.js' %}"></script>
+        <script type="module" src="{% static 'container_registry/edit.js' %}"></script>
     {% endif %}
 {% endblock bottom_import %}
