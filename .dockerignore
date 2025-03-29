@@ -1,15 +1,22 @@
 .idea
 .vscode
+.git
+.gitignore
+.github
+.argocd
 
 venv
 __pycache__
-
 node_modules
 package-lock.json
+
+data
+docs
+
 staticfiles/*
+static/dist/*
 
 .env
-kubeconfig.yaml
 
 Makefile
 make.ps1

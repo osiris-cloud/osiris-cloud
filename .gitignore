@@ -3,25 +3,15 @@
 
 venv
 __pycache__
-
 node_modules
 package-lock.json
 
-staticfiles/*
-static/dist/main.css
-static/dist/main.css.map
+data
 
-static/dist/css/output.css
-static/dist/main.bundle.js
-static/dist/main.bundle.js.map
+staticfiles/*
+static/dist/*
 
 .env
-
-kubeconfig
-kubeconfig.yaml
-seed/kubeconfig.yaml
-
-registry.key
 
 _testing
 
