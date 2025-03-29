@@ -80,18 +80,16 @@ class Env:
         'ca_cert': tempfile.NamedTemporaryFile(delete=False),
     }
 
-    loxi_url = os.getenv('FIREWALL_URL')
-
-    registry_domain = os.getenv('REGISTRY_DOMAIN', 'registry.osiriscloud.io')
+    registry_domain = os.getenv('REGISTRY_DOMAIN')
     registry_key_obj_path = os.getenv('REGISTRY_KEY_OBJECT_PATH')
     registry_signing_key = ''
     registry_kid = ''
     registry_webhook_secret = os.getenv('REGISTRY_WEBHOOK_SECRET')
 
-    container_apps_domain = os.getenv('CONTAINER_APPS_DOMAIN', 'poweredge.dev')
+    container_apps_domain = os.getenv('CONTAINER_APPS_DOMAIN')
 
     def __post_init__(self):
-        kubeconfig_path = os.path.join(BASE_DIR, 'kubeconfig.yaml')
+        kubeconfig_path = os.path.join(BASE_DIR, 'data/kubeconfig.yaml')
         if os.path.exists(kubeconfig_path):
             kubeconfig = load_file(kubeconfig_path, 'r')
         else:
@@ -130,7 +128,7 @@ class Env:
         else:
             print('# kubeconfig not found. k8s client not initialized')
 
-        registry_signing_key_path = os.path.join(BASE_DIR, 'registry.key')
+        registry_signing_key_path = os.path.join(BASE_DIR, 'data/registry.key')
         if os.path.exists(registry_signing_key_path):
             self.registry_signing_key = load_file(registry_signing_key_path, 'rb')
         else:
