@@ -1,0 +1,86 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Authorize app{% endblock title %}
+
+{% block navigation %}
+    {% include 'components/navbar/navbar-simple.html' %}
+{% endblock navigation %}
+
+{% block sidebar %}{% endblock sidebar %}
+
+{% block col_class %}{% endblock col_class %}
+
+{% block content %}
+    <div class="flex-1 flex flex-col items-center justify-center px-6 mx-auto">
+        <div class="text-center text-2xl font-semibold dark:text-white">
+            <span><strong>{{ client.name }}</strong> is requesting access to the following information</span>
+            <p class="mt-4 text-gray-400 text-sm mx-auto text-center bg-transparent">
+                Name, Email, Affiliation
+            </p>
+        </div>
+        <div class="w-full max-w-xl sm:p-4 flex flex-col items-center mt-6">
+            <form method="post" action="{% url 'oidc_provider:authorize' %}"
+                  class="w-full flex flex-col items-center justify-center gap-4"
+            >
+                {{ hidden_inputs }}
+                {% csrf_token %}
+                <div class="flex flex-col gap-2 w-44 max-w-xs">
+                    <button type="submit" name="allow" value="Authorize" id="authorize-btn"
+                            class="flex items-center justify-center text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg 
+                            text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                    >
+                        <span id="authorize-text">Authorize</span>
+                        <svg id="spinner" class="animate-spin h-5 w-5 text-white hidden ml-2"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z">
+                            </path>
+                        </svg>
+                    </button>
+                    <button type="submit" value="Decline"
+                            class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 
+                            focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white 
+                            dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block bottom_import %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            let isSubmitting = false;
+
+            form.addEventListener('submit', function (e) {
+                const submitter = e.submitter || document.activeElement;
+                if (submitter.id !== 'authorize-btn')
+                    return;
+
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return;
+                }
+
+                isSubmitting = true;
+
+                const authorizeButton = document.getElementById('authorize-btn');
+                authorizeButton.style.pointerEvents = 'none';
+                authorizeButton.style.opacity = '0.6';
+
+                const spinner = document.getElementById('spinner');
+                spinner.classList.remove('hidden');
+            });
+        });
+    </script>
+{% endblock bottom_import %}
+
+{% block namespace_js %}{% endblock namespace_js %}
+
+{% block footer %}{% endblock footer %}
