@@ -24,6 +24,11 @@ django: venv
 	@echo "### Starting Django"
 	./venv/bin/python3 manage.py runserver
 
+.PHONY: django-https
+django-https: venv
+	@echo "### Starting Django with HTTPS"
+	./venv/bin/python3 -m daphne -e ssl:8000:privateKey=./dev-certs/localhost.key:certKey=./dev-certs/localhost.crt --proxy-headers core.asgi:application
+
 .PHONY: web
 web: node_modules
 	@echo "### Starting Webpack"

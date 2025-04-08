@@ -33,10 +33,6 @@ function Create-Venv
         & $PY_VENV -m pip install --upgrade pip
         & $PIP install -r requirements.txt
     }
-    else
-    {
-        Write-Host "### Virtual environment already exists"
-    }
 }
 
 function Install-NodeModules
@@ -56,6 +52,13 @@ function Start-Django
     Create-Venv
     Write-Host "### Starting Django"
     & $PY_VENV manage.py runserver
+}
+
+function Start-Django-HTTPS
+{
+    Create-Venv
+    Write-Host "### Starting Django with HTTPS"
+    & $PY_VENV -m daphne -e ssl:8000:privateKey=./dev-certs/localhost.key:certKey=./dev-certs/localhost.crt --proxy-headers core.asgi:application
 }
 
 function Start-Web
@@ -177,7 +180,7 @@ function Clean-Environment
 function Start-Build
 {
     npm run build
-	python manage.py collectstatic --no-input
+    python manage.py collectstatic --no-input
 }
 
 
@@ -202,6 +205,10 @@ switch ($Target)
     "django" {
         Load-Env
         Start-Django
+    }
+    "django-https" {
+        Load-Env
+        Start-Django-HTTPS
     }
     "web" {
         Start-Web
