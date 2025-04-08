@@ -50,18 +50,20 @@ github_oauth.register(
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect(request.build_absolute_uri(reverse("dashboard")))
-    return render(request, 'pages/login.html')
+        next_url = request.GET.get('next', reverse("dashboard"))
+        return redirect(next_url)
+
+    next_url = request.GET.get('next', '')
+    return render(request, 'pages/login.html', {'next': next_url})
 
 
 def nyu_login(request):
+    if next_url := request.GET.get('next', ''):  # Save the next URL to redirect after login
+        request.session['original_next'] = next_url
+
     base_uri = request.scheme + '://' if env.debug else 'https://'
     redirect_uri = base_uri + request.get_host() + '/login/nyu/callback'
     return nyu_oauth.nyu.authorize_redirect(request, redirect_uri)
-
-
-def get_user_default_ns(user: User) -> Namespace:
-    return user.namespaces.filter(role='owner').filter(namespace__default=True).first().namespace
 
 
 def nyu_callback(request):
@@ -105,14 +107,19 @@ def nyu_callback(request):
                 Limit.objects.create(user=user, **DEFAULT_LIMIT)
                 logging.info(f"Default limits applied for namespace {ns_name}")
 
-                Usage.objects.create(user=user, cpu=0, memory=0, disk=0, public_ip=0, gpu=0, registry=0)
+                Usage.objects.create(user=user)
 
                 # We set the user's profile avatar
                 set_profile_avatar.delay(serialize_obj(user))
 
         login(request, user)
 
-        return redirect(request.build_absolute_uri(reverse("dashboard")))
+        next_url = request.session.get('original_next', reverse("dashboard"))
+
+        if 'original_next' in request.session:
+            del request.session['original_next']
+
+        return redirect(next_url)
 
     except Exception as e:
         logging.exception(e)
