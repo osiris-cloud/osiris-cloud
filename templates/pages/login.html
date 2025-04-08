@@ -22,7 +22,7 @@
         </a>
         <div class="w-full max-w-xl sm:p-8 flex flex-col items-center">
             <div class="mt-2 flex items-center justify-center gap-4">
-                <a href="/login/nyu" class="text-gray-900 bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-100
+                <a href="{% url 'nyu_login' %}?next={{ next|urlencode:"" }}" class="text-gray-900 bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-100
                                     font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 w-32">
                     <img src="https://blob.osiriscloud.io/nyu-logo.jpg" class="w-4 h-4 me-2"
                          alt="NYU Logo"
@@ -30,7 +30,7 @@
                     NYU SSO
                 </a>
 
-                <a href="/login/github"
+                <a href="{% url 'github_login' %}?next={{ next|urlencode:"" }}"
                    class="text-gray-900 bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-100
                       font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center justify-center dark:focus:ring-gray-500 w-32">
                     <svg class="w-4 h-4 me-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
