@@ -38,4 +38,3 @@ class GithubUser(models.Model):
 class GithubUserAdmin(admin.ModelAdmin):
     list_display = ('username', 'name', 'email')
     search_fields = ('username', 'name')
-
