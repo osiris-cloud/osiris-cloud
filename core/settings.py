@@ -144,6 +144,8 @@ env = Env()
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
+SITE_URL = os.environ.get('SITE_URL')
+
 ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io'] if not DEBUG else ['*']
 
 CSRF_TRUSTED_ORIGINS = ['https://osiriscloud.io', 'https://staging.osiriscloud.io']
@@ -170,8 +172,8 @@ INSTALLED_APPS = [
     'django_api_gen',
     'encrypted_model_fields',
     "main",
+    "oidc_provider",
     "apps.api",
-    # "apps.ip_manager",
     "apps.infra",
     "apps.oauth",
     "apps.users",
@@ -181,8 +183,6 @@ INSTALLED_APPS = [
 # Client facing apps
 OC_APPS = [
     "apps.dashboard",
-    # "apps.dns_manager",
-    # "apps.vm",
     "apps.container_registry",
     "apps.container_apps",
     "apps.secret_store",
@@ -200,6 +200,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "oidc_provider.middleware.SessionManagementMiddleware",
 ]
 
 APPEND_SLASH = False
@@ -215,7 +216,9 @@ ASGI_APPLICATION = "core.asgi.application"
 
 AUTH_USER_MODEL = "users.User"
 AUTHENTICATION_BACKENDS = ['apps.oauth.backend.AuthBackend']
+
 SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = True
 
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/dashboard"
@@ -289,7 +292,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-################# Celery Settings #################
 CELERY_BROKER_URL = env.rabbitmq_url
 CELERY_RESULT_BACKEND = "django-db"
 
@@ -305,8 +307,6 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'EST'
 CELERY_TASK_ALWAYS_EAGER = DEBUG  # Setting this to True will run tasks synchronously and block the main thread
-###################################################
-
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -328,4 +328,13 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'osiris-app-cache',
     }
+}
+
+OIDC_LOGIN_URL = '/login/nyu'
+OIDC_IDTOKEN_INCLUDE_CLAIMS = True
+OIDC_EXTRA_SCOPE_CLAIMS = 'apps.oauth.provider.OsirisScopeClaims'
+OIDC_SESSION_MANAGEMENT_ENABLE = True
+OIDC_TEMPLATES = {
+    'authorize': 'apps/oauth/authorize.html',
+    'error': 'oidc_provider/error.html'
 }

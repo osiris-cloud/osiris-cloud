@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("healthz", views.healthz, name="healthz"),
     path("login", include("apps.oauth.urls")),
+    path("oauth", include('apps.oauth.provider_urls')),
     path("logout", views.logout_view, name="logout"),
     path("", include("apps.users.urls")),
 
