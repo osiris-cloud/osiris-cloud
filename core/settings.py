@@ -148,12 +148,13 @@ SITE_URL = os.environ.get('SITE_URL')
 
 USE_X_FORWARDED_HOST = str2bool(os.environ.get('USE_X_FORWARDED_HOST', 'False'))
 USE_X_FORWARDED_PORT = str2bool(os.environ.get('USE_X_FORWARDED_PORT', 'False'))
+USE_X_FORWARDED_PROTO = str2bool(os.environ.get('USE_X_FORWARDED_PROTO', 'False'))
 
-ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io'] if not DEBUG else ['*']
+ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io', 'localhost'] if not DEBUG else ['*']
 
 CSRF_TRUSTED_ORIGINS = ['https://osiriscloud.io', 'https://staging.osiriscloud.io']
 if DEBUG:
-    CSRF_TRUSTED_ORIGINS.append('http://localhost:8000')
+    CSRF_TRUSTED_ORIGINS += ['http://localhost:8000', 'https://localhost:8000']
 
 with open('version.txt', 'r') as f:
     VER = f.read().strip()
