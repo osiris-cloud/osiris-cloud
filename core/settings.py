@@ -146,6 +146,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 SITE_URL = os.environ.get('SITE_URL')
 
+USE_X_FORWARDED_HOST = str2bool(os.environ.get('USE_X_FORWARDED_HOST', 'False'))
+USE_X_FORWARDED_PORT = str2bool(os.environ.get('USE_X_FORWARDED_PORT', 'False'))
+
 ALLOWED_HOSTS = ['osiriscloud.io', 'staging.osiriscloud.io'] if not DEBUG else ['*']
 
 CSRF_TRUSTED_ORIGINS = ['https://osiriscloud.io', 'https://staging.osiriscloud.io']
