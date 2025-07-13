@@ -14,7 +14,8 @@ applications. Osiris Cloud aims to give developers the tools to push boundaries,
 what's possible. It is designed to turn your bare metal hardware into a powerful cloud platform.
 
 > [!NOTE]
-> The project is in its early days and is not yet ready for production use.
+> The project is in its early days and is not yet ready for production use. information on how to setup/get started
+> will be added soon.
 
 ## Container Apps
 
@@ -48,7 +49,7 @@ resource without waiting for you to go through the traditionally long setup proc
 ## Namespaces
 
 Namespaces are used to isolate resources and provide a way to manage access control. This lets you have multiple users
-on your cloud platform, each with their own isolated environment. 
+on your cloud platform, each with their own isolated environment.
 
 <div style="margin-top:40px;">
 
